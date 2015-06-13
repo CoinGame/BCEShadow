@@ -1,11 +1,10 @@
-
-Nu Official Development Repo
+B&C Exchange Official Development Repo
 ==================================
 
-### What is Nu?
+### What is B&C Exchange?
 //todo: Description to be written
 
-### Nu Resources
+### B&C Exchange Resources
 * Client and Source: Client Binaries, Source Code
 * Documentation: Nu Whitepaper, Nu Wiki
 * Help: Forum, Report an Issue
