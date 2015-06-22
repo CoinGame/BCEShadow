@@ -13,7 +13,7 @@ seed = CoinContainer.new(
   bind_code: true,
   args: {
     gen: true,
-    splitshareoutputs: 25,
+    splitshareoutputs: 1000,
     timetravel: start_time_shift,
   },
 #  delete_at_exit: true,
