@@ -712,11 +712,8 @@ int GetProtocolForNextBlock(const CBlockIndex* pPrevIndex)
     if (pPrevIndex != NULL)
         nProtocol = pPrevIndex->nProtocolVersion;
 
-    if (nProtocol < PROTOCOL_V2_0 && IsNuProtocolV20NextBlock(pPrevIndex))
+    if (nProtocol < PROTOCOL_V2_0)
         nProtocol = PROTOCOL_V2_0;
-
-    if (nProtocol < PROTOCOL_V0_5)
-        nProtocol = PROTOCOL_V0_5;
 
     return nProtocol;
 }

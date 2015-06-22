@@ -2855,15 +2855,15 @@ bool LoadBlockIndex(bool fAllowNew)
         //   vMerkleTree: 4a5e1e
 
         // Genesis block
-        const char* pszTimestamp = "2014-08-01: Why Argentina's default feels like American bullying: Don Pittis";
-        unsigned int nTimeGenesis=1407023435;
-        unsigned int nNonceGenesis=1542387;
+        const char* pszTimestamp = "Bitcoin's block 360800 is 0000000000000000151b2741b37b9c1a9826947c49cb8afba5bb812d36ead66e";
+        unsigned int nTimeGenesis=1434280000;
+        unsigned int nNonceGenesis=0;
 
         if (fTestNet)
         {
-            pszTimestamp="August 02, 2014 Value Walk - Tesla Motors To Deliver Over 100,000 Cars A Year By 2015";
-            nTimeGenesis=1407023435;
-            nNonceGenesis=412602;
+            pszTimestamp="Bitcoin's block 360799 is 0000000000000000144552f74809400fff4341972f170b95a125eddf3b342fbc";
+            nTimeGenesis=1434279999;
+            nNonceGenesis=1455744;
         }
 
         CTransaction txNew;
@@ -2895,21 +2895,21 @@ bool LoadBlockIndex(bool fAllowNew)
             block.nNonce++;
         }
      
-        printf("Nu Genesis Block Found:\n");
+        printf("BCExchange Genesis Block Found:\n");
         printf("genesis hash=%s\n", block.GetHash().ToString().c_str());
         printf("merkle root=%s\n", block.hashMerkleRoot.ToString().c_str());
         block.print();
      
-        printf("End Nu Genesis Block\n");
+        printf("End BCExchange Genesis Block\n");
 
         //// debug print
         printf("%s\n", block.GetHash().ToString().c_str());
         printf("%s\n", hashGenesisBlock.ToString().c_str());
         printf("%s\n", block.hashMerkleRoot.ToString().c_str());
         if (!fTestNet)
-            assert(block.hashMerkleRoot == uint256("0x3e6c2608685f1d66d8fe9cb798400ec16aec1574b7ad9a7a92a65c7fcea2d32a"));
+            assert(block.hashMerkleRoot == uint256("0x07a0270f6caae539b85817c63855f6fc9f66ec67a1152d947d86243219ad7327"));
         else
-            assert(block.hashMerkleRoot == uint256("0xd044ad667adb2ec5073dc2f033f8ed9458f92515eb13310fb1fccfb4242cf31d"));
+            assert(block.hashMerkleRoot == uint256("0x0083269ccca7601e0f0ab117c3d95524e003ca544ce1b3b4ba07ede05cba07b5"));
 
         block.print();
         assert(block.GetHash() == hashGenesisBlock);

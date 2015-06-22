@@ -885,12 +885,12 @@ boost::filesystem::path GetDefaultDataDir()
 {
     namespace fs = boost::filesystem;
 
-    // Windows: C:\Documents and Settings\username\Application Data\Nu
-    // Mac: ~/Library/Application Support/Nu
-    // Unix: ~/.nu
+    // Windows: C:\Documents and Settings\username\Application Data\BCExchange
+    // Mac: ~/Library/Application Support/BCExchange
+    // Unix: ~/.bcexchange
 #ifdef WIN32
     // Windows
-    return MyGetSpecialFolderPath(CSIDL_APPDATA, true) / "Nu";
+    return MyGetSpecialFolderPath(CSIDL_APPDATA, true) / "BCExchange";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -902,10 +902,10 @@ boost::filesystem::path GetDefaultDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     fs::create_directory(pathRet);
-    return pathRet / "Nu";
+    return pathRet / "BCExchange";
 #else
     // Unix
-    return pathRet / ".nu";
+    return pathRet / ".bcexchange";
 #endif
 #endif
 }
@@ -1011,7 +1011,7 @@ boost::filesystem::path GetConfigFile()
 {
     namespace fs = boost::filesystem;
 
-    fs::path pathConfigFile(GetArg("-conf", "nu.conf"));
+    fs::path pathConfigFile(GetArg("-conf", "bcexchange.conf"));
     if (!pathConfigFile.is_complete()) pathConfigFile = GetDataDir(false) / pathConfigFile;
     return pathConfigFile;
 }

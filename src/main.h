@@ -38,7 +38,7 @@ static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
 static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
 static const unsigned int MAX_COINSTAKE_SIZE = 1000; // nubit: maximum size of CoinStake transactions
-static const int64 MIN_SHARE_TX_FEE = COIN;
+static const int64 MIN_SHARE_TX_FEE = CENT;
 static const int64 MIN_SHARE_TXOUT_AMOUNT = MIN_SHARE_TX_FEE;
 static const int64 MIN_CURRENCY_TX_FEE = CENT;
 static const int64 MIN_CURRENCY_TXOUT_AMOUNT = MIN_CURRENCY_TX_FEE;
@@ -51,7 +51,7 @@ static const int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 static const int STAKE_TARGET_SPACING = 60 * 1; // 60 second block spacing for Nubit
 static const int STAKE_MIN_AGE = 60 * 60 * 24 * 7; // changed to 7 days so only one vote in 10000 block voting period can be made
 static const int STAKE_MAX_AGE = STAKE_MIN_AGE + 1; // changed to same as minimum to incentivize minting as soon as possible
-static const int64 IPO_SHARES = 1000000000 * COIN; // Total number of shares to create using proof of work (intented for IPO)
+static const int64 IPO_SHARES = 252000 * COIN; // Total number of shares to create using proof of work (intented for IPO)
 static const int64 PROOF_OF_WORK_BLOCKS = 400; // Block height of the last proof of work block
 #ifdef TESTING
 static const int64 PARK_RATE_VOTES = 5; // Number of blocks used in park rate median vote calculation
@@ -65,8 +65,8 @@ static const unsigned int CUSTODIAN_VOTES = 10000;
 static const int PARK_RATE_VOTE_DELAY = 60;
 #endif
 static const int64 MOTION_VOTES = 10000;
-static const int64 PROOF_OF_STAKE_REWARD = 40 * COIN; // Constant reward of Proof of Stake blocks
-static const int64 MIN_COINSTAKE_VALUE = 10000 * COIN; // Minimum value allowed as input in a CoinStake
+static const int64 PROOF_OF_STAKE_REWARD = CENT; // Constant reward of Proof of Stake blocks
+static const int64 MIN_COINSTAKE_VALUE = COIN; // Minimum value allowed as input in a CoinStake
 static const int64 MAX_COIN_AGE = 100000000000000; // To make sure coin days can be added about 10,000 times without overflow
 
 #ifdef TESTING
@@ -86,8 +86,8 @@ static const int fHaveUPnP = true;
 static const int fHaveUPnP = false;
 #endif
 
-static const uint256 hashGenesisBlockOfficial("000003cc2da5a0a289ad0a590c20a8b975219ddc1204efd169e947dd4cbad73f");
-static const uint256 hashGenesisBlockTestNet("000005fa4ce5f6fefe0d7faee4708051527a35f6c918a03d8fdf077ac4845933");
+static const uint256 hashGenesisBlockOfficial("00000fa7a8ecd038c5d8771a72ebd9c62a951bd9bd824323180305b949309bcf");
+static const uint256 hashGenesisBlockTestNet("00000b6809fb37a7c8bc01c0fd17a8eb884d4e95f3425b74a56bdde9584f295b");
 
 static const int64 nMaxClockDrift = 2 * 60 * 60;        // two hours
 
