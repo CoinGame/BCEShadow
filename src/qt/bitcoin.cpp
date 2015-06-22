@@ -196,9 +196,9 @@ int main(int argc, char *argv[])
     app.setOrganizationName("Nu");
     app.setOrganizationDomain("NuBits.com");
     if(GetBoolArg("-testnet")) // Separate UI settings for testnet
-        app.setApplicationName("Nu-Qt-testnet");
+        app.setApplicationName("BCExchange-Qt-testnet");
     else
-        app.setApplicationName("Nu-Qt");
+        app.setApplicationName("BCExchange-Qt");
 
     // ... then GUI settings:
     OptionsModel optionsModel;
