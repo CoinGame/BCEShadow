@@ -2526,6 +2526,7 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
             mapProofOfStake.insert(make_pair(hash, hashProofOfStake));
     }
 
+#ifndef TESTING
     CBlockIndex* pcheckpoint = Checkpoints::GetLastSyncCheckpoint();
     if (pcheckpoint && pblock->hashPrevBlock != hashBestChain && !Checkpoints::WantedByPendingSyncCheckpoint(hash))
     {
@@ -2543,6 +2544,7 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
             return error("ProcessBlock() : block with too little %s", pblock->IsProofOfStake()? "proof-of-stake" : "proof-of-work");
         }
     }
+#endif
 
     // ppcoin: ask for pending sync-checkpoint if any
     if (!IsInitialBlockDownload())

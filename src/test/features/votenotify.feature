@@ -29,7 +29,7 @@ Feature: A command is called each time the vote changes. This can be used to upd
 
   Scenario: Votenotify is used as data feed source
     Given a node "Alice" started with a votenotify script
-    And node "Alice" generates a NSR address "alice"
+    And node "Alice" generates a BKS address "alice"
     And the votenotify script of node "Alice" is written to dump the vote and sign it with address "alice"
     And a data feed "Alice"
     And a node "Bob"

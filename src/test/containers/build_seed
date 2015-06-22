@@ -2,27 +2,27 @@
 
 require File.expand_path('../boot', __FILE__)
 
-genesis_time = Time.at(1407023435)
+genesis_time = Time.at(1434279999)
 
-start_time = genesis_time + 2 * 3600
+start_time = genesis_time + 60
 start_time_shift = (start_time - Time.now).to_i
 
 puts "Creating seed"
 seed = CoinContainer.new(
-  image: 'nubit/0.4.2',
-  bind_code: false,
+  image: 'bcexchange/base',
+  bind_code: true,
   args: {
     gen: true,
-    splitshareoutputs: 100000,
+    splitshareoutputs: 25,
     timetravel: start_time_shift,
   },
-  delete_at_exit: true,
+#  delete_at_exit: true,
 )
 
 puts "Creating node"
 node = CoinContainer.new(
-  image: 'nubit/0.4.2',
-  bind_code: false,
+  image: 'bcexchange/base',
+  bind_code: true,
   links: [seed],
   remove_wallet_after_shutdown: true,
   delete_at_exit: true,
@@ -49,10 +49,10 @@ loop do
   sleep 1
 end
 
-puts "Building images nubit/seed and nubit/node"
+puts "Building images bcexchange/seed and bcexchange/node"
 seed.shutdown
 node.shutdown
 seed.wait_for_shutdown
 node.wait_for_shutdown
-seed.commit('nubit/seed')
-node.commit('nubit/node')
+seed.commit('bcexchange/seed')
+node.commit('bcexchange/node')

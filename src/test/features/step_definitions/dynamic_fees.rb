@@ -15,7 +15,7 @@ When(/^node "(.*?)" votes for an (\w+) fee of ([\d.,]+)$/) do |arg1, unit_name, 
   expect(node.rpc("getvote")["fees"]).to eq(vote["fees"])
 end
 
-When(/^node "(.*?)" finds blocks until the NSR fee is ([\d.,]+)$/) do |arg1, arg2|
+When(/^node "(.*?)" finds blocks until the BKS fee is ([\d.,]+)$/) do |arg1, arg2|
   node = @nodes[arg1]
   fee = parse_number(arg2)
   begin

@@ -37,7 +37,7 @@ def park_rates_from_table(table)
   end.inject({}, :merge)
 end
 
-When(/^node "(.*?)" votes for these NuBit park rates:$/) do |arg1, table|
+When(/^node "(.*?)" votes for these BlockCredit park rates:$/) do |arg1, table|
   node = @nodes[arg1]
   vote = node.rpc("getvote")
   vote["parkrates"] = [
@@ -108,7 +108,7 @@ Then(/^node "(.*?)" finds enough blocks for the APR "(.*?)" to become the median
   step "all nodes reach the same height"
 end
 
-Then(/^the NuBit park rates should be$/) do |table|
+Then(/^the BlockCredit park rates should be$/) do |table|
   @nodes.values.each do |node|
     node_rates = node.unit_rpc("B", "getparkrates")
     table.hashes.each do |row|

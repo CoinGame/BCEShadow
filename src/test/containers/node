@@ -3,5 +3,5 @@
 cd $(dirname $0)/../..
 
 set -x
-docker run -v $PWD/..:/code -w /code/src --tty nubit/base ./nud "$@"
+docker run -v $PWD/..:/code -w /code/src --tty bcexchange/base ./bcexchanged "$@"
 

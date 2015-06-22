@@ -49,7 +49,7 @@ end
 Given(/^a node "(.*?)" connected through the proxy$/) do |arg1|
   name = arg1
   options = {
-    image: "nunet/empty",
+    image: "bcenet/empty",
     links: @nodes.values.map(&:name),
     args: {
       debug: true,

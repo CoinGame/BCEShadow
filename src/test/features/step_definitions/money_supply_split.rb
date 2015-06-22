@@ -14,12 +14,12 @@ Then(/^the "(.*?)" supply for "(.*?)" should be "(.*?)"$/) do |arg1, node, arg2|
   expect(supply).to be == parse_number(arg2)
 end
 
-When(/^the current NuShare supply on "(.*?)" is recorded$/) do |arg1|
+When(/^the current BlockShare supply on "(.*?)" is recorded$/) do |arg1|
   @nushare_supply = @nodes[arg1].unit_rpc('S', 'getinfo')["moneysupply"]
 end
 
 Then(/^the "(.*?)" supply for "(.*?)" should have increased by "(.*?)"$/) do |arg1, arg2, arg3|
-  expect(@nodes[arg2].unit_rpc(unit(arg1), 'getinfo')["moneysupply"]).to eq(@nushare_supply + parse_number(arg3))
+  expect(@nodes[arg2].unit_rpc(unit(arg1), 'getinfo')["moneysupply"]).to be_with(0.0001).of(@nushare_supply + parse_number(arg3))
 end
 
 
@@ -34,7 +34,7 @@ Then(/^"(.*?)" money supply on node "(.*?)" should increase by "(.*?)" when node
     checked_node.block_count == minter.block_count
   end
   wait_for do
-    expect(money_supply(unit_name, checked_node)).to eq(initial_supply + increase)
+    expect(money_supply(unit_name, checked_node)).to be_within(0.0001).of(initial_supply + increase)
   end
 end
 

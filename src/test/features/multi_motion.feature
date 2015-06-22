@@ -1,7 +1,6 @@
 Feature: Shareholders can vote for multiple motions
   Scenario: Two voters and two motions
     Given a network with nodes "Alice" and "Bob" able to mint
-    And the nodes travel to the Nu protocol v05 switch time
     When node "Alice" votes for the motions:
       | 3f786850e387550fdab836ed7e6dc881de23001b |
     When node "Bob" votes for the motions:

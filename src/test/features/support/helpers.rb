@@ -23,8 +23,8 @@ end
 
 def unit(unit_name)
   case unit_name.strip
-  when "NuShare", 'NuShares', 'NSR', "" then 'S'
-  when 'NuBit', 'NuBits', 'NBT' then 'B'
+  when "BlockShare", 'NuShares', 'BKS', "" then 'S'
+  when 'BlockCredit', 'NuBits', 'BKC' then 'B'
   else raise "Unknown unit: #{unit_name.inspect}"
   end
 end

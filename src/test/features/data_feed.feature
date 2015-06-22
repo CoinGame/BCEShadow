@@ -89,7 +89,7 @@ Feature: The user can define a data feed URL to automatically update his vote fr
   Scenario: A data feed is set with signature and the client is restarted
     Given a network with node "Alice" able to mint
     And a node "Bob"
-    And node "Bob" generates a NSR address "bob"
+    And node "Bob" generates a BKS address "bob"
     And a data feed "Bob"
     And the data feed "Bob" returns sample vote "full"
     When node "Alice" sets her data feed to the URL of "Bob" with address "bob"
@@ -161,7 +161,7 @@ Feature: The user can define a data feed URL to automatically update his vote fr
   Scenario: An user sets a data feed with an address and gets a signed vote
     Given a network with node "Alice" able to mint
     And a node "Bob"
-    And node "Bob" generates a NSR address "bob"
+    And node "Bob" generates a BKS address "bob"
     And a data feed "Bob"
     And the data feed "Bob" returns sample vote "full"
     And the data feed "Bob" is signed by node "Bob" with address "bob"
@@ -171,7 +171,7 @@ Feature: The user can define a data feed URL to automatically update his vote fr
   Scenario: An user sets a data feed with an address and gets an unsigned vote
     Given a network with node "Alice" able to mint
     And a node "Bob"
-    And node "Bob" generates a NSR address "bob"
+    And node "Bob" generates a BKS address "bob"
     And a data feed "Bob"
     And the data feed "Bob" returns sample vote "full"
     When node "Alice" sets her data feed to the URL of "Bob" with address "bob"
@@ -180,8 +180,8 @@ Feature: The user can define a data feed URL to automatically update his vote fr
   Scenario: An user sets a data feed with an address and gets an incorrectly signed vote
     Given a network with node "Alice" able to mint
     And a node "Bob"
-    And node "Bob" generates a NSR address "bob"
-    And node "Bob" generates a NSR address "wrong"
+    And node "Bob" generates a BKS address "bob"
+    And node "Bob" generates a BKS address "wrong"
     And a data feed "Bob"
     And the data feed "Bob" returns sample vote "full"
     And the data feed "Bob" is signed by node "Bob" with address "wrong"

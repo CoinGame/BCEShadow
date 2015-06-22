@@ -10,7 +10,7 @@ When(/^node "(.*?)" finds enough blocks for the voted park rate to become effect
   end
 end
 
-Then(/^the expected premium on node "(.*?)" for "(.*?)" NuBits parked for (\d+) blocks should be "(.*?)"$/) do |arg1, arg2, arg3, arg4|
+Then(/^the expected premium on node "(.*?)" for "(.*?)" BlockCredits parked for (\d+) blocks should be "(.*?)"$/) do |arg1, arg2, arg3, arg4|
   node = @nodes[arg1]
   amount = parse_number(arg2)
   blocks = arg3.to_i

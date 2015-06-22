@@ -50,8 +50,8 @@ class CoinContainer
     end
 
     default_args = {
-      datadir: "/root/.nu",
-      # testnet, user and password are already set in nu.conf
+      datadir: "/root/.bcexchange",
+      # testnet, user and password are already set in bcexchange.conf
       printtoconsole: true,
       rpcallowip: '*.*.*.*',
       logtimestamps: true,
@@ -88,19 +88,19 @@ class CoinContainer
     end
 
     if options[:remove_wallet_before_startup]
-      bash_cmds += ["rm -f /root/.nu/testnet/wallet*.dat"]
+      bash_cmds += ["rm -f /root/.bcexchange/testnet/wallet*.dat"]
     end
 
     bash_cmds += options[:before_start_commands]
 
-    bash_cmds += ["./nud " + cmd_args.join(" ")]
+    bash_cmds += ["./bcexchanged " + cmd_args.join(" ")]
 
     if options[:remove_addr_after_shutdown]
-      bash_cmds += ["rm /root/.nu/testnet/addr.dat"]
+      bash_cmds += ["rm /root/.bcexchange/testnet/addr.dat"]
     end
 
     if options[:remove_wallet_after_shutdown]
-      bash_cmds += ["rm /root/.nu/testnet/wallet*.dat"]
+      bash_cmds += ["rm /root/.bcexchange/testnet/wallet*.dat"]
     end
 
     command = [
