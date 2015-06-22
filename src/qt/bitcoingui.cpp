@@ -293,7 +293,7 @@ void BitcoinGUI::createActions()
     encryptWalletAction->setToolTip(tr("Encrypt or decrypt portfolio"));
     encryptWalletAction->setCheckable(true);
     unlockForMintingAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Unlock Wallet for Minting Only"), this);
-    unlockForMintingAction->setToolTip(tr("Unlock wallet only for minting. Sending NuShares will still require the passphrase."));
+    unlockForMintingAction->setToolTip(tr("Unlock wallet only for minting. Sending BlockShares will still require the passphrase."));
     unlockForMintingAction->setCheckable(true);
     backupWalletAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup Wallet"), this);
     backupWalletAction->setToolTip(tr("Backup portfolio to another location"));
@@ -302,7 +302,7 @@ void BitcoinGUI::createActions()
     openRPCConsoleAction = new QAction(tr("&Debug window"), this);
     openRPCConsoleAction->setToolTip(tr("Open debugging and diagnostic console"));
     exportPeercoinKeysAction = new QAction(QIcon(":/icons/export"), tr("&Export Peercoin keys..."), this);
-    exportPeercoinKeysAction->setToolTip(tr("Export the Peercoin keys associated with the NuShares addresses to Peercoin via RPC"));
+    exportPeercoinKeysAction->setToolTip(tr("Export the Peercoin keys associated with the BlockShares addresses to Peercoin via RPC"));
     distributeDividendsAction = new QAction(tr("&Distribute dividends..."), this);
     distributeDividendsAction->setToolTip(tr("Distribute dividends to share holders"));
 
@@ -434,7 +434,7 @@ void BitcoinGUI::setWalletModel(WalletModel *walletModel)
         // nubit: set current base unit
         BitcoinUnits::baseUnit = walletModel->getUnit();
 
-        // nubit: update the send and receive tooltip text to display the proper unit (NuShares/NuBits)
+        // nubit: update the send and receive tooltip text to display the proper unit (BlockShares/BlockCredits)
         receiveCoinsAction->setToolTip(tr("Show the list of addresses for receiving %1").arg(BitcoinUnits::baseName()));
         sendCoinsAction->setToolTip(tr("Send coins to a %1 address").arg(BitcoinUnits::baseName()));
 
@@ -453,17 +453,17 @@ void BitcoinGUI::setWalletModel(WalletModel *walletModel)
         parkPage->setModel(walletModel);
         votePage->setModel(walletModel);
 
-        parkAction->setVisible(walletModel->getUnit() != 'S');
+        parkAction->setVisible(walletModel->getUnit() != '8');
 
-        voteAction->setVisible(walletModel->getUnit() == 'S');
+        voteAction->setVisible(walletModel->getUnit() == '8');
 
-        if (walletModel->getUnit() != 'S' && centralWidget->currentWidget() == votePage)
+        if (walletModel->getUnit() != '8' && centralWidget->currentWidget() == votePage)
             gotoOverviewPage();
 
-        if (walletModel->getUnit() == 'S' && centralWidget->currentWidget() == parkPage)
+        if (walletModel->getUnit() == '8' && centralWidget->currentWidget() == parkPage)
             gotoOverviewPage();
 
-        sharesMenu->setEnabled(walletModel->getUnit() == 'S');
+        sharesMenu->setEnabled(walletModel->getUnit() == '8');
 
         setEncryptionStatus(walletModel->getEncryptionStatus());
         connect(walletModel, SIGNAL(encryptionStatusChanged(int)), this, SLOT(setEncryptionStatus(int)));
@@ -476,7 +476,7 @@ void BitcoinGUI::setWalletModel(WalletModel *walletModel)
         connect(walletModel, SIGNAL(requireUnlock()), this, SLOT(unlockWallet()));
 
         // nubit: change the client stylesheet when the unit context changes
-        if (walletModel->getUnit() == 'S')
+        if (walletModel->getUnit() == '8')
         {
             QFile stylesheet(":/styles/nushares.qss");
             stylesheet.open(QFile::ReadOnly);
@@ -516,15 +516,15 @@ void BitcoinGUI::setWalletModel(WalletModel *walletModel)
         for (int i=0; i < changeUnitActions.size(); ++i)
             unitMenu->addAction(changeUnitActions[i]);
 
-        if (walletModel->getUnit() == 'S')
+        if (walletModel->getUnit() == '8')
         {
-            switchUnitTarget = "B";
-            switchUnitAction->setText(tr("NuBits"));
+            switchUnitTarget = "C";
+            switchUnitAction->setText(tr("BlockCredits"));
         }
         else
         {
-            switchUnitTarget = "S";
-            switchUnitAction->setText(tr("NuShares"));
+            switchUnitTarget = "8";
+            switchUnitAction->setText(tr("BlockShares"));
         }
     }
 }
@@ -958,7 +958,7 @@ void BitcoinGUI::handleURI(QString strURI)
 
 void BitcoinGUI::setEncryptionStatus(int status)
 {
-    bool fShares = (walletModel->getUnit() == 'S');
+    bool fShares = (walletModel->getUnit() == '8');
     switch(status)
     {
     case WalletModel::Unencrypted:
@@ -1071,7 +1071,7 @@ void BitcoinGUI::exportPeercoinKeys()
 {
     QMessageBox::StandardButton reply;
 
-    QString sQuestion = tr("All your NuShares private keys will be converted to Peercoin private keys and imported into your Peercoin wallet.\n\nThe Peercoin wallet must be running, unlocked (if it was encrypted) and accept RPC commands.\n\nThis process may take several minutes because Peercoin will scan the blockchain for transactions on all the imported keys.\n\nDo you want to proceed?");
+    QString sQuestion = tr("All your BlockShares private keys will be converted to Peercoin private keys and imported into your Peercoin wallet.\n\nThe Peercoin wallet must be running, unlocked (if it was encrypted) and accept RPC commands.\n\nThis process may take several minutes because Peercoin will scan the blockchain for transactions on all the imported keys.\n\nDo you want to proceed?");
     reply = QMessageBox::warning(this, tr("Peercoin keys export confirmation"), sQuestion, QMessageBox::Yes | QMessageBox::No);
     if (reply != QMessageBox::Yes)
         return;

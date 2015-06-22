@@ -87,13 +87,13 @@ static const int fHaveUPnP = false;
 #endif
 
 static const uint256 hashGenesisBlockOfficial("00000fa7a8ecd038c5d8771a72ebd9c62a951bd9bd824323180305b949309bcf");
-static const uint256 hashGenesisBlockTestNet("00000b6809fb37a7c8bc01c0fd17a8eb884d4e95f3425b74a56bdde9584f295b");
+static const uint256 hashGenesisBlockTestNet("000009dedd6681804314c35707810c3e6e59b73c6db85908df128348059e796e");
 
 static const int64 nMaxClockDrift = 2 * 60 * 60;        // two hours
 
 extern CScript COINBASE_FLAGS;
 
-static const std::string sAvailableUnits("SB");
+static const std::string sAvailableUnits("8C");
 
 inline bool IsValidUnit(unsigned char cUnit)
 {
@@ -102,15 +102,15 @@ inline bool IsValidUnit(unsigned char cUnit)
 
 inline bool IsValidCurrency(unsigned char cUnit)
 {
-    return (cUnit != 'S' && IsValidUnit(cUnit));
+    return (cUnit != '8' && IsValidUnit(cUnit));
 }
 
 inline int64 GetDefaultFee(unsigned char cUnit)
 {
     switch (cUnit)
     {
-        case 'S': return COIN;
-        case 'B': return CENT;
+        case '8': return COIN;
+        case 'C': return CENT;
         default: return MAX_MONEY;
     }
 }
@@ -203,7 +203,7 @@ inline int GetMaturity(bool fProofOfStake)
 
 inline int64 MinTxOutAmount(unsigned char cUnit)
 {
-    return cUnit == 'S' ? MIN_SHARE_TXOUT_AMOUNT : MIN_CURRENCY_TXOUT_AMOUNT;
+    return cUnit == '8' ? MIN_SHARE_TXOUT_AMOUNT : MIN_CURRENCY_TXOUT_AMOUNT;
 }
 
 
@@ -609,18 +609,18 @@ public:
 
     bool IsCoinBase() const
     {
-        return (cUnit == 'S' && vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
+        return (cUnit == '8' && vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
     }
 
     bool IsCoinStake() const
     {
         // ppcoin: the coin stake transaction is marked with the first output empty
-        return (cUnit == 'S' && vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
+        return (cUnit == '8' && vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
     }
 
     bool IsCustodianGrant() const
     {
-        if (cUnit == 'S')
+        if (cUnit == '8')
             return (vin.size() == 1 && vin[0].prevout.hash == 0 && vin[0].prevout.n == -2 && vout.size() >= 1);
         else
             return (IsValidCurrency(cUnit) && vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
@@ -1559,8 +1559,8 @@ public:
         return strprintf("CBlockIndex(nprev=%08x, pnext=%08x, nFile=%d, nBlockPos=%-6d nHeight=%d, nMint=%s, nMoneySupply(S)=%s, nMoneySupply(B)=%s, nFlags=(%s)(%d)(%s), nStakeModifier=%016"PRI64x", nStakeModifierChecksum=%08x, hashProofOfStake=%s, prevoutStake=(%s), nStakeTime=%d merkle=%s, hashBlock=%s)",
             pprev, pnext, nFile, nBlockPos, nHeight,
             FormatMoney(nMint).c_str(),
-            FormatMoney(GetMoneySupply('S')).c_str(),
-            FormatMoney(GetMoneySupply('B')).c_str(),
+            FormatMoney(GetMoneySupply('8')).c_str(),
+            FormatMoney(GetMoneySupply('C')).c_str(),
             GeneratedStakeModifier() ? "MOD" : "-", GetStakeEntropyBit(), IsProofOfStake()? "PoS" : "PoW",
             nStakeModifier, nStakeModifierChecksum, 
             hashProofOfStake.ToString().c_str(),

@@ -72,7 +72,7 @@ public:
 
     bool IsValid() const
     {
-        if (cUnit != 'B')
+        if (cUnit != 'C')
             return false;
 
         if (sIdentifier.length() > 255)

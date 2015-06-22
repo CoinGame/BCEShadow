@@ -173,7 +173,7 @@ void OverviewPage::setBalance(qint64 balance, qint64 stake, qint64 unconfirmedBa
     ui->labelUnconfirmed->setText(BitcoinUnits::formatWithUnit(unit, unconfirmedBalance));
     ui->labelParked->setText(BitcoinUnits::formatWithUnit(unit, parked));
 
-    if (model->getUnit() == 'S')
+    if (model->getUnit() == '8')
     {
         removeLabels(ui->labelParkedLabel, ui->labelParked);
         insertLabels(ui->labelStakeLabel, ui->labelStake, stakeRow);

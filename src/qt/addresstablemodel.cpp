@@ -50,7 +50,7 @@ public:
                 const std::string& strName = item.second;
                 bool fMine = IsMine(*wallet, address.Get());
                 CPeercoinAddress dividendAddress;
-                if (wallet->GetUnit() == 'S')
+                if (wallet->GetUnit() == '8')
                     dividendAddress = CPeercoinAddress(address);
                 cachedAddressTable.append(AddressTableEntry(fMine ? AddressTableEntry::Receiving : AddressTableEntry::Sending,
                                   QString::fromStdString(strName),
@@ -82,7 +82,7 @@ AddressTableModel::AddressTableModel(CWallet *wallet, WalletModel *parent) :
     QAbstractTableModel(parent),walletModel(parent),wallet(wallet),priv(0)
 {
     columns << tr("Label") << tr("Address");
-    if (wallet->Unit() == 'S')
+    if (wallet->Unit() == '8')
         columns << tr("Dividend address");
     priv = new AddressTablePriv(wallet);
     priv->refreshAddressTable();

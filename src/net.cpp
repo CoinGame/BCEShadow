@@ -1665,7 +1665,7 @@ void StartNode(void* parg)
         printf("Error; CreateThread(ThreadDumpAddress) failed\n");
 
     // Generate coins in the background
-    GenerateBitcoins(GetBoolArg("-gen", false), GetWallet('S'));
+    GenerateBitcoins(GetBoolArg("-gen", false), GetWallet('8'));
 
     StartUpdateFromDataFeed();
 
@@ -1674,7 +1674,7 @@ void StartNode(void* parg)
     if (!GetBoolArg("-stakegen", true))
         return;
 #endif
-    if (!CreateThread(ThreadStakeMinter, GetWallet('S')))
+    if (!CreateThread(ThreadStakeMinter, GetWallet('8')))
         printf("Error: CreateThread(ThreadStakeMinter) failed\n");
 }
 

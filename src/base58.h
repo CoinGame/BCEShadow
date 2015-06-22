@@ -278,30 +278,25 @@ class CBitcoinAddress : public CBase58Data
 public:
     enum
     {
-        PUBKEY_ADDRESS = 63,  // Peershare addresses begin with 'S'
-        SCRIPT_ADDRESS = 125, // Peershare script addresses begin with 's'
-        PUBKEY_ADDRESS_TEST = 32,
-        SCRIPT_ADDRESS_TEST = 212,
+        EIGHT_PUBKEY_ADDRESS = 18,
+        EIGHT_SCRIPT_ADDRESS = 20,
+        EIGHT_PUBKEY_ADDRESS_TEST = 127,
+        EIGHT_SCRIPT_ADDRESS_TEST = 130,
 
-        S_PUBKEY_ADDRESS = 63,
-        S_SCRIPT_ADDRESS = 64,
-        S_PUBKEY_ADDRESS_TEST = 125,
-        S_SCRIPT_ADDRESS_TEST = 126,
-
-        B_PUBKEY_ADDRESS = 25,
-        B_SCRIPT_ADDRESS = 26,
-        B_PUBKEY_ADDRESS_TEST = 85,
-        B_SCRIPT_ADDRESS_TEST = 86,
+        C_PUBKEY_ADDRESS = 28,
+        C_SCRIPT_ADDRESS = 30,
+        C_PUBKEY_ADDRESS_TEST = 87,
+        C_SCRIPT_ADDRESS_TEST = 90,
     };
 
     unsigned char PubKeyVersion(unsigned char cUnit) const
     {
         switch (cUnit)
         {
-            case 'S':
-                return fTestNet ? S_PUBKEY_ADDRESS_TEST : S_PUBKEY_ADDRESS;
-            case 'B':
-                return fTestNet ? B_PUBKEY_ADDRESS_TEST : B_PUBKEY_ADDRESS;
+            case '8':
+                return fTestNet ? EIGHT_PUBKEY_ADDRESS_TEST : EIGHT_PUBKEY_ADDRESS;
+            case 'C':
+                return fTestNet ? C_PUBKEY_ADDRESS_TEST : C_PUBKEY_ADDRESS;
             default:
                 throw std::runtime_error((boost::format("No address version defined for unit '%c'") % cUnit).str());
         }
@@ -311,10 +306,10 @@ public:
     {
         switch (cUnit)
         {
-            case 'S':
-                return fTestNet ? S_SCRIPT_ADDRESS_TEST : S_SCRIPT_ADDRESS;
-            case 'B':
-                return fTestNet ? B_SCRIPT_ADDRESS_TEST : B_SCRIPT_ADDRESS;
+            case '8':
+                return fTestNet ? EIGHT_SCRIPT_ADDRESS_TEST : EIGHT_SCRIPT_ADDRESS;
+            case 'C':
+                return fTestNet ? C_SCRIPT_ADDRESS_TEST : C_SCRIPT_ADDRESS;
             default:
                 throw std::runtime_error((boost::format("No address version defined for unit '%c'") % cUnit).str());
         }
@@ -326,12 +321,12 @@ public:
         {
             switch (nVersion)
             {
-                case S_PUBKEY_ADDRESS_TEST:
-                case S_SCRIPT_ADDRESS_TEST:
-                    return 'S';
-                case B_PUBKEY_ADDRESS_TEST:
-                case B_SCRIPT_ADDRESS_TEST:
-                    return 'B';
+                case EIGHT_PUBKEY_ADDRESS_TEST:
+                case EIGHT_SCRIPT_ADDRESS_TEST:
+                    return '8';
+                case C_PUBKEY_ADDRESS_TEST:
+                case C_SCRIPT_ADDRESS_TEST:
+                    return 'C';
                 default:
                     return '?';
             }
@@ -340,12 +335,12 @@ public:
         {
             switch (nVersion)
             {
-                case S_PUBKEY_ADDRESS:
-                case S_SCRIPT_ADDRESS:
-                    return 'S';
-                case B_PUBKEY_ADDRESS:
-                case B_SCRIPT_ADDRESS:
-                    return 'B';
+                case EIGHT_PUBKEY_ADDRESS:
+                case EIGHT_SCRIPT_ADDRESS:
+                    return '8';
+                case C_PUBKEY_ADDRESS:
+                case C_SCRIPT_ADDRESS:
+                    return 'C';
                 default:
                     return '?';
             }
@@ -633,12 +628,12 @@ public:
     {
         switch (cUnit)
         {
-            case 'S':
+            case '8':
                 if (fTest)
                     return NUSHARES_SECRET_TEST;
                 else
                     return NUSHARES_SECRET;
-            case 'B':
+            case 'C':
                 if (fTest)
                     return NUBITS_SECRET_TEST;
                 else
@@ -658,18 +653,18 @@ public:
         switch(nVersion)
         {
             case NUSHARES_SECRET:
-                cDetectedUnit = 'S';
+                cDetectedUnit = '8';
                 break;
             case NUSHARES_SECRET_TEST:
-                cDetectedUnit = 'S';
+                cDetectedUnit = '8';
                 fExpectTestNet = true;
                 break;
 
             case NUBITS_SECRET:
-                cDetectedUnit = 'B';
+                cDetectedUnit = 'C';
                 break;
             case NUBITS_SECRET_TEST:
-                cDetectedUnit = 'B';
+                cDetectedUnit = 'C';
                 fExpectTestNet = true;
                 break;
 

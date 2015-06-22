@@ -1,4 +1,4 @@
-# NuBits Changes
+# BCExchange Changes
 
 CBitcoinAddress
 ---------------

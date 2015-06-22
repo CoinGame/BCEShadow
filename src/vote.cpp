@@ -252,7 +252,7 @@ bool CalculateParkRateVote(const std::vector<CVote>& vVote, std::vector<CParkRat
     }
 
     CParkRateVote parkRateVote;
-    parkRateVote.cUnit = 'B';
+    parkRateVote.cUnit = 'C';
     parkRateVote.vParkRate = result;
     results.push_back(parkRateVote);
 
@@ -263,9 +263,9 @@ bool LimitParkRateChangeV0_5(std::vector<CParkRateVote>& results, const std::map
 {
     map<unsigned char, unsigned int> minPreviousRates;
 
-    if (mapPreviousRates.count('B'))
+    if (mapPreviousRates.count('C'))
     {
-        const std::vector<const CParkRateVote*>& previousUnitRates = mapPreviousRates.find('B')->second;
+        const std::vector<const CParkRateVote*>& previousUnitRates = mapPreviousRates.find('C')->second;
         BOOST_FOREACH(const CParkRateVote* parkRateVote, previousUnitRates)
         {
             BOOST_FOREACH(const CParkRate& parkRate, parkRateVote->vParkRate)
@@ -283,7 +283,7 @@ bool LimitParkRateChangeV0_5(std::vector<CParkRateVote>& results, const std::map
     vector<CParkRate>* presult = NULL;
     BOOST_FOREACH(CParkRateVote& parkRateVote, results)
     {
-        if (parkRateVote.cUnit == 'B')
+        if (parkRateVote.cUnit == 'C')
         {
             presult = &parkRateVote.vParkRate;
             break;
@@ -318,9 +318,9 @@ bool LimitParkRateChangeV2_0(std::vector<CParkRateVote>& results, const std::map
     map<unsigned char, unsigned int> mapPreviousRate;
     set<unsigned char> setCompactDuration;
 
-    if (mapPreviousVotedRate.count('B'))
+    if (mapPreviousVotedRate.count('C'))
     {
-        const CParkRateVote* parkRateVote = mapPreviousVotedRate.find('B')->second;
+        const CParkRateVote* parkRateVote = mapPreviousVotedRate.find('C')->second;
         BOOST_FOREACH(const CParkRate& parkRate, parkRateVote->vParkRate)
         {
             mapPreviousRate[parkRate.nCompactDuration] = parkRate.nRate;
@@ -331,7 +331,7 @@ bool LimitParkRateChangeV2_0(std::vector<CParkRateVote>& results, const std::map
     vector<CParkRate>* presult = NULL;
     BOOST_FOREACH(CParkRateVote& parkRateVote, results)
     {
-        if (parkRateVote.cUnit == 'B')
+        if (parkRateVote.cUnit == 'C')
         {
             presult = &parkRateVote.vParkRate;
             break;
@@ -433,7 +433,7 @@ bool CalculateParkRateResults(const CVote &vote, const CBlockIndex* pindexprev, 
         map<unsigned char, vector<const CParkRateVote*> > mapPreviousRates;
         BOOST_FOREACH(unsigned char cUnit, sAvailableUnits)
         {
-            if (cUnit != 'S')
+            if (cUnit != '8')
                 mapPreviousRates[cUnit].reserve(PARK_RATE_PREVIOUS_VOTES);
         }
 
@@ -616,7 +616,7 @@ bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CB
 
         CTransaction tx;
         tx.cUnit = cUnit;
-        if (cUnit == 'S')
+        if (cUnit == '8')
             tx.vin.push_back(CTxIn(0, -2));
         else
             tx.vin.push_back(CTxIn());

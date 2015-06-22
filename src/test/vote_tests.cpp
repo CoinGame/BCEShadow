@@ -13,19 +13,19 @@ BOOST_AUTO_TEST_CASE(reload_vote_from_script_tests)
     CVote vote;
 
     CCustodianVote custodianVote;
-    CBitcoinAddress custodianAddress(CKeyID(123465), 'B');
+    CBitcoinAddress custodianAddress(CKeyID(123465), 'C');
     custodianVote.SetAddress(custodianAddress);
     custodianVote.nAmount = 100 * COIN;
     vote.vCustodianVote.push_back(custodianVote);
 
     CCustodianVote custodianVote2;
-    CBitcoinAddress custodianAddress2(CKeyID(555555555), 'B');
+    CBitcoinAddress custodianAddress2(CKeyID(555555555), 'C');
     custodianVote2.SetAddress(custodianAddress2);
     custodianVote2.nAmount = 5.5 * COIN;
     vote.vCustodianVote.push_back(custodianVote2);
 
     CParkRateVote parkRateVote;
-    parkRateVote.cUnit = 'B';
+    parkRateVote.cUnit = 'C';
     parkRateVote.vParkRate.push_back(CParkRate(13, 3));
     parkRateVote.vParkRate.push_back(CParkRate(14, 6));
     parkRateVote.vParkRate.push_back(CParkRate(15, 13));
@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(reload_vote_from_script_tests)
 BOOST_AUTO_TEST_CASE(reload_park_rates_from_script_tests)
 {
     CParkRateVote parkRateVote;
-    parkRateVote.cUnit = 'B';
+    parkRateVote.cUnit = 'C';
     parkRateVote.vParkRate.push_back(CParkRate(13, 3));
     parkRateVote.vParkRate.push_back(CParkRate(14, 6));
     parkRateVote.vParkRate.push_back(CParkRate(15, 13));
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(rate_calculation_from_votes)
     BOOST_CHECK_EQUAL(0, results.size());
 
     CParkRateVote parkRateVote;
-    parkRateVote.cUnit = 'B';
+    parkRateVote.cUnit = 'C';
     parkRateVote.vParkRate.push_back(CParkRate( 8, 100));
 
     CVote vote;
@@ -230,7 +230,7 @@ BOOST_AUTO_TEST_CASE(rate_limitation_v05)
     map<unsigned char, vector<const CParkRateVote*> > previousRates;
 
     CParkRateVote parkRateVote;
-    parkRateVote.cUnit = 'B';
+    parkRateVote.cUnit = 'C';
     parkRateVote.vParkRate.push_back(CParkRate(15, 1000 * COIN_PARK_RATE / COIN)); // 1 month
     parkRateVote.vParkRate.push_back(CParkRate(18, 1000 * COIN_PARK_RATE / COIN)); // 6 months
     parkRateVote.vParkRate.push_back(CParkRate(19, 1000 * COIN_PARK_RATE / COIN)); // 1 year
@@ -254,8 +254,8 @@ BOOST_AUTO_TEST_CASE(rate_limitation_v05)
 
     // With an empty previous rate (meaning the rates are all 0), the rate increase is limited
     CParkRateVote previousRate;
-    previousRate.cUnit = 'B';
-    previousRates['B'].push_back(&previousRate);
+    previousRate.cUnit = 'C';
+    previousRates['C'].push_back(&previousRate);
 
     results = baseResults;
     BOOST_CHECK(LimitParkRateChangeV0_5(results, previousRates));
@@ -329,7 +329,7 @@ BOOST_AUTO_TEST_CASE(rate_limitation_v06)
     map<unsigned char, const CParkRateVote*> mapPreviousRate;
 
     CParkRateVote parkRateVote;
-    parkRateVote.cUnit = 'B';
+    parkRateVote.cUnit = 'C';
     parkRateVote.vParkRate.push_back(CParkRate(15, 1000 * COIN_PARK_RATE / COIN)); // 1 month
     parkRateVote.vParkRate.push_back(CParkRate(18, 1000 * COIN_PARK_RATE / COIN)); // 6 months
     parkRateVote.vParkRate.push_back(CParkRate(19, 1000 * COIN_PARK_RATE / COIN)); // 1 year
@@ -353,8 +353,8 @@ BOOST_AUTO_TEST_CASE(rate_limitation_v06)
 
     // With an empty previous rate (meaning all rates were 0), the rate increase is limited
     CParkRateVote previousRate;
-    previousRate.cUnit = 'B';
-    mapPreviousRate['B'] = &previousRate;
+    previousRate.cUnit = 'C';
+    mapPreviousRate['C'] = &previousRate;
 
     results = baseResults;
     BOOST_CHECK(LimitParkRateChangeV2_0(results, mapPreviousRate));
@@ -455,7 +455,7 @@ BOOST_AUTO_TEST_CASE(vote_validity_tests)
     BOOST_CHECK(vote.IsValid(PROTOCOL_VERSION));
 
     // A park rate vote on share is invalid
-    parkRateVote.cUnit = 'S';
+    parkRateVote.cUnit = '8';
     vote.vParkRateVote.push_back(parkRateVote);
     BOOST_CHECK(!vote.IsValid(PROTOCOL_VERSION));
 
@@ -464,11 +464,11 @@ BOOST_AUTO_TEST_CASE(vote_validity_tests)
     BOOST_CHECK(!vote.IsValid(PROTOCOL_VERSION));
 
     // A park rate vote on nubits is valid
-    vote.vParkRateVote[0].cUnit = 'B';
+    vote.vParkRateVote[0].cUnit = 'C';
     BOOST_CHECK(vote.IsValid(PROTOCOL_VERSION));
 
     // Two park rate vote on nubits is invalid
-    parkRateVote.cUnit = 'B';
+    parkRateVote.cUnit = 'C';
     vote.vParkRateVote.push_back(parkRateVote);
     BOOST_CHECK(!vote.IsValid(PROTOCOL_VERSION));
 
@@ -495,7 +495,7 @@ BOOST_AUTO_TEST_CASE(vote_validity_tests)
 
     // A valid custodian vote
     CCustodianVote custodianVote;
-    custodianVote.cUnit = 'B';
+    custodianVote.cUnit = 'C';
     custodianVote.hashAddress = uint160(1);
     custodianVote.nAmount = 8 * COIN;
     vote.vCustodianVote.push_back(custodianVote);
@@ -504,12 +504,12 @@ BOOST_AUTO_TEST_CASE(vote_validity_tests)
     // Another unit is invalid
     vote.vCustodianVote[0].cUnit = 'A';
     BOOST_CHECK(!vote.IsValid(PROTOCOL_VERSION));
-    // NuShares grants are invalid pre v2.0
-    vote.vCustodianVote[0].cUnit = 'S';
+    // BlockShares grants are invalid pre v2.0
+    vote.vCustodianVote[0].cUnit = '8';
     BOOST_CHECK(!vote.IsValid(PROTOCOL_V0_5));
     // But valid after v2.0
     BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
-    vote.vCustodianVote[0].cUnit = 'B';
+    vote.vCustodianVote[0].cUnit = 'C';
 
     // Voting for the same custodian and amount twice is invalid
     vote.vCustodianVote.push_back(custodianVote);
@@ -555,7 +555,7 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
 
     // Add a custodian vote with the same coin age
     CCustodianVote custodianVote;
-    custodianVote.cUnit = 'B';
+    custodianVote.cUnit = 'C';
     custodianVote.hashAddress = uint160(1);
     custodianVote.nAmount = 8 * COIN;
     vote.vCustodianVote.push_back(custodianVote);
@@ -582,7 +582,7 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
     BOOST_CHECK_EQUAL(1, vCurrencyCoinBase.size());
     CTransaction tx = vCurrencyCoinBase[0];
     BOOST_CHECK(tx.IsCustodianGrant());
-    BOOST_CHECK_EQUAL('B', tx.cUnit);
+    BOOST_CHECK_EQUAL('C', tx.cUnit);
     BOOST_CHECK_EQUAL(1, tx.vout.size());
     BOOST_CHECK_EQUAL(8 * COIN, tx.vout[0].nValue);
     CTxDestination address;
@@ -590,7 +590,7 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
     BOOST_CHECK_EQUAL(uint160(1).ToString(), boost::get<CKeyID>(address).ToString());
 
     // This custodian has already been elected
-    mapAlreadyElected[CBitcoinAddress(address, 'B')] = new CBlockIndex;
+    mapAlreadyElected[CBitcoinAddress(address, 'C')] = new CBlockIndex;
 
     // He should not receive any new currency
     BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, vCurrencyCoinBase));
@@ -610,7 +610,7 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
     BOOST_CHECK_EQUAL(1, vCurrencyCoinBase.size());
     tx = vCurrencyCoinBase[0];
     BOOST_CHECK(tx.IsCustodianGrant());
-    BOOST_CHECK_EQUAL('B', tx.cUnit);
+    BOOST_CHECK_EQUAL('C', tx.cUnit);
     BOOST_CHECK_EQUAL(2, tx.vout.size());
     BOOST_CHECK_EQUAL(8 * COIN, tx.vout[0].nValue);
     BOOST_CHECK(ExtractDestination(tx.vout[0].scriptPubKey, address));
@@ -633,47 +633,47 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
 
     tx = vCurrencyCoinBase[0];
     BOOST_CHECK(tx.IsCustodianGrant());
-    BOOST_CHECK_EQUAL('B', tx.cUnit);
+    BOOST_CHECK_EQUAL('C', tx.cUnit);
     BOOST_CHECK_EQUAL(1, tx.vout.size());
     BOOST_CHECK_EQUAL(5 * COIN, tx.vout[0].nValue);
     BOOST_CHECK(ExtractDestination(tx.vout[0].scriptPubKey, address));
     BOOST_CHECK_EQUAL(uint160(1).ToString(), boost::get<CKeyID>(address).ToString());
 
-    // NuShare grants are valid now
-    vVote[0].vCustodianVote.back().cUnit = 'S';
-    vVote[1].vCustodianVote.back().cUnit = 'S';
-    vVote[2].vCustodianVote.back().cUnit = 'S';
+    // BlockShare grants are valid now
+    vVote[0].vCustodianVote.back().cUnit = '8';
+    vVote[1].vCustodianVote.back().cUnit = '8';
+    vVote[2].vCustodianVote.back().cUnit = '8';
     BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, vCurrencyCoinBase));
     BOOST_CHECK_EQUAL(1, vCurrencyCoinBase.size());
     tx = vCurrencyCoinBase[0];
     tx.nTime = 2000000000; // set a time that is after V06 switch time
     BOOST_CHECK(tx.IsCustodianGrant());
     BOOST_CHECK(!tx.IsCoinBase());
-    BOOST_CHECK_EQUAL('S', tx.cUnit);
-    BOOST_CHECK_GE(2, tx.vout.size()); // NSR currency coin base has an empty first output
+    BOOST_CHECK_EQUAL('8', tx.cUnit);
+    BOOST_CHECK_GE(2, tx.vout.size()); // BKS currency coin base has an empty first output
     BOOST_CHECK_EQUAL(5 * COIN, tx.vout[0].nValue);
     BOOST_CHECK(ExtractDestination(tx.vout[0].scriptPubKey, address));
     BOOST_CHECK_EQUAL(uint160(1).ToString(), boost::get<CKeyID>(address).ToString());
 
-    // Check if both NSR and NBT grants can happen
-    vVote[2].vCustodianVote.back().cUnit = 'B';
+    // Check if both BKS and BKC grants can happen
+    vVote[2].vCustodianVote.back().cUnit = 'C';
 
-    // Should NSR and NBT
+    // Should BKS and BKC
     BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, vCurrencyCoinBase));
     BOOST_CHECK_EQUAL(2, vCurrencyCoinBase.size());
-    tx = vCurrencyCoinBase[0];
+    tx = vCurrencyCoinBase[1];
     BOOST_CHECK(tx.IsCustodianGrant());
-    BOOST_CHECK_EQUAL('B', tx.cUnit);
+    BOOST_CHECK_EQUAL('C', tx.cUnit);
     BOOST_CHECK_EQUAL(1, tx.vout.size());
     BOOST_CHECK_EQUAL(8 * COIN, tx.vout[0].nValue);
     BOOST_CHECK(ExtractDestination(tx.vout[0].scriptPubKey, address));
     BOOST_CHECK_EQUAL(uint160(1).ToString(), boost::get<CKeyID>(address).ToString());
-    tx = vCurrencyCoinBase[1];
+    tx = vCurrencyCoinBase[0];
     tx.nTime = 2000000000; // set a time that is after V06 switch time
     BOOST_CHECK(tx.IsCustodianGrant());
     BOOST_CHECK(!tx.IsCoinBase());
-    BOOST_CHECK_EQUAL('S', tx.cUnit);
-    BOOST_CHECK_GE(2, tx.vout.size()); // NSR currency coin base has an empty first output
+    BOOST_CHECK_EQUAL('8', tx.cUnit);
+    BOOST_CHECK_GE(2, tx.vout.size()); // BKS currency coin base has an empty first output
     BOOST_CHECK_EQUAL(5 * COIN, tx.vout[0].nValue);
     BOOST_CHECK(ExtractDestination(tx.vout[0].scriptPubKey, address));
     BOOST_CHECK_EQUAL(uint160(1).ToString(), boost::get<CKeyID>(address).ToString());
@@ -687,7 +687,7 @@ BOOST_AUTO_TEST_CASE(premium_calculation)
 {
     vector<CParkRateVote> vParkRateResult;
     CParkRateVote parkRateResult;
-    parkRateResult.cUnit = 'B';
+    parkRateResult.cUnit = 'C';
     parkRateResult.vParkRate.push_back(CParkRate( 2,  5 * COIN_PARK_RATE / COIN));
     parkRateResult.vParkRate.push_back(CParkRate( 5, 50 * COIN_PARK_RATE / COIN));
     parkRateResult.vParkRate.push_back(CParkRate( 3, 10 * COIN_PARK_RATE / COIN));
@@ -700,40 +700,40 @@ BOOST_AUTO_TEST_CASE(premium_calculation)
     vParkRateResult.push_back(parkRateResult);
 
     // Below minimum rate
-    BOOST_CHECK_EQUAL( 0, GetPremium( 1 * COIN, 0, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL( 0, GetPremium( 1 * COIN, 1, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL( 0, GetPremium( 1 * COIN, 3, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL( 0, GetPremium(10 * COIN, 3, 'B', vParkRateResult));
+    BOOST_CHECK_EQUAL( 0, GetPremium( 1 * COIN, 0, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL( 0, GetPremium( 1 * COIN, 1, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL( 0, GetPremium( 1 * COIN, 3, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL( 0, GetPremium(10 * COIN, 3, 'C', vParkRateResult));
 
     // Above maximum rate
-    BOOST_CHECK_EQUAL( 0, GetPremium(   1 * COIN, (1<<17)+1, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL( 0, GetPremium(1000 * COIN, (1<<17)+1, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL( 0, GetPremium(   1 * COIN,   1000000, 'B', vParkRateResult));
+    BOOST_CHECK_EQUAL( 0, GetPremium(   1 * COIN, (1<<17)+1, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL( 0, GetPremium(1000 * COIN, (1<<17)+1, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL( 0, GetPremium(   1 * COIN,   1000000, 'C', vParkRateResult));
 
     // Exact durations
-    BOOST_CHECK_EQUAL( 5, GetPremium(1   * COIN,  4, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL(10, GetPremium(2   * COIN,  4, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL( 0, GetPremium(0.1 * COIN,  4, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL(10, GetPremium(1   * COIN,  8, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL(99, GetPremium(9.9 * COIN,  8, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL(50, GetPremium(1   * COIN, 32, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL( 1 * COIN, GetPremium(1 * COIN,  1024, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL( 2 * COIN, GetPremium(1 * COIN,  4096, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL( 5 * COIN, GetPremium(1 * COIN,  8192, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL(50 * COIN, GetPremium(1 * COIN, 1<<15, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL(40 * COIN, GetPremium(1 * COIN, 1<<16, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL(50 * COIN, GetPremium(1 * COIN, 1<<17, 'B', vParkRateResult));
+    BOOST_CHECK_EQUAL( 5, GetPremium(1   * COIN,  4, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL(10, GetPremium(2   * COIN,  4, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL( 0, GetPremium(0.1 * COIN,  4, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL(10, GetPremium(1   * COIN,  8, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL(99, GetPremium(9.9 * COIN,  8, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL(50, GetPremium(1   * COIN, 32, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL( 1 * COIN, GetPremium(1 * COIN,  1024, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL( 2 * COIN, GetPremium(1 * COIN,  4096, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL( 5 * COIN, GetPremium(1 * COIN,  8192, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL(50 * COIN, GetPremium(1 * COIN, 1<<15, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL(40 * COIN, GetPremium(1 * COIN, 1<<16, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL(50 * COIN, GetPremium(1 * COIN, 1<<17, 'C', vParkRateResult));
 
     // Intermediate durations
-    BOOST_CHECK_EQUAL( 6, GetPremium(1   * COIN,  5, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL( 9, GetPremium(1.5 * COIN,  5, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL(25, GetPremium(4   * COIN,  5, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL( 8, GetPremium(1   * COIN,  7, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL( 8, GetPremium(1   * COIN,  7, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL(21, GetPremium(1   * COIN, 15, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL(38, GetPremium(1   * COIN, 25, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL((int64)(3.39453125 * COIN), GetPremium(1 * COIN, 6000, 'B', vParkRateResult));
-    BOOST_CHECK_EQUAL((int64)(49.69482421875 * COIN), GetPremium(1 * COIN, (1<<15) + 1000, 'B', vParkRateResult));
+    BOOST_CHECK_EQUAL( 6, GetPremium(1   * COIN,  5, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL( 9, GetPremium(1.5 * COIN,  5, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL(25, GetPremium(4   * COIN,  5, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL( 8, GetPremium(1   * COIN,  7, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL( 8, GetPremium(1   * COIN,  7, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL(21, GetPremium(1   * COIN, 15, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL(38, GetPremium(1   * COIN, 25, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL((int64)(3.39453125 * COIN), GetPremium(1 * COIN, 6000, 'C', vParkRateResult));
+    BOOST_CHECK_EQUAL((int64)(49.69482421875 * COIN), GetPremium(1 * COIN, (1<<15) + 1000, 'C', vParkRateResult));
 }
 
 BOOST_AUTO_TEST_CASE(effective_park_rates_delayed_after_protocol_v2_0)
@@ -741,7 +741,7 @@ BOOST_AUTO_TEST_CASE(effective_park_rates_delayed_after_protocol_v2_0)
     CBlockIndex *pindexBase = NULL;
 
     int64 nValue = 1000 * COIN;
-    unsigned char cUnit = 'B';
+    unsigned char cUnit = 'C';
     int nCompactDuration = 5;
     int nDuration = (1 << nCompactDuration);
 
@@ -786,56 +786,9 @@ BOOST_AUTO_TEST_CASE(effective_park_rates_delayed_after_protocol_v2_0)
     BOOST_CHECK_EQUAL(expectedPremium, pindexBase->GetNextPremium(nValue, nDuration, cUnit));
 }
 
-BOOST_AUTO_TEST_CASE(vote_v1_unserialization)
-{
-    // Serialized with vote v1 code:
-    /* {
-    CVote vote;
-    CCustodianVote custodianVote;
-    custodianVote.cUnit = 'B';
-    custodianVote.hashAddress = uint160(123465);
-    custodianVote.nAmount = 100 * COIN;
-    vote.vCustodianVote.push_back(custodianVote);
-    printf("%s\n", vote.ToScript().ToString().c_str());
-    printf("%s\n", HexStr(vote.ToScript()).c_str());
-    } */
-    vector<unsigned char> voteV1String = ParseHex("6a513701000000014249e201000000000000000000000000000000000040420f0000000000000000000000000000000000000000000000000000");
-
-    CScript voteV1Script(voteV1String.begin(), voteV1String.end());
-
-    CVote vote;
-    BOOST_CHECK(ExtractVote(voteV1Script, vote, PROTOCOL_VERSION));
-
-    BOOST_CHECK_EQUAL(CBitcoinAddress(CKeyID(123465), 'B').ToString(), vote.vCustodianVote[0].GetAddress().ToString());
-}
-
-BOOST_AUTO_TEST_CASE(vote_before_multi_motion_unserialization)
-{
-    // Serialized with v0.4.2 vote code:
-    /* {
-    CVote vote;
-    CCustodianVote custodianVote;
-    custodianVote.cUnit = 'B';
-    custodianVote.hashAddress = uint160(123465);
-    custodianVote.nAmount = 100 * COIN;
-    vote.vCustodianVote.push_back(custodianVote);
-    vote.hashMotion = uint160("3f786850e387550fdab836ed7e6dc881de23001b");
-    printf("%s\n", vote.ToScript().ToString().c_str());
-    printf("%s\n", HexStr(vote.ToScript()).c_str());
-    } */
-    vector<unsigned char> oldVoteString = ParseHex("6a5138089d000001420049e201000000000000000000000000000000000040420f0000000000001b0023de81c86d7eed36b8da0f5587e35068783f");
-
-    CScript oldVoteScript(oldVoteString.begin(), oldVoteString.end());
-
-    CVote vote;
-    BOOST_CHECK(ExtractVote(oldVoteScript, vote, PROTOCOL_VERSION));
-
-    BOOST_CHECK_EQUAL(1, vote.vMotion.size());
-    BOOST_CHECK_EQUAL(uint160("3f786850e387550fdab836ed7e6dc881de23001b").ToString(), vote.vMotion[0].ToString());
-}
-
 BOOST_AUTO_TEST_CASE(protocol_voting)
 {
+    /* Test disabled on BCExchange because protocol starts at 2_0. Enable again when there's a 3_0 protocol switch to test.
     int PROTOCOL_SWITCH_TIME = 100;
     int PROTOCOL_VOTES_REQ = 70;
     int PROTOCOL_VOTES_TOTAL = 80;
@@ -918,6 +871,7 @@ BOOST_AUTO_TEST_CASE(protocol_voting)
         pIndexBest = pIndexBest->pprev;
         delete pIndex;
     }
+    */
 }
 
 BOOST_AUTO_TEST_CASE(vote_v50000_unserialization)
@@ -926,7 +880,7 @@ BOOST_AUTO_TEST_CASE(vote_v50000_unserialization)
     /* {
     CVote vote;
     CCustodianVote custodianVote;
-    custodianVote.cUnit = 'B';
+    custodianVote.cUnit = 'C';
     custodianVote.hashAddress = uint160(123465);
     custodianVote.nAmount = 100 * COIN;
     vote.vCustodianVote.push_back(custodianVote);
@@ -962,26 +916,26 @@ void AddFeeVoteBlocks(int nCount, int64 nFeeVoteS, int64 nFeeVoteB)
         lastFeeVoteIndex++;
         pindex->nHeight = lastFeeVoteIndex;
         if (nFeeVoteS != -1)
-            pindex->vote.mapFeeVote['S'] = nFeeVoteS;
+            pindex->vote.mapFeeVote['8'] = nFeeVoteS;
         if (nFeeVoteB != -1)
-            pindex->vote.mapFeeVote['B'] = nFeeVoteB;
+            pindex->vote.mapFeeVote['C'] = nFeeVoteB;
         BOOST_CHECK(CalculateVotedFees(pindex));
     }
 }
 
 #define CHECK_VOTED_MIN_FEE(nIndex, nExpectedSFee, nExpectedBFee) { \
-    BOOST_CHECK_EQUAL(nExpectedSFee, feeVoteIndexes[nIndex]->GetVotedMinFee('S')); \
-    BOOST_CHECK_EQUAL(nExpectedBFee, feeVoteIndexes[nIndex]->GetVotedMinFee('B')); \
+    BOOST_CHECK_EQUAL(nExpectedSFee, feeVoteIndexes[nIndex]->GetVotedMinFee('8')); \
+    BOOST_CHECK_EQUAL(nExpectedBFee, feeVoteIndexes[nIndex]->GetVotedMinFee('C')); \
 }
 
 #define CHECK_EFFECTIVE_MIN_FEE(nIndex, nExpectedSFee, nExpectedBFee) { \
-    BOOST_CHECK_EQUAL(nExpectedSFee, feeVoteIndexes[nIndex]->GetMinFee('S')); \
-    BOOST_CHECK_EQUAL(nExpectedBFee, feeVoteIndexes[nIndex]->GetMinFee('B')); \
+    BOOST_CHECK_EQUAL(nExpectedSFee, feeVoteIndexes[nIndex]->GetMinFee('8')); \
+    BOOST_CHECK_EQUAL(nExpectedBFee, feeVoteIndexes[nIndex]->GetMinFee('C')); \
 }
 
 #define CHECK_SAFE_MIN_FEE(nIndex, nExpectedSFee, nExpectedBFee) { \
-    BOOST_CHECK_EQUAL(nExpectedSFee, feeVoteIndexes[nIndex]->GetSafeMinFee('S')); \
-    BOOST_CHECK_EQUAL(nExpectedBFee, feeVoteIndexes[nIndex]->GetSafeMinFee('B')); \
+    BOOST_CHECK_EQUAL(nExpectedSFee, feeVoteIndexes[nIndex]->GetSafeMinFee('8')); \
+    BOOST_CHECK_EQUAL(nExpectedBFee, feeVoteIndexes[nIndex]->GetSafeMinFee('C')); \
 }
 
 void ResetFeeVoteBlocks()
@@ -996,7 +950,7 @@ BOOST_AUTO_TEST_CASE(fee_vote_calculation)
 {
     // 3000 blocks not including any fee vote
     AddFeeVoteBlocks(3000,     -1, -1);
-    // 3500 blocks voting for a new NSR fee and no vote for the NBT fee
+    // 3500 blocks voting for a new BKS fee and no vote for the BKC fee
     AddFeeVoteBlocks( 500, 2*COIN, -1);
     AddFeeVoteBlocks(1000, 3*COIN, -1);
     AddFeeVoteBlocks(2000, 1*CENT, -1);

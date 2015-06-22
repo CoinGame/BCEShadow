@@ -339,7 +339,7 @@ void CheckNoPark(const CScript& script)
     BOOST_CHECK(!ExtractPark(script, nDuration, unparkDestination));
     BOOST_CHECK_EQUAL(0, nDuration);
     CBitcoinAddress address;
-    BOOST_CHECK(!address.Set(unparkDestination, 'S'));
+    BOOST_CHECK(!address.Set(unparkDestination, '8'));
 }
 
 BOOST_AUTO_TEST_CASE(park_solver)

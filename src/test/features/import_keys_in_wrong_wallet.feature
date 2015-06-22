@@ -5,8 +5,8 @@ Feature: When a private key is imported into a wallet, transactions from other u
     And node "Alice" grants herself "1,000" BlockCredits
     When node "Bob" imports the private key "QhoWjbTAAcyQYQC9JJWXs1K6xs9urFGeWyNhQj1KjVqn8C5HMtZh" into the BKS wallet
     And node "Bob" imports the private key "QhoWjbTAAcyQYQC9JJWXs1K6xs9urFGeWyNhQj1KjVqn8C5HMtZh" into the BKC wallet
-    And node "Alice" sends "20" BKS to "sWXhvvvsHaJJGWm4ZBS2xFdy615dJ74Ehb"
-    And node "Alice" sends "15" BKC to "bR1aYb1LtMmFZBBbaQ7HZEkVupmtqVSfpt"
+    And node "Alice" sends "20" BKS to "tLGNLqFgbLhsph875TJATbERTYytHxB2uh"
+    And node "Alice" sends "15" BKC to "c9aaeg4EAcZDVPEwJuBayjZTmid5h6yL7m"
     And node "Alice" finds a block received by all nodes
     Then node "Bob" should have 1 BKS transaction
     And the transaction should be a receive of "20"

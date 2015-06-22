@@ -35,7 +35,7 @@ When(/^node "(.*?)" adds a BlockCredit multisig address "(.*?)" requiring (\d+) 
   addresses = arg4.scan(/"(.*?)"/).map(&:first).map { |name| @addresses[name] }
   pubkeys = addresses.map { |address| @pubkeys[address] }
 
-  result = node.unit_rpc('B', "addmultisigaddress", required, pubkeys)
+  result = node.unit_rpc('C', "addmultisigaddress", required, pubkeys)
   @addresses[address_name] = result
 end
 

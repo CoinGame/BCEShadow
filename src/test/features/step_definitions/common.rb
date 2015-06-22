@@ -297,7 +297,7 @@ When(/^node "(.*?)" votes a park rate of "(.*?)" BlockCredits per Nubit parked d
   vote = node.rpc("getvote")
   vote["parkrates"] = [
     {
-      "unit" => "B",
+      "unit" => 'C',
       "rates" => [
         {
           "blocks" => arg3.to_i,
@@ -332,7 +332,7 @@ When(/^node "(.*?)" finds blocks until the BlockCredit park rate for (\d+) block
     block = node.generate_stake
     time_travel(60)
     info = node.rpc("getblock", block)
-    park_rates = info["parkrates"].detect { |r| r["unit"] == "B" }
+    park_rates = info["parkrates"].detect { |r| r["unit"] == 'C' }
     expect(park_rates).not_to be_nil
     rates = park_rates["rates"]
     rate = rates.detect { |r| r["blocks"] == arg2.to_i }
@@ -538,7 +538,7 @@ end
 Then(/^(?:node |)"(.*?)" should have "(.*?)" BlockCredits parked$/) do |arg1, arg2|
   node = @nodes[arg1]
   amount = parse_number(arg2)
-  info = node.unit_rpc("B", "getinfo")
+  info = node.unit_rpc('C', "getinfo")
   wait_for do
     expect(info["parked"]).to eq(amount)
   end

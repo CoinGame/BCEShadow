@@ -311,7 +311,7 @@ CVote ParseVote(const Object& objVote)
 
 void UpdateFromDataFeed()
 {
-    CWallet* pwallet = GetWallet('S');
+    CWallet* pwallet = GetWallet('8');
     CDataFeed dataFeed;
     {
         LOCK(pwallet->cs_wallet);

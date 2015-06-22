@@ -15,7 +15,7 @@ Then(/^the "(.*?)" supply for "(.*?)" should be "(.*?)"$/) do |arg1, node, arg2|
 end
 
 When(/^the current BlockShare supply on "(.*?)" is recorded$/) do |arg1|
-  @nushare_supply = @nodes[arg1].unit_rpc('S', 'getinfo')["moneysupply"]
+  @nushare_supply = @nodes[arg1].unit_rpc('8', 'getinfo')["moneysupply"]
 end
 
 Then(/^the "(.*?)" supply for "(.*?)" should have increased by "(.*?)"$/) do |arg1, arg2, arg3|

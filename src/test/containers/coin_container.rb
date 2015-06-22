@@ -185,10 +185,10 @@ class CoinContainer
     end
 
     @rpc_ports = {
-      'S' => ports["15001/tcp"].first["HostPort"].to_i,
-      'B' => ports["15002/tcp"].first["HostPort"].to_i,
+      '8' => ports["15001/tcp"].first["HostPort"].to_i,
+      'C' => ports["15002/tcp"].first["HostPort"].to_i,
     }
-    @rpc_port = @rpc_ports['S']
+    @rpc_port = @rpc_ports['8']
     @port= ports["7895/tcp"].first["HostPort"].to_i
   end
 
@@ -203,7 +203,7 @@ class CoinContainer
   end
 
   def rpc(method, *params)
-    unit_rpc('S', method, *params)
+    unit_rpc('8', method, *params)
   end
 
   def unit_rpc(unit, method, *params)

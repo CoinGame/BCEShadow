@@ -11,7 +11,7 @@ BOOST_AUTO_TEST_CASE(liquidityinfo_validity)
 {
     CLiquidityInfo baseInfo;
 
-    baseInfo.cUnit = 'B';
+    baseInfo.cUnit = 'C';
     baseInfo.nTime = GetAdjustedTime();
     baseInfo.nBuyAmount = 0;
     baseInfo.nSellAmount = 0;
@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE(liquidityinfo_validity)
 
     {
         CLiquidityInfo info(baseInfo);
-        info.cUnit = 'S';
+        info.cUnit = '8';
         BOOST_CHECK(!info.IsValid());
     }
 

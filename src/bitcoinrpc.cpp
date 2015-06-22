@@ -763,7 +763,7 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("parked",        ValueFromAmount(pwalletMain->GetParked())));
     obj.push_back(Pair("blocks",        (int)nBestHeight));
     obj.push_back(Pair("moneysupply",   ValueFromAmount(pindexBest->GetMoneySupply(pwalletMain->Unit()))));
-    if (pwalletMain->Unit() != 'S')
+    if (pwalletMain->Unit() != '8')
         obj.push_back(Pair("totalparked",   ValueFromAmount(pindexBest->GetTotalParked(pwalletMain->Unit()))));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("proxy",         (fUseProxy ? addrProxy.ToStringIPPort() : string())));
@@ -814,8 +814,8 @@ Value getparkrates(const Array& params, bool fHelp)
     if (!IsValidUnit(cUnit))
         throw JSONRPCError(-12, "Error: Invalid currency");
 
-    if (cUnit == 'S')
-        throw JSONRPCError(-12, "Error: Park rates are not available on NuShares");
+    if (cUnit == '8')
+        throw JSONRPCError(-12, "Error: Park rates are not available on BlockShares");
 
     pindex = pindex->GetIndexWithEffectiveParkRates();
 
@@ -3111,19 +3111,19 @@ CVote SampleVote()
     CVote sample;
 
     CCustodianVote custodianVote;
-    CBitcoinAddress custodianAddress(CKeyID(uint160(123)), 'B');
+    CBitcoinAddress custodianAddress(CKeyID(uint160(123)), 'C');
     custodianVote.SetAddress(custodianAddress);
     custodianVote.nAmount = 100 * COIN;
     sample.vCustodianVote.push_back(custodianVote);
 
     CCustodianVote custodianVote2;
-    CBitcoinAddress custodianAddress2(CScriptID(uint160(555555555)), 'B');
+    CBitcoinAddress custodianAddress2(CScriptID(uint160(555555555)), 'C');
     custodianVote2.SetAddress(custodianAddress2);
     custodianVote2.nAmount = 5.5 * COIN;
     sample.vCustodianVote.push_back(custodianVote2);
 
     CParkRateVote parkRateVote;
-    parkRateVote.cUnit = 'B';
+    parkRateVote.cUnit = 'C';
     parkRateVote.vParkRate.push_back(CParkRate(13, 3 * COIN_PARK_RATE / COIN));
     parkRateVote.vParkRate.push_back(CParkRate(14, 6 * COIN_PARK_RATE / COIN));
     parkRateVote.vParkRate.push_back(CParkRate(15, 13 * COIN_PARK_RATE / COIN));
@@ -3494,7 +3494,7 @@ Value liquidityinfo(const Array& params, bool fHelp)
         throw runtime_error(
             "liquidityinfo <currency> <buyamount> <sellamount> <grantaddress> [<indentifier>]\n"
             "Broadcast liquidity information.\n"
-            "currency is the single letter of the currency (currently only 'B')\n"
+            "currency is the single letter of the currency (currently only 'C')\n"
             "grantaddress is the custodian address that was granted. The private key of this address must be in the wallet."
             );
 
@@ -3640,7 +3640,7 @@ Value getliquidityinfo(const Array& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "getliquidityinfo <currency>\n"
-            "currency is the single letter of the currency (currently only 'B')"
+            "currency is the single letter of the currency (currently only 'C')"
             );
 
     if (params[0].get_str().size() != 1)
@@ -3703,7 +3703,7 @@ Value getliquiditydetails(const Array& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "getliquiditydetails <currency>\n"
-            "currency is the single letter of the currency (currently only 'B')"
+            "currency is the single letter of the currency (currently only 'C')"
             );
 
     if (params[0].get_str().size() != 1)
@@ -4342,7 +4342,7 @@ Value setdatafeed(const Array& params, bool fHelp)
             throw runtime_error("Invalid parts");
     }
 
-    CWallet* pwallet = GetWallet('S');
+    CWallet* pwallet = GetWallet('8');
     pwallet->SetDataFeed(CDataFeed(sURL, sSignatureURL, sAddress, vParts));
 
     try
@@ -4365,7 +4365,7 @@ Value getdatafeed(const Array& params, bool fHelp)
             "getdatafeed\n"
             "Return the current data feed.");
 
-    CWallet* pwallet = GetWallet('S');
+    CWallet* pwallet = GetWallet('8');
     const CDataFeed& dataFeed(pwallet->GetDataFeed());
 
     Object result;
@@ -4383,7 +4383,7 @@ Value burn(const Array& params, bool fHelp)
         throw runtime_error(
             "burn <amount> <unit> [comment]\n"
             "<amount> is a real and is rounded to the nearest 0.0001\n"
-            "<unit> is the unit to burn ('B' for NuBits, 'S' for NuShares).\n"
+            "<unit> is the unit to burn ('C' for BlockCredits, '8' for BlockShares).\n"
             "requires portfolio passphrase to be set with walletpassphrase first");
 
     // Amount
@@ -4432,7 +4432,7 @@ Value generatestake(const Array& params, bool fHelp)
     if (GetBoolArg("-stakegen", true))
         throw JSONRPCError(-3, "Stake generation enabled. Won't start another generation.");
 
-    CWallet *pwallet = GetWallet('S');
+    CWallet *pwallet = GetWallet('8');
     BitcoinMiner(pwallet, true, true);
     return hashSingleStakeBlock.ToString();
 }
@@ -4496,7 +4496,7 @@ Value duplicateblock(const Array& params, bool fHelp)
         parent = original->pprev;
     }
 
-    CWallet *pwallet = GetWallet('S');
+    CWallet *pwallet = GetWallet('8');
     CDefaultKey reservekey(pwallet);
     bool fProofOfStake = true;
     unsigned int nExtraNonce = 0;
@@ -5333,7 +5333,7 @@ Object CallRPC(const string& strMethod, const Array& params)
     SSLStream sslStream(io_service, context);
     SSLIOStreamDevice d(sslStream, fUseSSL);
     iostreams::stream<SSLIOStreamDevice> stream(d);
-    int port = GetRPCPort(GetArg("-unit", "S")[0]);
+    int port = GetRPCPort(GetArg("-unit", "8")[0]);
     if (!d.connect(GetArg("-rpcconnect", "127.0.0.1"), to_string(port)))
         throw runtime_error("couldn't connect to server");
 

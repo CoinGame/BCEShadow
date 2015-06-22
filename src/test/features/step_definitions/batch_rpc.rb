@@ -1,6 +1,6 @@
 
 When(/^this RPC request is sent to node "(.*?)":$/) do |arg1, string|
-  @result = @nodes[arg1].raw_rpc('S', string)
+  @result = @nodes[arg1].raw_rpc('8', string)
 end
 
 Then(/^the result should contain (\d+) getinfo answers$/) do |arg1|
