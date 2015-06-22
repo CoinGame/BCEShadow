@@ -4,6 +4,9 @@ B&C Exchange Official Development Repo
 ### What is B&C Exchange?
 //todo: Description to be written
 
+Design document:
+https://nubits.com/sites/default/files/assets/Blocks%20%26%20Chains%20Decentralized%20Exchange.pdf
+
 ### B&C Exchange Resources
 * Client and Source: Client Binaries, Source Code
 * Documentation: Nu Whitepaper, Nu Wiki
