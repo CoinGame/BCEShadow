@@ -1,5 +1,5 @@
 ---
-name: "nu"
+name: "bcexchange"
 suites:
 - "precise"
 architectures:
@@ -16,11 +16,11 @@ packages:
 - "libqt4-dev"
 reference_datetime: "2011-01-30 00:00:00"
 remotes:
-- "url": "git@bitbucket.org:JordanLeePeershares/nubit.git"
-  "dir": "nubit"
+- "url": "git@bitbucket.org:JordanLeePeershares/bcexchange.git"
+  "dir": "bcexchange"
 files:
-- "nu-deps-linux32-gitian-r5.zip"
-- "nu-deps-linux64-gitian-r5.zip"
+- "bcexchange-deps-linux32-gitian-r5.zip"
+- "bcexchange-deps-linux64-gitian-r5.zip"
 - "boost-linux32-1.55.0-gitian-r1.zip"
 - "boost-linux64-1.55.0-gitian-r1.zip"
 script: |
@@ -35,30 +35,30 @@ script: |
   #
   mkdir -p $STAGING
   cd $STAGING
-  unzip ../build/nu-deps-linux${GBUILD_BITS}-gitian-r5.zip
+  unzip ../build/bcexchange-deps-linux${GBUILD_BITS}-gitian-r5.zip
   unzip ../build/boost-linux${GBUILD_BITS}-1.55.0-gitian-r1.zip
   cd ..
   #
-  cd $HOME/build/nubit
-  git archive --format=tar -o nubit.tar HEAD
+  cd $HOME/build/bcexchange
+  git archive --format=tar -o bcexchange.tar HEAD
   cp doc/README $OUTDIR
   cp COPYING $OUTDIR
-  DISTNAME=nubit.tar
+  DISTNAME=bcexchange.tar
   #
   export LD_PRELOAD=/usr/lib/faketime/libfaketime.so.1
   export FAKETIME=$REFERENCE_DATETIME
 
-  qmake INCLUDEPATH="$STAGING/include" LIBS="-L$STAGING/lib" USE_QRCODE=1 RELEASE=1 BOOST_LIB_SUFFIX=-mt QMAKE_CXXFLAGS=-frandom-seed=nu QMAKE_LFLAGS=-frandom-seed=nu
+  qmake INCLUDEPATH="$STAGING/include" LIBS="-L$STAGING/lib" USE_QRCODE=1 RELEASE=1 BOOST_LIB_SUFFIX=-mt QMAKE_CXXFLAGS=-frandom-seed=bcexchange QMAKE_LFLAGS=-frandom-seed=bcexchange
   make $MAKEOPTS
-  install -s nu $BINDIR
+  install -s bcexchange $BINDIR
 
   cd src
-  make -f makefile.unix STATIC=1 $MAKEOPTS nud USE_UPNP=1 BDB_INCLUDE_PATH=$STAGING/include BDB_LIB_PATH=$STAGING/lib BOOST_LIB_SUFFIX=-mt DEBUGFLAGS=
-  install -s nud $BINDIR
+  make -f makefile.unix STATIC=1 $MAKEOPTS bcexchange USE_UPNP=1 BDB_INCLUDE_PATH=$STAGING/include BDB_LIB_PATH=$STAGING/lib BOOST_LIB_SUFFIX=-mt DEBUGFLAGS=
+  install -s bcexchanged $BINDIR
 
   # sort distribution tar file and normalize user/group/mtime information for deterministic output
   mkdir -p $OUTDIR/src
   rm -rf $TEMPDIR
   mkdir -p $TEMPDIR
   cd $TEMPDIR
-  tar -xvf $HOME/build/nubit/$DISTNAME | sort | tar --no-recursion -cT /dev/stdin --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 --mtime="$REFERENCE_DATETIME" | gzip -n > $OUTDIR/src/$DISTNAME.gz
+  tar -xvf $HOME/build/bcexchange/$DISTNAME | sort | tar --no-recursion -cT /dev/stdin --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 --mtime="$REFERENCE_DATETIME" | gzip -n > $OUTDIR/src/$DISTNAME.gz

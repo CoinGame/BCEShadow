@@ -26,10 +26,10 @@ NO LIABILITY FOR DAMAGES. In no event shall the authors of this Software be liab
 # Setup
 ------
 Unpack the files into a directory and run:
- bin/32/nu (GUI, 32-bit)
- bin/32/nud (headless, 32-bit)
- bin/64/nu (GUI, 64-bit)
- bin/64/nud (headless, 64-bit)
+ bin/32/bcexchange (GUI, 32-bit)
+ bin/32/bcexchanged (headless, 32-bit)
+ bin/64/bcexchange (GUI, 64-bit)
+ bin/64/bcexchanged (headless, 64-bit)
 
 The software automatically finds other nodes to connect to.  You can
 enable Universal Plug and Play (UPnP) with your router/firewall
@@ -43,10 +43,10 @@ Upgrade
 -------
 All your existing coins/transactions should be intact with the upgrade.
 To upgrade, first backup wallet:
-  nud backupwallet <destination_backup_file>
+  bcexchanged backupwallet <destination_backup_file>
 Then shutdown the daemon with:
-  nud stop
-Remove files inside wallet directory other than wallet.dat and nu.conf
+  bcexchanged stop
+Remove files inside wallet directory other than wallet.dat and bcexchange.conf
 Start up the new client. It would start re-download of block chain.
 
 

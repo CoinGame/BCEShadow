@@ -45,10 +45,10 @@
 #     mkdir miniupnpc
 #     copy *.h miniupnpc/
 #
-# - Build nud.exe
+# - Build bcexchanged.exe
 #   in MinGW MSYS
-#     cd nud/src
-#     make nud.exe -f makefile.mingw USE_UPNP=1
+#     cd bcexchange/src
+#     make bcexchanged.exe -f makefile.mingw USE_UPNP=1
 #
 #
 
@@ -121,12 +121,12 @@ OBJS= \
     obj/datafeed.o
 
 
-all: nud.exe
+all: bcexchanged.exe
 
 obj/%.o: %.cpp $(HEADERS)
 	g++ -c $(CFLAGS) -o $@ $<
 
-nud.exe: $(OBJS:obj/%=obj/%)
+bcexchanged.exe: $(OBJS:obj/%=obj/%)
 	g++ $(CFLAGS) -o $@ $(LIBPATHS) $^ $(LIBS)
 
 TESTOBJS := $(patsubst test/%.cpp,obj-test/%.o,$(wildcard test/*.cpp))
@@ -134,11 +134,11 @@ TESTOBJS := $(patsubst test/%.cpp,obj-test/%.o,$(wildcard test/*.cpp))
 obj-test/%.o: test/%.cpp $(HEADERS)
 	g++ -c $(TESTDEFS) $(CFLAGS) -o $@ $<
 
-test_nu.exe: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
+test_bcexchange.exe: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
 	g++ $(CFLAGS) -o $@ $(LIBPATHS) $^ -lboost_unit_test_framework $(LIBS)
 
 clean:
-	-del /Q nud test_bitcoin
+	-del /Q bcexchanged test_bcexchange
 	-del /Q obj\*
 	-del /Q obj-test\*
 	-del /Q build.h

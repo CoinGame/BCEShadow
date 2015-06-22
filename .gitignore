@@ -3,12 +3,15 @@ src/peershares
 src/peersharesd
 src/test_peershares
 src/nud
+src/bcexchanged
 ppcoin-qt
 nu-qt
 nu
+bcexchange
 src/ppcoind
 src/test_ppcoin
 src/test_nu
+src/test_bcexchange
 src/build.h
 .*.swp
 *.*~*
@@ -19,6 +22,7 @@ src/build.h
 *.patch
 .peershares
 .nu
+.bcexchange
 #compilation and Qt preprocessor part
 *.qm
 Makefile

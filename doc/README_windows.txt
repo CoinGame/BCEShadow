@@ -29,9 +29,9 @@ NO LIABILITY FOR DAMAGES. In no event shall the authors of this Software be liab
 After completing windows setup then run Nu.
 Alternatively you can run windows command line (cmd) in nu program dir.
   cd daemon
-  nud
-You would need to create a configuration file nu.conf in the default
-wallet directory. Grant access to nud/nu in anti-virus and firewall
+  bcexchanged
+You would need to create a configuration file bcexchange.conf in the default
+wallet directory. Grant access to bcexchanged/bcexchange in anti-virus and firewall
 applications if necessary.
 
 The software automatically finds other nodes to connect to.  You can
@@ -45,10 +45,10 @@ Upgrade
 -------
 All your existing coins/transactions should be intact with the upgrade.
 To upgrade, first backup wallet:
-  nud backupwallet <destination_backup_file>
+  bcexchanged backupwallet <destination_backup_file>
 Then shutdown the daemon with:
-  nud stop
-Remove files inside wallet directory other than wallet.dat and nu.conf
+  bcexchanged stop
+Remove files inside wallet directory other than wallet.dat and bcexchange.conf
 Start up the new client. It would start re-download of block chain.
 
 

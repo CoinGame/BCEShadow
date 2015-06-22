@@ -1081,7 +1081,7 @@ boost::filesystem::path GetPidFile()
 {
     namespace fs = boost::filesystem;
 	
-    fs::path pathPidFile(GetArg("-pid", "nu.pid"));
+    fs::path pathPidFile(GetArg("-pid", "bcexchange.pid"));
     if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;
 }

@@ -8,7 +8,7 @@
 #include "version.h"
 
 // Name of client reported in the 'version' message. Report the same name
-// for both nud and Nu, to make it harder for attackers to
+// for both bcexchanged and bcexchange, to make it harder for attackers to
 // target servers or GUI users specifically.
 const std::string CLIENT_NAME("Siglee");
 
