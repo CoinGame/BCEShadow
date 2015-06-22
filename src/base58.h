@@ -599,12 +599,10 @@ class CBitcoinSecret : public CBase58Data
 public:
     enum
     {
-        NUSHARES_SECRET = 149,      // PXXXXXXXX... for compressed keys
-        NUSHARES_SECRET_TEST = 223, // aXXXXXXXX... for compressed keys
-        NUBITS_SECRET = 150,        // PXXXXXXXX... for compressed keys
-        NUBITS_SECRET_TEST = 224,   // aXXXXXXXX... for compressed keys
-        DEFAULT_SECRET = 191,       // 128 + CBitcoinAddress::PUBKEY_ADDRESS
-        DEFAULT_SECRET_TEST = 160,  // 128 + CBitcoinAddress::PUBKEY_ADDRESS_TEST
+        BLOCKSHARES_SECRET = 153,      // PXXXXXXXX... for compressed keys
+        BLOCKSHARES_SECRET_TEST = 227, // aXXXXXXXX... for compressed keys
+        BLOCKCREDITS_SECRET = 154,        // PXXXXXXXX... for compressed keys
+        BLOCKCREDITS_SECRET_TEST = 228,   // aXXXXXXXX... for compressed keys
     };
 
     void SetSecret(const CSecret& vchSecret, bool fCompressed, unsigned char cUnit)
@@ -630,19 +628,16 @@ public:
         {
             case '8':
                 if (fTest)
-                    return NUSHARES_SECRET_TEST;
+                    return BLOCKSHARES_SECRET_TEST;
                 else
-                    return NUSHARES_SECRET;
+                    return BLOCKSHARES_SECRET;
             case 'C':
                 if (fTest)
-                    return NUBITS_SECRET_TEST;
+                    return BLOCKCREDITS_SECRET_TEST;
                 else
-                    return NUBITS_SECRET;
+                    return BLOCKCREDITS_SECRET;
             default:
-                if (fTest)
-                    return DEFAULT_SECRET_TEST;
-                else
-                    return DEFAULT_SECRET;
+                throw std::runtime_error("Unknown unit");
         }
     }
 
@@ -652,25 +647,19 @@ public:
         unsigned char cDetectedUnit = '?';
         switch(nVersion)
         {
-            case NUSHARES_SECRET:
+            case BLOCKSHARES_SECRET:
                 cDetectedUnit = '8';
                 break;
-            case NUSHARES_SECRET_TEST:
+            case BLOCKSHARES_SECRET_TEST:
                 cDetectedUnit = '8';
                 fExpectTestNet = true;
                 break;
 
-            case NUBITS_SECRET:
+            case BLOCKCREDITS_SECRET:
                 cDetectedUnit = 'C';
                 break;
-            case NUBITS_SECRET_TEST:
+            case BLOCKCREDITS_SECRET_TEST:
                 cDetectedUnit = 'C';
-                fExpectTestNet = true;
-                break;
-
-            case DEFAULT_SECRET:
-                break;
-            case DEFAULT_SECRET_TEST:
                 fExpectTestNet = true;
                 break;
 
@@ -680,8 +669,7 @@ public:
 
         bool fCorrectNetwork = fExpectTestNet == fTestNet;
         bool fExpectedFormat = vchData.size() == 32 || (vchData.size() == 33 && vchData[32] == 1);
-        // The detected default version '?' is always valid, while the new versions must be explicitly set
-        bool fCorrectUnit = cDetectedUnit == '?' || cDetectedUnit == cUnit;
+        bool fCorrectUnit = cDetectedUnit == cUnit;
 
         return fCorrectNetwork && fExpectedFormat && fCorrectUnit;
     }
