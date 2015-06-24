@@ -541,7 +541,7 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
 
     // Zero vote results in no new currency
     vector<CTransaction> vCurrencyCoinBase;
-    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, vCurrencyCoinBase));
+    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, 0, vCurrencyCoinBase));
     BOOST_CHECK_EQUAL(0, vCurrencyCoinBase.size());
 
     // Add a vote without custodian vote
@@ -550,7 +550,7 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
     vVote.push_back(vote);
 
     // Still no currency created
-    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, vCurrencyCoinBase));
+    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, 0, vCurrencyCoinBase));
     BOOST_CHECK_EQUAL(0, vCurrencyCoinBase.size());
 
     // Add a custodian vote with the same coin age
@@ -562,14 +562,14 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
     vVote.push_back(vote);
 
     // Still no currency created
-    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, vCurrencyCoinBase));
+    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, 0, vCurrencyCoinBase));
     BOOST_CHECK_EQUAL(0, vCurrencyCoinBase.size());
 
     // The last vote has a little more weight
     vVote.back().nCoinAgeDestroyed++;
 
     // Still no currency created because this vote does not have the majority of blocks (we have 2 votes)
-    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, vCurrencyCoinBase));
+    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, 0, vCurrencyCoinBase));
     BOOST_CHECK_EQUAL(0, vCurrencyCoinBase.size());
 
     // Add a 3rd vote for the same custodian
@@ -578,7 +578,7 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
     vVote.push_back(vote);
 
     // This custodian should win and currency should be created
-    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, vCurrencyCoinBase));
+    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, 0, vCurrencyCoinBase));
     BOOST_CHECK_EQUAL(1, vCurrencyCoinBase.size());
     CTransaction tx = vCurrencyCoinBase[0];
     BOOST_CHECK(tx.IsCustodianGrant());
@@ -591,10 +591,19 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
 
     // This custodian has already been elected
     mapAlreadyElected[CBitcoinAddress(address, 'C')] = new CBlockIndex;
+    mapAlreadyElected[CBitcoinAddress(address, 'C')]->nHeight = 1000;
 
     // He should not receive any new currency
-    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, vCurrencyCoinBase));
+    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, 1001, vCurrencyCoinBase));
     BOOST_CHECK_EQUAL(0, vCurrencyCoinBase.size());
+
+    // ... unless the current block is at the same height as the grant
+    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, 1000, vCurrencyCoinBase));
+    BOOST_CHECK_EQUAL(1, vCurrencyCoinBase.size());
+
+    // ... or below
+    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, 500, vCurrencyCoinBase));
+    BOOST_CHECK_EQUAL(1, vCurrencyCoinBase.size());
 
     // Add a vote for another custodian to the existing votes
     custodianVote.hashAddress = uint160(2);
@@ -606,7 +615,7 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
     mapAlreadyElected.clear();
 
     // Both should receive new currency
-    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, vCurrencyCoinBase));
+    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, 0, vCurrencyCoinBase));
     BOOST_CHECK_EQUAL(1, vCurrencyCoinBase.size());
     tx = vCurrencyCoinBase[0];
     BOOST_CHECK(tx.IsCustodianGrant());
@@ -628,7 +637,7 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
 //    printVotes(vVote);
 
     // Only the amount with the highest coin age is granted
-    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, vCurrencyCoinBase));
+    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, 0, vCurrencyCoinBase));
     BOOST_CHECK_EQUAL(1, vCurrencyCoinBase.size());
 
     tx = vCurrencyCoinBase[0];
@@ -643,7 +652,7 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
     vVote[0].vCustodianVote.back().cUnit = '8';
     vVote[1].vCustodianVote.back().cUnit = '8';
     vVote[2].vCustodianVote.back().cUnit = '8';
-    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, vCurrencyCoinBase));
+    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, 0, vCurrencyCoinBase));
     BOOST_CHECK_EQUAL(1, vCurrencyCoinBase.size());
     tx = vCurrencyCoinBase[0];
     tx.nTime = 2000000000; // set a time that is after V06 switch time
@@ -659,7 +668,7 @@ BOOST_AUTO_TEST_CASE(create_currency_coin_bases)
     vVote[2].vCustodianVote.back().cUnit = 'C';
 
     // Should BKS and BKC
-    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, vCurrencyCoinBase));
+    BOOST_CHECK(GenerateCurrencyCoinBases(vVote, mapAlreadyElected, 0, vCurrencyCoinBase));
     BOOST_CHECK_EQUAL(2, vCurrencyCoinBase.size());
     tx = vCurrencyCoinBase[1];
     BOOST_CHECK(tx.IsCustodianGrant());
