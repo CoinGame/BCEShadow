@@ -559,7 +559,7 @@ typedef map<CCustodianVote, CCustodianVoteCounter> CustodianVoteCounterMap;
 typedef map<CBitcoinAddress, int64> GrantedAmountMap;
 typedef map<unsigned char, GrantedAmountMap> GrantedAmountPerUnitMap;
 
-bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CBitcoinAddress, CBlockIndex*>& mapAlreadyElected, std::vector<CTransaction>& vCurrencyCoinBaseRet)
+bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CBitcoinAddress, CBlockIndex*>& mapAlreadyElected, int nHeight, std::vector<CTransaction>& vCurrencyCoinBaseRet)
 {
     vCurrencyCoinBaseRet.clear();
 
@@ -578,12 +578,9 @@ bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CB
 
         BOOST_FOREACH(const CCustodianVote& custodianVote, vote.vCustodianVote)
         {
-            if (!mapAlreadyElected.count(custodianVote.GetAddress()))
-            {
-                CCustodianVoteCounter& counter = mapCustodianVoteCounter[custodianVote];
-                counter.nWeight += vote.nCoinAgeDestroyed;
-                counter.nCount++;
-            }
+            CCustodianVoteCounter& counter = mapCustodianVoteCounter[custodianVote];
+            counter.nWeight += vote.nCoinAgeDestroyed;
+            counter.nCount++;
         }
     }
 
@@ -626,13 +623,24 @@ bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CB
             const CBitcoinAddress& address = grantedAmount.first;
             int64 amount = grantedAmount.second;
 
+            const std::map<CBitcoinAddress, CBlockIndex*>::const_iterator it =
+                mapAlreadyElected.find(address);
+            if (it != mapAlreadyElected.end())
+            {
+                // Custodian already elected
+                // Ignore it only if it was elected before the current height
+                if (it->second->nHeight < nHeight)
+                    continue;
+            }
+
             CScript scriptPubKey;
             scriptPubKey.SetDestination(address.Get());
 
             tx.vout.push_back(CTxOut(amount, scriptPubKey));
         }
 
-        vCurrencyCoinBaseRet.push_back(tx);
+        if (tx.vout.size() != 0)
+            vCurrencyCoinBaseRet.push_back(tx);
     }
 
     return true;

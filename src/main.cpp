@@ -2412,7 +2412,7 @@ bool CBlock::AcceptBlock()
             {
                 LOCK(cs_mapElectedCustodian);
 
-                if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, vExpectedCurrencyCoinBase))
+                if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, nHeight, vExpectedCurrencyCoinBase))
                     return error("AcceptBlock() : unable to generate currency coin bases");
             }
         }
@@ -4323,7 +4323,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey, CWallet* pwallet, bool fProofOfS
         {
             LOCK(cs_mapElectedCustodian);
 
-            if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, vCurrencyCoinBase))
+            if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, pindexPrev->nHeight + 1, vCurrencyCoinBase))
             {
                 printf("CreateNewBlock(): unable to generate currency coin bases");
                 return NULL;

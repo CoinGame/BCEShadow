@@ -4541,7 +4541,7 @@ Value duplicateblock(const Array& params, bool fHelp)
         {
             LOCK(cs_mapElectedCustodian);
 
-            if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, vCurrencyCoinBase))
+            if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, pindexPrev->nHeight + 1, vCurrencyCoinBase))
                 throw JSONRPCError(-3, "unable to generate currency coin bases");
         }
 
