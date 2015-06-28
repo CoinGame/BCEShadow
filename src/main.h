@@ -109,8 +109,8 @@ inline int64 GetDefaultFee(unsigned char cUnit)
 {
     switch (cUnit)
     {
-        case '8': return COIN;
-        case 'C': return CENT;
+        case '8': return CENT;
+        case 'C': return COIN;
         default: return MAX_MONEY;
     }
 }

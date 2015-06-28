@@ -920,7 +920,7 @@ BOOST_AUTO_TEST_CASE(fee_calculation)
 vector<CBlockIndex*> feeVoteIndexes;
 int lastFeeVoteIndex = -1;
 
-void AddFeeVoteBlocks(int nCount, int64 nFeeVoteS, int64 nFeeVoteB)
+void AddFeeVoteBlocks(int nCount, int64 nFeeVote8, int64 nFeeVoteC)
 {
     for (int i = 0; i < nCount; i++)
     {
@@ -933,10 +933,10 @@ void AddFeeVoteBlocks(int nCount, int64 nFeeVoteS, int64 nFeeVoteB)
         feeVoteIndexes.push_back(pindex);
         lastFeeVoteIndex++;
         pindex->nHeight = lastFeeVoteIndex;
-        if (nFeeVoteS != -1)
-            pindex->vote.mapFeeVote['8'] = nFeeVoteS;
-        if (nFeeVoteB != -1)
-            pindex->vote.mapFeeVote['C'] = nFeeVoteB;
+        if (nFeeVote8 != -1)
+            pindex->vote.mapFeeVote['8'] = nFeeVote8;
+        if (nFeeVoteC != -1)
+            pindex->vote.mapFeeVote['C'] = nFeeVoteC;
         BOOST_CHECK(CalculateVotedFees(pindex));
     }
 }
@@ -995,26 +995,26 @@ BOOST_AUTO_TEST_CASE(fee_vote_calculation)
     // The first blocks have the default fee
     for (int i = 0; i < 4000; i++)
     {
-        CHECK_VOTED_MIN_FEE    (i, COIN, CENT);
-        CHECK_EFFECTIVE_MIN_FEE(i, COIN, CENT);
-        CHECK_SAFE_MIN_FEE     (i, COIN, CENT);
+        CHECK_VOTED_MIN_FEE    (i, CENT, COIN);
+        CHECK_EFFECTIVE_MIN_FEE(i, CENT, COIN);
+        CHECK_SAFE_MIN_FEE     (i, CENT, COIN);
     }
 
     // The votes started at block 3000, so at block 4000 there are 1001 votes so the voted fee changes
-    CHECK_VOTED_MIN_FEE    (4000, 2*COIN, CENT);
+    CHECK_VOTED_MIN_FEE    (4000, 2*COIN, COIN);
     // But not the other ones
-    CHECK_EFFECTIVE_MIN_FEE(4000,   COIN, CENT);
-    CHECK_SAFE_MIN_FEE     (4000,   COIN, CENT);
+    CHECK_EFFECTIVE_MIN_FEE(4000,   CENT, COIN);
+    CHECK_SAFE_MIN_FEE     (4000,   CENT, COIN);
 
     // The effective fee doesn't change until 60 blocks have passed
     for (int i = 4000; i < 4060; i++)
-        CHECK_EFFECTIVE_MIN_FEE(i, COIN, CENT);
-    CHECK_EFFECTIVE_MIN_FEE(4060, 2*COIN, CENT);
+        CHECK_EFFECTIVE_MIN_FEE(i, CENT, COIN);
+    CHECK_EFFECTIVE_MIN_FEE(4060, 2*COIN, COIN);
 
     // The safe fee changes 10 blocks before the effective fee
     for (int i = 4000; i < 4050; i++)
-        CHECK_SAFE_MIN_FEE(i, COIN, CENT);
-    CHECK_SAFE_MIN_FEE(4050, 2*COIN, CENT);
+        CHECK_SAFE_MIN_FEE(i, CENT, COIN);
+    CHECK_SAFE_MIN_FEE(4050, 2*COIN, COIN);
 
 
     ResetFeeVoteBlocks();
@@ -1024,17 +1024,17 @@ BOOST_AUTO_TEST_CASE(fee_vote_calculation)
     AddFeeVoteBlocks( 500, -1,  5*CENT);
     AddFeeVoteBlocks(1000, -1,  1*CENT);
 
-    CHECK_VOTED_MIN_FEE(2000, 1*COIN, 5*CENT);
-    CHECK_VOTED_MIN_FEE(2499, 1*COIN, 5*CENT);
-    CHECK_VOTED_MIN_FEE(2500, 1*COIN, 3*CENT);
+    CHECK_VOTED_MIN_FEE(2000, 1*CENT, 5*CENT);
+    CHECK_VOTED_MIN_FEE(2499, 1*CENT, 5*CENT);
+    CHECK_VOTED_MIN_FEE(2500, 1*CENT, 3*CENT);
 
-    CHECK_EFFECTIVE_MIN_FEE(2559, 1*COIN, 5*CENT);
-    CHECK_EFFECTIVE_MIN_FEE(2560, 1*COIN, 3*CENT);
+    CHECK_EFFECTIVE_MIN_FEE(2559, 1*CENT, 5*CENT);
+    CHECK_EFFECTIVE_MIN_FEE(2560, 1*CENT, 3*CENT);
 
-    CHECK_SAFE_MIN_FEE(2549, 1*COIN, 5*CENT);
-    CHECK_SAFE_MIN_FEE(2550, 1*COIN, 5*CENT);
-    CHECK_SAFE_MIN_FEE(2558, 1*COIN, 5*CENT); // the next block still has a 5 cents fee
-    CHECK_SAFE_MIN_FEE(2559, 1*COIN, 3*CENT); // there's no more 5 cents blocks
+    CHECK_SAFE_MIN_FEE(2549, 1*CENT, 5*CENT);
+    CHECK_SAFE_MIN_FEE(2550, 1*CENT, 5*CENT);
+    CHECK_SAFE_MIN_FEE(2558, 1*CENT, 5*CENT); // the next block still has a 5 cents fee
+    CHECK_SAFE_MIN_FEE(2559, 1*CENT, 3*CENT); // there's no more 5 cents blocks
 
     ResetFeeVoteBlocks();
 }
