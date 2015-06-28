@@ -932,19 +932,20 @@ void AddFeeVoteBlocks(int nCount, int64 nFeeVoteS, int64 nFeeVoteB)
     }
 }
 
-#define CHECK_VOTED_MIN_FEE(nIndex, nExpectedSFee, nExpectedBFee) { \
-    BOOST_CHECK_EQUAL(nExpectedSFee, feeVoteIndexes[nIndex]->GetVotedMinFee('8')); \
-    BOOST_CHECK_EQUAL(nExpectedBFee, feeVoteIndexes[nIndex]->GetVotedMinFee('C')); \
+#define CHECK_VOTED_MIN_FEE(nIndex, nExpected8Fee, nExpectedCFee) { \
+    BOOST_CHECK_EQUAL(nExpected8Fee, feeVoteIndexes[nIndex]->GetVotedMinFee('8')); \
+    BOOST_CHECK_EQUAL(nExpectedCFee, feeVoteIndexes[nIndex]->GetVotedMinFee('C')); \
 }
 
-#define CHECK_EFFECTIVE_MIN_FEE(nIndex, nExpectedSFee, nExpectedBFee) { \
-    BOOST_CHECK_EQUAL(nExpectedSFee, feeVoteIndexes[nIndex]->GetMinFee('8')); \
-    BOOST_CHECK_EQUAL(nExpectedBFee, feeVoteIndexes[nIndex]->GetMinFee('C')); \
+#define CHECK_EFFECTIVE_MIN_FEE(nIndex, nExpected8Fee, nExpectedCFee) { \
+    BOOST_CHECK_EQUAL(nExpected8Fee, feeVoteIndexes[nIndex]->GetMinFee('8')); \
+    BOOST_CHECK_EQUAL(nExpectedCFee, feeVoteIndexes[nIndex]->GetMinFee('C')); \
+    CheckFeeOnTransactions(feeVoteIndexes[nIndex], nExpected8Fee, nExpectedCFee); \
 }
 
-#define CHECK_SAFE_MIN_FEE(nIndex, nExpectedSFee, nExpectedBFee) { \
-    BOOST_CHECK_EQUAL(nExpectedSFee, feeVoteIndexes[nIndex]->GetSafeMinFee('8')); \
-    BOOST_CHECK_EQUAL(nExpectedBFee, feeVoteIndexes[nIndex]->GetSafeMinFee('C')); \
+#define CHECK_SAFE_MIN_FEE(nIndex, nExpected8Fee, nExpectedCFee) { \
+    BOOST_CHECK_EQUAL(nExpected8Fee, feeVoteIndexes[nIndex]->GetSafeMinFee('8')); \
+    BOOST_CHECK_EQUAL(nExpectedCFee, feeVoteIndexes[nIndex]->GetSafeMinFee('C')); \
 }
 
 void ResetFeeVoteBlocks()
