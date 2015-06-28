@@ -1,5 +1,5 @@
 ---
-name: "nu-deps"
+name: "bcexchange-deps"
 suites:
 - "precise"
 architectures:
@@ -170,5 +170,5 @@ script: |
     done
     #
     cd $INSTALLPREFIX
-    find include lib | sort | zip -X@ $OUTDIR/nu-deps-win$BITS-gitian-r12.zip
+    find include lib | sort | zip -X@ $OUTDIR/bcexchange-deps-win$BITS-gitian-r12.zip
   done # for BITS in

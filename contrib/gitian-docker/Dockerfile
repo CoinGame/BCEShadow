@@ -22,4 +22,4 @@ RUN cd gitian-builder/inputs && wget 'http://curl.haxx.se/download/curl-7.41.0.t
 
 ADD setup.sh /setup.sh
 RUN chmod +x /setup.sh
-
+RUN apt-get install -y zip

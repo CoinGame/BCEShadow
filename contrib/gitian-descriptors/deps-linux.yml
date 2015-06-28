@@ -1,5 +1,5 @@
 ---
-name: "nu-deps"
+name: "bcexchange-deps"
 suites:
 - "precise"
 architectures:
@@ -129,4 +129,4 @@ script: |
   done
   #
   cd $STAGING
-  find include lib bin host | sort | zip -X@ $OUTDIR/nu-deps-linux${GBUILD_BITS}-gitian-r5.zip
+  find include lib bin host | sort | zip -X@ $OUTDIR/bcexchange-deps-linux${GBUILD_BITS}-gitian-r5.zip
