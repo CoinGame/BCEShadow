@@ -908,6 +908,15 @@ BOOST_AUTO_TEST_CASE(vote_v50000_unserialization)
     BOOST_CHECK_EQUAL(0, vote.mapFeeVote.size());
 }
 
+BOOST_AUTO_TEST_CASE(fee_calculation)
+{
+    BOOST_CHECK_EQUAL(   0, CalculateFee(   0,    1));
+    BOOST_CHECK_EQUAL(   1, CalculateFee(   1,    1));
+    BOOST_CHECK_EQUAL( 123, CalculateFee(1000,  123));
+    BOOST_CHECK_EQUAL(  11, CalculateFee( 101,  100));
+    BOOST_CHECK_EQUAL( 236, CalculateFee(2121,  111));
+}
+
 vector<CBlockIndex*> feeVoteIndexes;
 int lastFeeVoteIndex = -1;
 
@@ -929,6 +938,24 @@ void AddFeeVoteBlocks(int nCount, int64 nFeeVoteS, int64 nFeeVoteB)
         if (nFeeVoteB != -1)
             pindex->vote.mapFeeVote['C'] = nFeeVoteB;
         BOOST_CHECK(CalculateVotedFees(pindex));
+    }
+}
+
+void CheckFeeOnTransactions(CBlockIndex *pindex, int64 nExpected8Fee, int64 nExpectedCFee)
+{
+    {
+        CTransaction tx;
+        tx.cUnit = '8';
+        for (int i = 0; i < 3000; i+= 125)
+            BOOST_CHECK_EQUAL(CalculateFee(i, nExpected8Fee), tx.GetMinFee(pindex, i));
+        BOOST_CHECK_EQUAL(tx.GetMinFee(pindex, ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION)), tx.GetMinFee(pindex));
+    }
+    {
+        CTransaction tx;
+        tx.cUnit = 'C';
+        for (int i = 0; i < 3000; i+= 194)
+            BOOST_CHECK_EQUAL(CalculateFee(i, nExpectedCFee), tx.GetMinFee(pindex, i));
+        BOOST_CHECK_EQUAL(tx.GetMinFee(pindex, ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION)), tx.GetMinFee(pindex));
     }
 }
 

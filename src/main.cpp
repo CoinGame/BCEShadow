@@ -699,7 +699,7 @@ int64 CTransaction::GetSafeMinFee(const CBlockIndex *pindex, unsigned int nBytes
 
 int64 CTransaction::GetMinFee(int64 nBaseFee, unsigned int nBytes) const
 {
-    int64 nMinFee = (1 + (int64)nBytes / 1000) * nBaseFee;
+    int64 nMinFee = CalculateFee(nBytes, nBaseFee);
 
     if (!MoneyRange(nMinFee))
         nMinFee = MAX_MONEY;
@@ -4944,4 +4944,17 @@ int64 CBlockIndex::GetSafeMinFee(unsigned char cUnit) const
             nMaxMinFee = nBlockMinFee;
     }
     return nMaxMinFee;
+}
+
+int64 CalculateFee(int nSize, int64 nPerKiloByteFee)
+{
+    int64 nFee;
+
+    nFee = nSize * nPerKiloByteFee;
+    if (nFee % 1000 != 0)
+        nFee = nFee / 1000 + 1;
+    else
+        nFee = nFee / 1000;
+
+    return nFee;
 }

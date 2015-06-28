@@ -194,6 +194,7 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake);
 #endif
 bool GetTransaction(const uint256 &hash, CTransaction &tx, uint256 &hashBlock);
 bool IsNuProtocolV05(int64 nTimeBlock);
+int64 CalculateFee(int nSize, int64 nPerKiloByteFee);
 
 
 inline int GetMaturity(bool fProofOfStake)
