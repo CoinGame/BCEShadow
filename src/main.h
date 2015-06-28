@@ -714,11 +714,14 @@ public:
         return MinTxOutAmount(cUnit);
     }
 
-    int64 GetMinFee(int64 nBaseFee, unsigned int nBytes=0) const;
+    int64 GetMinFee(int64 nBaseFee, unsigned int nBytes) const;
+    int64 GetMinFee(int64 nBaseFee) const { return GetMinFee(nBaseFee, ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION)); }
     // nubit: Returns the minimum fee required for this transaction in this block
-    int64 GetMinFee(const CBlockIndex *pindex, unsigned int nBytes=0) const;
+    int64 GetMinFee(const CBlockIndex *pindex, unsigned int nBytes) const;
+    int64 GetMinFee(const CBlockIndex *pindex) const { return GetMinFee(pindex, ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION)); }
     // nubit: Returns the minimum fee that's safe to use in the next few blocks after pindex
-    int64 GetSafeMinFee(const CBlockIndex *pindex, unsigned int nBytes=0) const;
+    int64 GetSafeMinFee(const CBlockIndex *pindex, unsigned int nBytes) const;
+    int64 GetSafeMinFee(const CBlockIndex *pindex) const { return GetSafeMinFee(pindex, ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION)); }
 
     bool ReadFromDisk(CDiskTxPos pos, FILE** pfileRet=NULL)
     {
