@@ -8,7 +8,7 @@ require File.expand_path('../boot', __FILE__)
 genesis_time = Time.at(1434279999)
 
 seed_start_time = genesis_time + 60
-start_time = seed_start_time + 5 * 60
+start_time = seed_start_time + 24 * 60 * 60
 start_time_shift = (start_time - Time.now).to_i
 
 puts "Starting seed"
@@ -17,6 +17,7 @@ seed = CoinContainer.new(
   bind_code: true,
   args: {
     timetravel: start_time_shift,
+    splitshareoutputs: 10,
   },
 )
 seed.wait_for_boot
