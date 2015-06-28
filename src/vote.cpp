@@ -207,9 +207,6 @@ bool CalculateParkRateVote(const std::vector<CVote>& vVote, std::vector<CParkRat
 
     BOOST_FOREACH(const CVote& vote, vVote)
     {
-        if (vote.nCoinAgeDestroyed == 0)
-            return error("vote with 0 coin age destroyed");
-
         totalVoteWeight += vote.nCoinAgeDestroyed;
 
         BOOST_FOREACH(const CParkRateVote& parkRateVote, vote.vParkRateVote)
@@ -571,9 +568,6 @@ bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CB
 
     BOOST_FOREACH(const CVote& vote, vVote)
     {
-        if (vote.nCoinAgeDestroyed == 0)
-            return error("vote with 0 coin age destroyed");
-
         totalVoteWeight += vote.nCoinAgeDestroyed;
 
         BOOST_FOREACH(const CCustodianVote& custodianVote, vote.vCustodianVote)
