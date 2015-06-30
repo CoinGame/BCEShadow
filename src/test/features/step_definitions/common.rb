@@ -385,6 +385,10 @@ When(/^node "(.*?)" sends "(.*?)" (\w+) to "([^"]*?)"$/) do |arg1, arg2, unit_na
   @nodes[arg1].unit_rpc unit(unit_name), "sendtoaddress", @addresses.fetch(arg3, arg3), parse_number(arg2)
 end
 
+When(/^node "(.*?)" sends "(.*?)" (\w+) to raw address "([^"]*?)"$/) do |arg1, arg2, unit_name, arg3|
+  @nodes[arg1].unit_rpc unit(unit_name), "sendtoaddress", arg3, parse_number(arg2)
+end
+
 Given(/^node "(.*?)" sends "(.*?)" (\w+) to node "(.*?)"$/) do |arg1, arg2, arg3, arg4|
   node = @nodes[arg1]
   amount = parse_number(arg2)

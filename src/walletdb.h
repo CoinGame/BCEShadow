@@ -209,6 +209,7 @@ public:
     }
 
     int LoadWallet(CWallet* pwallet);
+    int LoadWalletImport(CWallet* pwallet);
 };
 
 #endif // BITCOIN_WALLETDB_H

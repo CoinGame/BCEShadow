@@ -46,7 +46,6 @@ bool CBasicKeyStore::HaveCScript(const CScriptID& hash) const
     return result;
 }
 
-
 bool CBasicKeyStore::GetCScript(const CScriptID &hash, CScript& redeemScriptOut) const
 {
     {
@@ -59,6 +58,20 @@ bool CBasicKeyStore::GetCScript(const CScriptID &hash, CScript& redeemScriptOut)
         }
     }
     return false;
+}
+
+void CBasicKeyStore::GetCScripts(std::set<CScriptID> &setHashes) const
+{
+    setHashes.clear();
+    {
+        LOCK(cs_KeyStore);
+        ScriptMap::const_iterator mi = mapScripts.begin();
+        while (mi != mapScripts.end())
+        {
+            setHashes.insert((*mi).first);
+            mi++;
+        }
+    }
 }
 
 bool CCryptoKeyStore::SetCrypted()

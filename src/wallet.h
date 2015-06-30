@@ -290,6 +290,8 @@ public:
 
     int LoadWallet(bool& fFirstRunRet);
 
+    int LoadWalletImport(bool& fFirstRunRet);
+
     bool SetAddressBookName(const CTxDestination& address, const std::string& strName);
 
     bool DelAddressBookName(const CTxDestination& address);

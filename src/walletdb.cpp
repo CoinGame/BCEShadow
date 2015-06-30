@@ -349,6 +349,150 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
     return DB_LOAD_OK;
 }
 
+int CWalletDB::LoadWalletImport(CWallet* pwallet)
+{
+    pwallet->vchDefaultKey = CPubKey();
+    vector<uint256> vWalletUpgrade;
+
+    //// todo: shouldn't we catch exceptions and try to recover and continue?
+    {
+        LOCK(pwallet->cs_wallet);
+        int nMinVersion = 0;
+        if (Read((string)"minversion", nMinVersion))
+        {
+            if (nMinVersion > CLIENT_VERSION)
+                return DB_TOO_NEW;
+            pwallet->LoadMinVersion(nMinVersion);
+        }
+
+        // Get cursor
+        Dbc* pcursor = GetCursor();
+        if (!pcursor)
+        {
+            printf("Error getting wallet database cursor\n");
+            return DB_CORRUPT;
+        }
+
+        loop
+        {
+            // Read next record
+            CDataStream ssKey(SER_DISK, CLIENT_VERSION);
+            CDataStream ssValue(SER_DISK, CLIENT_VERSION);
+            int ret = ReadAtCursor(pcursor, ssKey, ssValue);
+            if (ret == DB_NOTFOUND)
+                break;
+            else if (ret != 0)
+            {
+                printf("Error reading next record from wallet database\n");
+                return DB_CORRUPT;
+            }
+
+            // Unserialize
+            // Taking advantage of the fact that pair serialization
+            // is just the two items serialized one after the other
+            string strType;
+            ssKey >> strType;
+            if (strType == "name")
+            {
+                string strAddress;
+                ssKey >> strAddress;
+                ssValue >> pwallet->mapAddressBook[CBitcoinAddress(strAddress).Get()];
+            }
+            else if (strType == "key" || strType == "wkey")
+            {
+                vector<unsigned char> vchPubKey;
+                ssKey >> vchPubKey;
+                CKey key;
+                if (strType == "key")
+                {
+                    CPrivKey pkey;
+                    ssValue >> pkey;
+                    key.SetPubKey(vchPubKey);
+                    key.SetPrivKey(pkey);
+                    if (key.GetPubKey() != vchPubKey)
+                    {
+                        printf("Error reading wallet database: CPrivKey pubkey inconsistency\n");
+                        return DB_CORRUPT;
+                    }
+                    if (!key.IsValid())
+                    {
+                        printf("Error reading wallet database: invalid CPrivKey\n");
+                        return DB_CORRUPT;
+                    }
+                }
+                else
+                {
+                    CWalletKey wkey;
+                    ssValue >> wkey;
+                    key.SetPubKey(vchPubKey);
+                    key.SetPrivKey(wkey.vchPrivKey);
+                    if (key.GetPubKey() != vchPubKey)
+                    {
+                        printf("Error reading wallet database: CWalletKey pubkey inconsistency\n");
+                        return DB_CORRUPT;
+                    }
+                    if (!key.IsValid())
+                    {
+                        printf("Error reading wallet database: invalid CWalletKey\n");
+                        return DB_CORRUPT;
+                    }
+                }
+                if (!pwallet->LoadKey(key))
+                {
+                    printf("Error reading wallet database: LoadKey failed\n");
+                    return DB_CORRUPT;
+                }
+            }
+            else if (strType == "mkey")
+            {
+                unsigned int nID;
+                ssKey >> nID;
+                CMasterKey kMasterKey;
+                ssValue >> kMasterKey;
+                if(pwallet->mapMasterKeys.count(nID) != 0)
+                {
+                    printf("Error reading wallet database: duplicate CMasterKey id %u\n", nID);
+                    return DB_CORRUPT;
+                }
+                pwallet->mapMasterKeys[nID] = kMasterKey;
+                if (pwallet->nMasterKeyMaxID < nID)
+                    pwallet->nMasterKeyMaxID = nID;
+            }
+            else if (strType == "ckey")
+            {
+                vector<unsigned char> vchPubKey;
+                ssKey >> vchPubKey;
+                vector<unsigned char> vchPrivKey;
+                ssValue >> vchPrivKey;
+                if (!pwallet->LoadCryptedKey(vchPubKey, vchPrivKey))
+                {
+                    printf("Error reading wallet database: LoadCryptedKey failed\n");
+                    return DB_CORRUPT;
+                }
+            }
+            else if (strType == "defaultkey")
+            {
+                ssValue >> pwallet->vchDefaultKey;
+            }
+            else if (strType == "cscript")
+            {
+                uint160 hash;
+                ssKey >> hash;
+                CScript script;
+                ssValue >> script;
+                if (!pwallet->LoadCScript(script))
+                {
+                    printf("Error reading wallet database: LoadCScript failed\n");
+                    return DB_CORRUPT;
+                }
+            }
+        }
+        pcursor->close();
+    }
+
+    return DB_LOAD_OK;
+}
+
 void ThreadFlushWalletDB(void* parg)
 {
     const string& strFile = ((const string*)parg)[0];
