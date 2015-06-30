@@ -32,10 +32,10 @@ QString BitcoinUnits::baseName(unsigned char baseUnit)
 {
     switch (baseUnit)
     {
-        case 'S':
-            return QString("NuShares");
-        case 'B':
-            return QString("NuBits");
+        case '8':
+            return QString("BlockShares");
+        case 'C':
+            return QString("BlockCredits");
         default:
             return QString("???");
     }
@@ -45,15 +45,15 @@ QString BitcoinUnits::name(int unit)
 {
     switch (baseUnit)
     {
-        case 'S':
+        case '8':
             switch(unit)
             {
-                case BTC: return QString("NSR");
+                case BTC: return QString("BKS");
             }
-        case 'B':
+        case 'C':
             switch(unit)
             {
-                case BTC: return QString("NBT");
+                case BTC: return QString("BKC");
             }
     }
     return QString("???");
@@ -63,15 +63,15 @@ QString BitcoinUnits::description(int unit)
 {
     switch (baseUnit)
     {
-        case 'S':
+        case '8':
             switch(unit)
             {
-                case BTC: return QString("NuShares");
+                case BTC: return QString("BlockShares");
             }
-        case 'B':
+        case 'C':
             switch(unit)
             {
-                case BTC: return QString("NuBits");
+                case BTC: return QString("BlockCredits");
             }
     }
     return QString("???");

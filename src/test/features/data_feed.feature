@@ -4,12 +4,12 @@ Feature: The user can define a data feed URL to automatically update his vote fr
       """
       {
          "custodians":[
-            {"address":"bPwdoprYd3SRHqUCG5vCcEY68g8UfGC1d9", "amount":100.00000000},
-            {"address":"bxmgMJVaniUDbtiMVC7g5RuSy46LTVCLBT", "amount":5.50000000}
+            {"address":"cMJxKcoyfwD3jY8MhhstQmvmhf9oDka4ML", "amount":100.00000000},
+            {"address":"cL4NEzwHDyWYNVBAMNmE6PPKabjJN1jVqb", "amount":5.50000000}
          ],
          "parkrates":[
             {
-               "unit":"B",
+               "unit":"C",
                "rates":[
                   {"blocks":8192, "rate":0.00030000},
                   {"blocks":16384, "rate":0.00060000},
@@ -22,8 +22,8 @@ Feature: The user can define a data feed URL to automatically update his vote fr
             "3f786850e387550fdab836ed7e6dc881de23001b"
          ],
          "fees": {
-           "B": 0.02,
-           "S": 0.5
+           "8": 0.5,
+           "C": 0.02
          }
       }
       """
@@ -31,11 +31,11 @@ Feature: The user can define a data feed URL to automatically update his vote fr
       """
       {
          "custodians":[
-            {"address":"bPwdoprYd3SRHqUCG5vCcEY68g8UfGC1d9", "amount":100.00000000}
+            {"address":"cMJxKcoyfwD3jY8MhhstQmvmhf9oDka4ML", "amount":100.00000000}
          ],
          "parkrates":[
             {
-               "unit":"B",
+               "unit":"C",
                "rates":[
                   {"blocks":8192, "rate":0.00040000},
                   {"blocks":16384, "rate":0.00080000}
@@ -47,8 +47,8 @@ Feature: The user can define a data feed URL to automatically update his vote fr
             "1111111111111111111111111111111111111111"
          ],
          "fees": {
-           "B": 0.01,
-           "S": 2.0
+           "8": 2.0,
+           "C": 0.01
          }
       }
       """
@@ -89,7 +89,7 @@ Feature: The user can define a data feed URL to automatically update his vote fr
   Scenario: A data feed is set with signature and the client is restarted
     Given a network with node "Alice" able to mint
     And a node "Bob"
-    And node "Bob" generates a NSR address "bob"
+    And node "Bob" generates a BKS address "bob"
     And a data feed "Bob"
     And the data feed "Bob" returns sample vote "full"
     When node "Alice" sets her data feed to the URL of "Bob" with address "bob"
@@ -161,7 +161,7 @@ Feature: The user can define a data feed URL to automatically update his vote fr
   Scenario: An user sets a data feed with an address and gets a signed vote
     Given a network with node "Alice" able to mint
     And a node "Bob"
-    And node "Bob" generates a NSR address "bob"
+    And node "Bob" generates a BKS address "bob"
     And a data feed "Bob"
     And the data feed "Bob" returns sample vote "full"
     And the data feed "Bob" is signed by node "Bob" with address "bob"
@@ -171,7 +171,7 @@ Feature: The user can define a data feed URL to automatically update his vote fr
   Scenario: An user sets a data feed with an address and gets an unsigned vote
     Given a network with node "Alice" able to mint
     And a node "Bob"
-    And node "Bob" generates a NSR address "bob"
+    And node "Bob" generates a BKS address "bob"
     And a data feed "Bob"
     And the data feed "Bob" returns sample vote "full"
     When node "Alice" sets her data feed to the URL of "Bob" with address "bob"
@@ -180,8 +180,8 @@ Feature: The user can define a data feed URL to automatically update his vote fr
   Scenario: An user sets a data feed with an address and gets an incorrectly signed vote
     Given a network with node "Alice" able to mint
     And a node "Bob"
-    And node "Bob" generates a NSR address "bob"
-    And node "Bob" generates a NSR address "wrong"
+    And node "Bob" generates a BKS address "bob"
+    And node "Bob" generates a BKS address "wrong"
     And a data feed "Bob"
     And the data feed "Bob" returns sample vote "full"
     And the data feed "Bob" is signed by node "Bob" with address "wrong"

@@ -57,7 +57,7 @@ Feature: The top block is removed if a duplicate stake is received
     Then all nodes should be at block "X"
 
     When node "B" generates a new address "addr"
-    And node "C" sends "1000" shares to "addr" through transaction "tx"
+    And node "C" sends "1" shares to "addr" through transaction "tx"
     Then all nodes should have 1 transaction in memory pool
 
     When node "A" finds a block "Y"

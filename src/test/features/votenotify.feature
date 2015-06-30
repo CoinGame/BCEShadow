@@ -4,12 +4,12 @@ Feature: A command is called each time the vote changes. This can be used to upd
       """
       {
          "custodians":[
-            {"address":"bPwdoprYd3SRHqUCG5vCcEY68g8UfGC1d9", "amount":100.00000000},
-            {"address":"bxmgMJVaniUDbtiMVC7g5RuSy46LTVCLBT", "amount":5.50000000}
+            {"address":"cMJxKcoyfwD3jY8MhhstQmvmhf9oDka4ML", "amount":100.00000000},
+            {"address":"cL4NEzwHDyWYNVBAMNmE6PPKabjJN1jVqb", "amount":5.50000000}
          ],
          "parkrates":[
             {
-               "unit":"B",
+               "unit":"C",
                "rates":[
                   {"blocks":8192, "rate":0.00030000},
                   {"blocks":16384, "rate":0.00060000},
@@ -22,14 +22,14 @@ Feature: A command is called each time the vote changes. This can be used to upd
             "3f786850e387550fdab836ed7e6dc881de23001b"
          ],
          "fees": {
-            "B": 0.05
+            "C": 0.05
          }
       }
       """
 
   Scenario: Votenotify is used as data feed source
     Given a node "Alice" started with a votenotify script
-    And node "Alice" generates a NSR address "alice"
+    And node "Alice" generates a BKS address "alice"
     And the votenotify script of node "Alice" is written to dump the vote and sign it with address "alice"
     And a data feed "Alice"
     And a node "Bob"

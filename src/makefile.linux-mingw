@@ -76,7 +76,7 @@ OBJS= \
     obj/liquidityinfo.o \
     obj/datafeed.o
 
-all: nud.exe
+all: bcexchanged.exe
 
 obj/build.h: FORCE
 	/bin/sh ../share/genbuild.sh obj/build.h
@@ -86,7 +86,7 @@ DEFS += -DHAVE_BUILD_INFO
 obj/%.o: %.cpp $(HEADERS)
 	${HOST}-g++ -c $(CFLAGS) -o $@ $<
 
-nud.exe: $(OBJS:obj/%=obj/%)
+bcexchanged.exe: $(OBJS:obj/%=obj/%)
 	${HOST}-g++ $(CFLAGS) -o $@ $(LIBPATHS) $^ $(LIBS)
 
 TESTOBJS := $(patsubst test/%.cpp,obj-test/%.o,$(wildcard test/*.cpp))
@@ -94,15 +94,15 @@ TESTOBJS := $(patsubst test/%.cpp,obj-test/%.o,$(wildcard test/*.cpp))
 obj-test/%.o: test/%.cpp $(HEADERS)
 	${HOST}-g++ -c $(TESTDEFS) $(CFLAGS) -o $@ $<
 
-test_nu.exe: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
+test_bcexchange.exe: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
 	${HOST}-g++ $(CFLAGS) -o $@ $(LIBPATHS) $^ -lboost_unit_test_framework $(LIBS)
 
 
 clean:
 	-rm -f obj/*.o
-	-rm -f nud.exe
+	-rm -f bcexchanged.exe
 	-rm -f obj-test/*.o
-	-rm -f test_nu.exe
+	-rm -f test_bcexchange.exe
 	-rm -f src/build.h
 
 FORCE:

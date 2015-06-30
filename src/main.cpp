@@ -471,7 +471,7 @@ CTransaction::GetLegacySigOpCount() const
 
 void CTransaction::AddOutput(const CScript& script, int64 nAmount)
 {
-    if (cUnit == 'S' && nSplitShareOutputs > 0 && nAmount >= nSplitShareOutputs * 2)
+    if (cUnit == '8' && nSplitShareOutputs > 0 && nAmount >= nSplitShareOutputs * 2)
     {
         int64 nOutputs = nAmount / nSplitShareOutputs;
         int64 nRemainingAmount = nAmount;
@@ -493,7 +493,7 @@ void CTransaction::AddChange(int64 nChange, CScript& scriptChange, const CCoinCo
     // coin control: send change to custom address
     if (coinControl && !boost::get<CNoDestination>(&coinControl->destChange))
         scriptChange.SetDestination(coinControl->destChange);
-    else if (!GetBoolArg("-avatar", (cUnit == 'S'))) // ppcoin: not avatar mode; nu: avatar mode enabled by default only on Share wallet to avoid change being sent to hidden address
+    else if (!GetBoolArg("-avatar", (cUnit == '8'))) // ppcoin: not avatar mode; nu: avatar mode enabled by default only on Share wallet to avoid change being sent to hidden address
     {
         // send change to newly generated address
         //
@@ -512,7 +512,7 @@ void CTransaction::AddChange(int64 nChange, CScript& scriptChange, const CCoinCo
 
     // nu: split change if appropriate
     int64 nChangeOutputs;
-    if (cUnit == 'S' && nSplitShareOutputs > 0 && nChange >= nSplitShareOutputs * 2)
+    if (cUnit == '8' && nSplitShareOutputs > 0 && nChange >= nSplitShareOutputs * 2)
         nChangeOutputs = nChange / nSplitShareOutputs;
     else
         nChangeOutputs = 1;
@@ -602,7 +602,7 @@ bool CTransaction::CheckTransaction() const
         return DoS(100, error("CTransaction::CheckTransaction() : size limits failed"));
 
     // nuBits: CoinBase and CoinStake are only allowed on shares
-    if (cUnit != 'S' && (IsCoinBase() || IsCoinStake()))
+    if (cUnit != '8' && (IsCoinBase() || IsCoinStake()))
         return DoS(10, error("CTransaction::CheckTransaction() : invalid unit in CoinBase or CoinStake"));
 
     // Check for negative or overflow output values
@@ -664,7 +664,7 @@ bool CTransaction::CheckTransaction() const
         if (IsPark(txout.scriptPubKey))
         {
             // parking shares is not allowed
-            if (cUnit == 'S')
+            if (cUnit == '8')
                 return DoS(100, error("CTransaction::CheckTransaction() : parking of shares"));
 
             if (!IsValidPark(txout.scriptPubKey))
@@ -699,7 +699,7 @@ int64 CTransaction::GetSafeMinFee(const CBlockIndex *pindex, unsigned int nBytes
 
 int64 CTransaction::GetMinFee(int64 nBaseFee, unsigned int nBytes) const
 {
-    int64 nMinFee = (1 + (int64)nBytes / 1000) * nBaseFee;
+    int64 nMinFee = CalculateFee(nBytes, nBaseFee);
 
     if (!MoneyRange(nMinFee))
         nMinFee = MAX_MONEY;
@@ -1732,7 +1732,7 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
 
     // ppcoin: track money supply and mint amount info
     // nubit: per unit tracking
-    pindex->nMint = mapValueOut['S'] - mapValueIn['S'] + mapFees['S'];
+    pindex->nMint = mapValueOut['8'] - mapValueIn['8'] + mapFees['8'];
     BOOST_FOREACH(unsigned char cUnit, sAvailableUnits)
     {
         pindex->mapMoneySupply[cUnit] = (pindex->pprev? pindex->pprev->mapMoneySupply[cUnit] : 0) + mapValueOut[cUnit] - mapValueIn[cUnit];
@@ -1753,7 +1753,7 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
     // ppcoin: fees are not collected by miners as in bitcoin
     // ppcoin: fees are destroyed to compensate the entire network
     if (fDebug && GetBoolArg("-printcreation"))
-        printf("ConnectBlock() : destroy=%s nFees=%"PRI64d"\n", FormatMoney(mapFees['S']).c_str(), mapFees['S']);
+        printf("ConnectBlock() : destroy=%s nFees=%"PRI64d"\n", FormatMoney(mapFees['8']).c_str(), mapFees['8']);
 
     // Update block index on disk without changing it in memory.
     // The memory index structure will be changed after the db commits.
@@ -2008,7 +2008,7 @@ bool CBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
     bnBestChainTrust = pindexNew->bnChainTrust;
     nTimeBestReceived = GetTime();
     nTransactionsUpdated++;
-    printf("SetBestChain: new best=%s  height=%d  trust=%s  moneysupply(S)=%s moneysupply(B)=%s\n", hashBestChain.ToString().substr(0,20).c_str(), nBestHeight, bnBestChainTrust.ToString().c_str(), FormatMoney(pindexBest->GetMoneySupply('S')).c_str(), FormatMoney(pindexBest->GetMoneySupply('B')).c_str());
+    printf("SetBestChain: new best=%s  height=%d  trust=%s  moneysupply(S)=%s moneysupply(B)=%s\n", hashBestChain.ToString().substr(0,20).c_str(), nBestHeight, bnBestChainTrust.ToString().c_str(), FormatMoney(pindexBest->GetMoneySupply('8')).c_str(), FormatMoney(pindexBest->GetMoneySupply('C')).c_str());
 
     std::string strCmd = GetArg("-blocknotify", "");
 
@@ -2412,7 +2412,7 @@ bool CBlock::AcceptBlock()
             {
                 LOCK(cs_mapElectedCustodian);
 
-                if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, vExpectedCurrencyCoinBase))
+                if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, nHeight, vExpectedCurrencyCoinBase))
                     return error("AcceptBlock() : unable to generate currency coin bases");
             }
         }
@@ -2526,6 +2526,7 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
             mapProofOfStake.insert(make_pair(hash, hashProofOfStake));
     }
 
+#ifndef TESTING
     CBlockIndex* pcheckpoint = Checkpoints::GetLastSyncCheckpoint();
     if (pcheckpoint && pblock->hashPrevBlock != hashBestChain && !Checkpoints::WantedByPendingSyncCheckpoint(hash))
     {
@@ -2543,6 +2544,7 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
             return error("ProcessBlock() : block with too little %s", pblock->IsProofOfStake()? "proof-of-stake" : "proof-of-work");
         }
     }
+#endif
 
     // ppcoin: ask for pending sync-checkpoint if any
     if (!IsInitialBlockDownload())
@@ -2855,22 +2857,22 @@ bool LoadBlockIndex(bool fAllowNew)
         //   vMerkleTree: 4a5e1e
 
         // Genesis block
-        const char* pszTimestamp = "2014-08-01: Why Argentina's default feels like American bullying: Don Pittis";
-        unsigned int nTimeGenesis=1407023435;
-        unsigned int nNonceGenesis=1542387;
+        const char* pszTimestamp = "Bitcoin's block 360800 is 0000000000000000151b2741b37b9c1a9826947c49cb8afba5bb812d36ead66e";
+        unsigned int nTimeGenesis=1434280000;
+        unsigned int nNonceGenesis=0;
 
         if (fTestNet)
         {
-            pszTimestamp="August 02, 2014 Value Walk - Tesla Motors To Deliver Over 100,000 Cars A Year By 2015";
-            nTimeGenesis=1407023435;
-            nNonceGenesis=412602;
+            pszTimestamp="Bitcoin's block 360799 is 0000000000000000144552f74809400fff4341972f170b95a125eddf3b342fbc";
+            nTimeGenesis=1434279999;
+            nNonceGenesis=1455744;
         }
 
         CTransaction txNew;
         txNew.nTime = nTimeGenesis;
         txNew.vin.resize(1);
         txNew.vout.resize(1);
-        txNew.cUnit = 'S';
+        txNew.cUnit = '8';
         txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(9999) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
         txNew.vout[0].SetEmpty();
         CBlock block;
@@ -2895,21 +2897,21 @@ bool LoadBlockIndex(bool fAllowNew)
             block.nNonce++;
         }
      
-        printf("Nu Genesis Block Found:\n");
+        printf("BCExchange Genesis Block Found:\n");
         printf("genesis hash=%s\n", block.GetHash().ToString().c_str());
         printf("merkle root=%s\n", block.hashMerkleRoot.ToString().c_str());
         block.print();
      
-        printf("End Nu Genesis Block\n");
+        printf("End BCExchange Genesis Block\n");
 
         //// debug print
         printf("%s\n", block.GetHash().ToString().c_str());
         printf("%s\n", hashGenesisBlock.ToString().c_str());
         printf("%s\n", block.hashMerkleRoot.ToString().c_str());
         if (!fTestNet)
-            assert(block.hashMerkleRoot == uint256("0x3e6c2608685f1d66d8fe9cb798400ec16aec1574b7ad9a7a92a65c7fcea2d32a"));
+            assert(block.hashMerkleRoot == uint256("0x389f2ddc2f8cee3dd94b5f9418a3bb38bfabda310771f25f1b8d8e15cce7ebe4"));
         else
-            assert(block.hashMerkleRoot == uint256("0xd044ad667adb2ec5073dc2f033f8ed9458f92515eb13310fb1fccfb4242cf31d"));
+            assert(block.hashMerkleRoot == uint256("0x8be28677dacf29e408de840ab74324d2c28ee0d0b9af935b882f2e1baaa174d2"));
 
         block.print();
         assert(block.GetHash() == hashGenesisBlock);
@@ -4321,7 +4323,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey, CWallet* pwallet, bool fProofOfS
         {
             LOCK(cs_mapElectedCustodian);
 
-            if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, vCurrencyCoinBase))
+            if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, pindexPrev->nHeight + 1, vCurrencyCoinBase))
             {
                 printf("CreateNewBlock(): unable to generate currency coin bases");
                 return NULL;
@@ -4942,4 +4944,17 @@ int64 CBlockIndex::GetSafeMinFee(unsigned char cUnit) const
             nMaxMinFee = nBlockMinFee;
     }
     return nMaxMinFee;
+}
+
+int64 CalculateFee(int nSize, int64 nPerKiloByteFee)
+{
+    int64 nFee;
+
+    nFee = nSize * nPerKiloByteFee;
+    if (nFee % 1000 != 0)
+        nFee = nFee / 1000 + 1;
+    else
+        nFee = nFee / 1000;
+
+    return nFee;
 }

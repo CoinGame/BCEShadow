@@ -2,9 +2,9 @@ Feature: getrawtransaction returns data about known transactions
 
   Scenario: getrawtransaction on a normal block
     Given a network with nodes "Alice" and "Bob" able to mint
-    And node "Bob" generates a NSR address "bob"
+    And node "Bob" generates a BKS address "bob"
     When node "Alice" finds a block "A"
-    And node "Alice" sends "1000" NSR to "bob"
+    And node "Alice" sends "1" BKS to "bob"
     And node "Alice" finds a block "B"
     And the 1st transaction of block "B" on node "Alice" is named "coinbase"
     And the 2nd transaction of block "B" on node "Alice" is named "coinstake"
@@ -16,10 +16,10 @@ Feature: getrawtransaction returns data about known transactions
 
   Scenario: getrawtransaction on orphaned block transactions
     Given a network with nodes "Alice", "Bob" and "Charlie" able to mint
-    And node "Bob" generates a NSR address "bob"
+    And node "Bob" generates a BKS address "bob"
     When node "Alice" finds a block "A"
     And all nodes reach block "A"
-    And node "Alice" sends "1000" NSR to "bob"
+    And node "Alice" sends "1" BKS to "bob"
     And node "Alice" finds a block "B" not received by node "Bob"
     And the 1st transaction of block "B" on node "Alice" is named "orphaned coinbase"
     And the 2nd transaction of block "B" on node "Alice" is named "orphaned coinstake"

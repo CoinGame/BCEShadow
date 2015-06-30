@@ -1,12 +1,12 @@
-Nu 2.0.0 BETA
-Copyright (c) 2014 Nu Developers
+BCExchange 2.0.0 BETA
+Copyright (c) 2014 BCExchange Developers
 
 ## End-User License Agreement
 
-This agreement is between you (either an individual or a single entity) and the Nu developers. By installing, copy, or otherwise using the Nu software ("NU"), you agree to be bound by the terms of this EULA. If you do not agree to the terms of this EULA, do not install or use the product.
+This agreement is between you (either an individual or a single entity) and the BCExchange developers. By installing, copy, or otherwise using the BCExchange software ("NU"), you agree to be bound by the terms of this EULA. If you do not agree to the terms of this EULA, do not install or use the product.
 
 ### PRODUCT LICENSE
-Nu is being distributed as Freeware for personal, commercial use, non-profit organization, educational purpose. It may be distributed freely on any website or through any other distribution mechanism, as long as no part of it is changed in any way.
+BCExchange is being distributed as Freeware for personal, commercial use, non-profit organization, educational purpose. It may be distributed freely on any website or through any other distribution mechanism, as long as no part of it is changed in any way.
 
 This EULA grants you the following rights: 
 
@@ -26,32 +26,32 @@ NO LIABILITY FOR DAMAGES. In no event shall the authors of this Software be liab
 
 # Setup
 -----
-After completing windows setup then run Nu.
-Alternatively you can run windows command line (cmd) in nu program dir.
+After completing windows setup then run BCExchange.
+Alternatively you can run windows command line (cmd) in bcexchange program dir.
   cd daemon
-  nud
-You would need to create a configuration file nu.conf in the default
-wallet directory. Grant access to nud/nu in anti-virus and firewall
+  bcexchanged
+You would need to create a configuration file bcexchange.conf in the default
+wallet directory. Grant access to bcexchanged/bcexchange in anti-virus and firewall
 applications if necessary.
 
 The software automatically finds other nodes to connect to.  You can
 enable Universal Plug and Play (UPnP) with your router/firewall
 or forward port 7890 (TCP) to your computer so you can receive
-incoming connections.  Nu works without incoming connections,
-but allowing incoming connections helps the Nu network.
+incoming connections.  BCExchange works without incoming connections,
+but allowing incoming connections helps the BCExchange network.
 
 
 Upgrade
 -------
 All your existing coins/transactions should be intact with the upgrade.
 To upgrade, first backup wallet:
-  nud backupwallet <destination_backup_file>
+  bcexchanged backupwallet <destination_backup_file>
 Then shutdown the daemon with:
-  nud stop
-Remove files inside wallet directory other than wallet.dat and nu.conf
+  bcexchanged stop
+Remove files inside wallet directory other than wallet.dat and bcexchange.conf
 Start up the new client. It would start re-download of block chain.
 
 
-See the documentation/wiki at the Nu website:
-  http://www.nubits.com
+See the documentation/wiki at the BCExchange website:
+  http://FIXME
 for help and more information.

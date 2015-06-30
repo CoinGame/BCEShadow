@@ -196,9 +196,9 @@ int main(int argc, char *argv[])
     app.setOrganizationName("Nu");
     app.setOrganizationDomain("NuBits.com");
     if(GetBoolArg("-testnet")) // Separate UI settings for testnet
-        app.setApplicationName("Nu-Qt-testnet");
+        app.setApplicationName("BCExchange-Qt-testnet");
     else
-        app.setApplicationName("Nu-Qt");
+        app.setApplicationName("BCExchange-Qt");
 
     // ... then GUI settings:
     OptionsModel optionsModel;
@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
                     splash.finish(&window);
 
                 ClientModel clientModel(&optionsModel);
-                WalletModel *walletModel = new WalletModel(GetWallet('B'), &optionsModel);
+                WalletModel *walletModel = new WalletModel(GetWallet('C'), &optionsModel);
 
                 window.setClientModel(&clientModel);
                 window.setWalletModel(walletModel);

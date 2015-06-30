@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(multisig_Solver1)
     CBasicKeyStore keystore, emptykeystore, partialkeystore;
     CKey key[3];
     CTxDestination keyaddr[3];
-    keystore.SetUnit('S');
+    keystore.SetUnit('8');
     for (int i = 0; i < 3; i++)
     {
         key[i].MakeNewKey(true);

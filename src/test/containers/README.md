@@ -40,7 +40,7 @@ You can use src/test/containers/show_log to display the log of the last containe
 
 When you're done working, you should remove all containers with:
 
-    src/test/containers/remove_nu_containers
+    src/test/containers/remove_bcexchange_containers
 
 It will also clean the shared temporary directories in `src/test/containers/tmp`.
 
@@ -56,7 +56,7 @@ Build and strip it:
 
     src/test/containers/make clean
     src/test/containers/make -j4 DEBUGFLAGS=
-    strip src/nud
+    strip src/bcexchanged
 
 Put the binary on a public URL.
 

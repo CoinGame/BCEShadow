@@ -38,8 +38,8 @@ static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
 static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
 static const unsigned int MAX_COINSTAKE_SIZE = 1000; // nubit: maximum size of CoinStake transactions
-static const int64 MIN_SHARE_TX_FEE = COIN;
-static const int64 MIN_SHARE_TXOUT_AMOUNT = MIN_SHARE_TX_FEE;
+static const int64 MIN_SHARE_TX_FEE = CENT;
+static const int64 MIN_SHARE_TXOUT_AMOUNT = 1;
 static const int64 MIN_CURRENCY_TX_FEE = CENT;
 static const int64 MIN_CURRENCY_TXOUT_AMOUNT = MIN_CURRENCY_TX_FEE;
 static const int64 MAX_MONEY = 2000000000 * COIN;
@@ -51,7 +51,7 @@ static const int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 static const int STAKE_TARGET_SPACING = 60 * 1; // 60 second block spacing for Nubit
 static const int STAKE_MIN_AGE = 60 * 60 * 24 * 7; // changed to 7 days so only one vote in 10000 block voting period can be made
 static const int STAKE_MAX_AGE = STAKE_MIN_AGE + 1; // changed to same as minimum to incentivize minting as soon as possible
-static const int64 IPO_SHARES = 1000000000 * COIN; // Total number of shares to create using proof of work (intented for IPO)
+static const int64 IPO_SHARES = 210000 * COIN; // Total number of shares to create using proof of work (intented for IPO)
 static const int64 PROOF_OF_WORK_BLOCKS = 400; // Block height of the last proof of work block
 #ifdef TESTING
 static const int64 PARK_RATE_VOTES = 5; // Number of blocks used in park rate median vote calculation
@@ -65,8 +65,8 @@ static const unsigned int CUSTODIAN_VOTES = 10000;
 static const int PARK_RATE_VOTE_DELAY = 60;
 #endif
 static const int64 MOTION_VOTES = 10000;
-static const int64 PROOF_OF_STAKE_REWARD = 40 * COIN; // Constant reward of Proof of Stake blocks
-static const int64 MIN_COINSTAKE_VALUE = 10000 * COIN; // Minimum value allowed as input in a CoinStake
+static const int64 PROOF_OF_STAKE_REWARD = CENT; // Constant reward of Proof of Stake blocks
+static const int64 MIN_COINSTAKE_VALUE = COIN; // Minimum value allowed as input in a CoinStake
 static const int64 MAX_COIN_AGE = 100000000000000; // To make sure coin days can be added about 10,000 times without overflow
 
 #ifdef TESTING
@@ -86,14 +86,14 @@ static const int fHaveUPnP = true;
 static const int fHaveUPnP = false;
 #endif
 
-static const uint256 hashGenesisBlockOfficial("000003cc2da5a0a289ad0a590c20a8b975219ddc1204efd169e947dd4cbad73f");
-static const uint256 hashGenesisBlockTestNet("000005fa4ce5f6fefe0d7faee4708051527a35f6c918a03d8fdf077ac4845933");
+static const uint256 hashGenesisBlockOfficial("00000121fe0997cac2f6f1e326e2cb18afea06a4f387edb7168a17a7c6af47c5");
+static const uint256 hashGenesisBlockTestNet("000009dedd6681804314c35707810c3e6e59b73c6db85908df128348059e796e");
 
 static const int64 nMaxClockDrift = 2 * 60 * 60;        // two hours
 
 extern CScript COINBASE_FLAGS;
 
-static const std::string sAvailableUnits("SB");
+static const std::string sAvailableUnits("8C");
 
 inline bool IsValidUnit(unsigned char cUnit)
 {
@@ -102,15 +102,15 @@ inline bool IsValidUnit(unsigned char cUnit)
 
 inline bool IsValidCurrency(unsigned char cUnit)
 {
-    return (cUnit != 'S' && IsValidUnit(cUnit));
+    return (cUnit != '8' && IsValidUnit(cUnit));
 }
 
 inline int64 GetDefaultFee(unsigned char cUnit)
 {
     switch (cUnit)
     {
-        case 'S': return COIN;
-        case 'B': return CENT;
+        case '8': return CENT;
+        case 'C': return COIN;
         default: return MAX_MONEY;
     }
 }
@@ -194,6 +194,7 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake);
 #endif
 bool GetTransaction(const uint256 &hash, CTransaction &tx, uint256 &hashBlock);
 bool IsNuProtocolV05(int64 nTimeBlock);
+int64 CalculateFee(int nSize, int64 nPerKiloByteFee);
 
 
 inline int GetMaturity(bool fProofOfStake)
@@ -203,7 +204,7 @@ inline int GetMaturity(bool fProofOfStake)
 
 inline int64 MinTxOutAmount(unsigned char cUnit)
 {
-    return cUnit == 'S' ? MIN_SHARE_TXOUT_AMOUNT : MIN_CURRENCY_TXOUT_AMOUNT;
+    return cUnit == '8' ? MIN_SHARE_TXOUT_AMOUNT : MIN_CURRENCY_TXOUT_AMOUNT;
 }
 
 
@@ -609,18 +610,18 @@ public:
 
     bool IsCoinBase() const
     {
-        return (cUnit == 'S' && vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
+        return (cUnit == '8' && vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
     }
 
     bool IsCoinStake() const
     {
         // ppcoin: the coin stake transaction is marked with the first output empty
-        return (cUnit == 'S' && vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
+        return (cUnit == '8' && vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
     }
 
     bool IsCustodianGrant() const
     {
-        if (cUnit == 'S')
+        if (cUnit == '8')
             return (vin.size() == 1 && vin[0].prevout.hash == 0 && vin[0].prevout.n == -2 && vout.size() >= 1);
         else
             return (IsValidCurrency(cUnit) && vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
@@ -713,11 +714,14 @@ public:
         return MinTxOutAmount(cUnit);
     }
 
-    int64 GetMinFee(int64 nBaseFee, unsigned int nBytes=0) const;
+    int64 GetMinFee(int64 nBaseFee, unsigned int nBytes) const;
+    int64 GetMinFee(int64 nBaseFee) const { return GetMinFee(nBaseFee, ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION)); }
     // nubit: Returns the minimum fee required for this transaction in this block
-    int64 GetMinFee(const CBlockIndex *pindex, unsigned int nBytes=0) const;
+    int64 GetMinFee(const CBlockIndex *pindex, unsigned int nBytes) const;
+    int64 GetMinFee(const CBlockIndex *pindex) const { return GetMinFee(pindex, ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION)); }
     // nubit: Returns the minimum fee that's safe to use in the next few blocks after pindex
-    int64 GetSafeMinFee(const CBlockIndex *pindex, unsigned int nBytes=0) const;
+    int64 GetSafeMinFee(const CBlockIndex *pindex, unsigned int nBytes) const;
+    int64 GetSafeMinFee(const CBlockIndex *pindex) const { return GetSafeMinFee(pindex, ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION)); }
 
     bool ReadFromDisk(CDiskTxPos pos, FILE** pfileRet=NULL)
     {
@@ -1559,8 +1563,8 @@ public:
         return strprintf("CBlockIndex(nprev=%08x, pnext=%08x, nFile=%d, nBlockPos=%-6d nHeight=%d, nMint=%s, nMoneySupply(S)=%s, nMoneySupply(B)=%s, nFlags=(%s)(%d)(%s), nStakeModifier=%016"PRI64x", nStakeModifierChecksum=%08x, hashProofOfStake=%s, prevoutStake=(%s), nStakeTime=%d merkle=%s, hashBlock=%s)",
             pprev, pnext, nFile, nBlockPos, nHeight,
             FormatMoney(nMint).c_str(),
-            FormatMoney(GetMoneySupply('S')).c_str(),
-            FormatMoney(GetMoneySupply('B')).c_str(),
+            FormatMoney(GetMoneySupply('8')).c_str(),
+            FormatMoney(GetMoneySupply('C')).c_str(),
             GeneratedStakeModifier() ? "MOD" : "-", GetStakeEntropyBit(), IsProofOfStake()? "PoS" : "PoW",
             nStakeModifier, nStakeModifierChecksum, 
             hashProofOfStake.ToString().c_str(),

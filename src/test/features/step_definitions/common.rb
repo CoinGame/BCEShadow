@@ -9,7 +9,7 @@ Before do
   @raw_tx_complete = {}
   @pubkeys = {}
   @unit = {}
-  @time = Time.utc(2014, 9, 1, 0, 0, 0)
+  @time = Time.utc(2015, 7, 1, 12, 0, 0)
 end
 
 def timeshift
@@ -37,7 +37,7 @@ Given(/^a network with nodes? (.+)(?: able to mint)?$/) do |node_names|
   node_names.each_with_index do |name, i|
     options = {
       name: name,
-      image: "nunet/#{available_nodes[i]}",
+      image: "bcenet/#{available_nodes[i]}",
       links: @nodes.values.map(&:name),
       args: {
         debug: true,
@@ -67,7 +67,7 @@ Given(/^a node "(.*?)" with an empty wallet$/) do |arg1|
   name = arg1
   options = {
     name: name,
-    image: "nunet/empty",
+    image: "bcenet/empty",
     links: @nodes.values.map(&:name),
     args: {
       debug: true,
@@ -83,7 +83,7 @@ Given(/^a node "(.*?)" connected only to node "(.*?)"$/) do |arg1, arg2|
   other_node = @nodes[arg2]
   name = arg1
   options = {
-    image: "nunet/a",
+    image: "bcenet/a",
     links: [other_node.name],
     link_with_connect: true,
     args: {
@@ -105,7 +105,7 @@ Given(/^a node "(.*?)" with an empty wallet and with avatar mode disabled$/) do 
   name = arg1
   options = {
     name: name,
-    image: "nunet/empty",
+    image: "bcenet/empty",
     links: @nodes.values.map(&:name),
     link_with_connect: true,
     args: {
@@ -123,7 +123,7 @@ Given(/^a node "(.*?)" running version "(.*?)"$/) do |arg1, arg2|
   name = arg1
   options = {
     name: name,
-    image: "nunet/#{arg2}",
+    image: "bcenet/#{arg2}",
     bind_code: false,
     links: @nodes.values.map(&:name),
     args: {
@@ -146,7 +146,7 @@ Given(/^a node "(.*?)" running version "(.*?)" and able to mint$/) do |arg1, arg
   name = arg1
   options = {
     name: name,
-    image: "nunet/#{arg2}",
+    image: "bcenet/#{arg2}",
     bind_code: false,
     links: @nodes.values.map(&:name),
     args: {
@@ -168,7 +168,7 @@ Given(/^a node "(.*?)" only connected to node "(.*?)"$/) do |arg1, arg2|
   name = arg1
   options = {
     name: name,
-    image: "nunet/empty",
+    image: "bcenet/empty",
     links: [@nodes[arg2]].map(&:name),
     link_method: "connect",
     args: {
@@ -292,12 +292,12 @@ When(/^node "(.*?)" votes an amount of "(.*?)" for custodian "(.*?)"$/) do |arg1
   expect(result).to eq(vote)
 end
 
-When(/^node "(.*?)" votes a park rate of "(.*?)" NuBits per Nubit parked during (\d+) blocks$/) do |arg1, arg2, arg3|
+When(/^node "(.*?)" votes a park rate of "(.*?)" BlockCredits per Nubit parked during (\d+) blocks$/) do |arg1, arg2, arg3|
   node = @nodes[arg1]
   vote = node.rpc("getvote")
   vote["parkrates"] = [
     {
-      "unit" => "B",
+      "unit" => 'C',
       "rates" => [
         {
           "blocks" => arg3.to_i,
@@ -326,13 +326,13 @@ When(/^node "(.*?)" finds blocks until custodian "(.*?)" is elected$/) do |arg1,
   end
 end
 
-When(/^node "(.*?)" finds blocks until the NuBit park rate for (\d+) blocks is "(.*?)"$/) do |arg1, arg2, arg3|
+When(/^node "(.*?)" finds blocks until the BlockCredit park rate for (\d+) blocks is "(.*?)"$/) do |arg1, arg2, arg3|
   node = @nodes[arg1]
   wait_for do
     block = node.generate_stake
     time_travel(60)
     info = node.rpc("getblock", block)
-    park_rates = info["parkrates"].detect { |r| r["unit"] == "B" }
+    park_rates = info["parkrates"].detect { |r| r["unit"] == 'C' }
     expect(park_rates).not_to be_nil
     rates = park_rates["rates"]
     rate = rates.detect { |r| r["blocks"] == arg2.to_i }
@@ -404,7 +404,7 @@ def debug_balance(node, unit_name)
   )
 end
 
-Then(/^node "(.*?)" (?:should reach|reaches) a balance of "([^"]*?)"( NuBits| NuShares| NSR| NBT|)$/) do |arg1, arg2, unit_name|
+Then(/^node "(.*?)" (?:should reach|reaches) a balance of "([^"]*?)"( BlockCredits| BlockShares| BKS| BKC|)$/) do |arg1, arg2, unit_name|
   node = @nodes[arg1]
   amount = parse_number(arg2)
   begin
@@ -418,7 +418,7 @@ Then(/^node "(.*?)" (?:should reach|reaches) a balance of "([^"]*?)"( NuBits| Nu
   end
 end
 
-Then(/^node "(.*?)" should have a balance of "([^"]*?)"( NuBits| NuShares| NSR| NBT|)$/) do |arg1, arg2, unit_name|
+Then(/^node "(.*?)" should have a balance of "([^"]*?)"( BlockCredits| BlockShares| BKS| BKC|)$/) do |arg1, arg2, unit_name|
   node = @nodes[arg1]
   amount = parse_number(arg2)
   begin
@@ -432,7 +432,7 @@ Then(/^node "(.*?)" should have a balance of "([^"]*?)"( NuBits| NuShares| NSR| 
   end
 end
 
-Then(/^node "(.*?)" should reach an unconfirmed balance of "([^"]*?)"( NuBits|)$/) do |arg1, arg2, unit_name|
+Then(/^node "(.*?)" should reach an unconfirmed balance of "([^"]*?)"( BlockCredits|)$/) do |arg1, arg2, unit_name|
   node = @nodes[arg1]
   amount = parse_number(arg2)
   wait_for do
@@ -440,13 +440,13 @@ Then(/^node "(.*?)" should reach an unconfirmed balance of "([^"]*?)"( NuBits|)$
   end
 end
 
-Then(/^node "(.*?)" should have an unconfirmed balance of "([^"]*?)"( NuBits|)$/) do |arg1, arg2, unit_name|
+Then(/^node "(.*?)" should have an unconfirmed balance of "([^"]*?)"( BlockCredits|)$/) do |arg1, arg2, unit_name|
   node = @nodes[arg1]
   amount = parse_number(arg2)
   expect(node.unit_rpc(unit(unit_name), "getbalance", "*", 0)).to eq(amount)
 end
 
-Then(/^node "(.*?)" should reach a balance of "([^"]*?)"( NuBits|) on account "([^"]*?)"$/) do |arg1, arg2, unit_name, account|
+Then(/^node "(.*?)" should reach a balance of "([^"]*?)"( BlockCredits|) on account "([^"]*?)"$/) do |arg1, arg2, unit_name, account|
   node = @nodes[arg1]
   amount = parse_number(arg2)
   wait_for do
@@ -455,7 +455,7 @@ Then(/^node "(.*?)" should reach a balance of "([^"]*?)"( NuBits|) on account "(
 end
 
 Given(/^node "(.*?)" generates an? (\w+) address "(.*?)"$/) do |arg1, unit_name, arg2|
-  unit_name = "NuShares" if unit_name == "new"
+  unit_name = "BlockShares" if unit_name == "new"
   @addresses[arg2] = @nodes[arg1].unit_rpc(unit(unit_name), "getnewaddress")
   @unit[@addresses[arg2]] = unit(unit_name)
 end
@@ -483,7 +483,7 @@ Then(/^node "(.*?)" (?:should have|should reach|reaches) (\d+) transactions? in 
   end
 end
 
-Then(/^the NuBit balance of node "(.*?)" should reach "(.*?)"$/) do |arg1, arg2|
+Then(/^the BlockCredit balance of node "(.*?)" should reach "(.*?)"$/) do |arg1, arg2|
   wait_for do
     expect(@nodes[arg1].unit_rpc('B', 'getbalance')).to eq(parse_number(arg2))
   end
@@ -501,7 +501,7 @@ When(/^node "(.*?)" finds enough blocks to mature a Proof of Stake block$/) do |
   end
 end
 
-When(/^node "(.*?)" parks "(.*?)" NuBits (?:for|during) (\d+) blocks$/) do |arg1, arg2, arg3|
+When(/^node "(.*?)" parks "(.*?)" BlockCredits (?:for|during) (\d+) blocks$/) do |arg1, arg2, arg3|
   time_travel(5)
   node = @nodes[arg1]
   amount = parse_number(arg2)
@@ -510,7 +510,7 @@ When(/^node "(.*?)" parks "(.*?)" NuBits (?:for|during) (\d+) blocks$/) do |arg1
   node.unit_rpc('B', 'park', amount, blocks)
 end
 
-When(/^node "(.*?)" parks "(.*?)" NuBits (?:for|during) (\d+) blocks with "(.*?)" as unpark address$/) do |arg1, arg2, arg3, arg4|
+When(/^node "(.*?)" parks "(.*?)" BlockCredits (?:for|during) (\d+) blocks with "(.*?)" as unpark address$/) do |arg1, arg2, arg3, arg4|
   time_travel(5)
   node = @nodes[arg1]
   amount = parse_number(arg2)
@@ -535,10 +535,10 @@ When(/^node "(.*?)" unparks to transaction "(.*?)"$/) do |arg1, arg2|
   @tx[arg2] = txs.first
 end
 
-Then(/^(?:node |)"(.*?)" should have "(.*?)" NuBits parked$/) do |arg1, arg2|
+Then(/^(?:node |)"(.*?)" should have "(.*?)" BlockCredits parked$/) do |arg1, arg2|
   node = @nodes[arg1]
   amount = parse_number(arg2)
-  info = node.unit_rpc("B", "getinfo")
+  info = node.unit_rpc('C', "getinfo")
   wait_for do
     expect(info["parked"]).to eq(amount)
   end
@@ -618,7 +618,7 @@ end
 Then(/^the (\d+)st transaction should be the initial distribution of shares$/) do |arg1|
   tx = @listtransactions[arg1.to_i - 1]
   expect(tx["category"]).to eq("receive")
-  expect(tx["amount"]).to eq(parse_number("10,000,000"))
+  expect(tx["amount"]).to eq(parse_number("2,500"))
 end
 
 Then(/^block "(.*?)" should contain transaction "(.*?)"$/) do |arg1, arg2|
@@ -665,7 +665,7 @@ Given(/^node "(.*?)" grants (?:her|him)self "(.*?)" (\w+)$/) do |arg1, arg2, uni
   step "node \"#{arg1}\" finds blocks until custodian \"#{address_name}\" is elected"
 end
 
-Given(/^node "(.*?)" finds blocks until just received NSR are able to mint$/) do |arg1|
+Given(/^node "(.*?)" finds blocks until just received BKS are able to mint$/) do |arg1|
   node = @nodes[arg1]
   5.times do
     node.rpc("generatestake")
@@ -709,20 +709,8 @@ Given(/^the network is at protocol (.*?)$/) do |arg1|
   node_name = @nodes.keys.first
   node = @nodes[node_name]
   case arg1
-  when "0.5"
-    if node.info["timestamp"] < 1414195200
-      step %Q(the nodes travel to the Nu protocol v05 switch time)
-      step %Q(node "#{node_name}" finds 1 blocks received by all nodes)
-    end
   when "2.0"
-    if node.info["protocolversion"] < PROTOCOL_V2_0
-      step %Q(the network is at protocol 0.5)
-      step %Q(node "#{node_name}" finds 9 blocks received by all nodes)
-      step %Q(node "#{node_name}" should use protocol 50000)
-      step %Q(the nodes travel to the Nu protocol v20 switch time)
-      step %Q(node "#{node_name}" finds 2 blocks received by all nodes)
-      step %Q(node "#{node_name}" should use protocol #{PROTOCOL_V2_0})
-    end
+    # bcexchange starts at protocol 2.0
   else
     raise "unknown protocol: #{arg1.inspect}"
   end

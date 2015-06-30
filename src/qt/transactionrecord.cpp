@@ -42,7 +42,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
     int64 nNet = nCredit - nDebit;
     uint256 hash = wtx.GetHash();
     std::map<std::string, std::string> mapValue = wtx.mapValue;
-    const bool combineOutputs = (wtx.cUnit == 'S');
+    const bool combineOutputs = (wtx.cUnit == '8');
 
     if (showTransaction(wtx))
     {

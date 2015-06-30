@@ -552,7 +552,7 @@ bool CWallet::IsChange(const CTxOut& txout, const CTransaction& tx) const
             return true;
 
         // nubit: if the output address is the same as any input address, it is change (happens when avatar mode is enabled)
-        if (GetBoolArg("-avatar", (cUnit == 'S')))
+        if (GetBoolArg("-avatar", (cUnit == '8')))
         {
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
             {
@@ -628,7 +628,7 @@ void CWalletTx::GetAmounts(int64& nGeneratedImmature, int64& nGeneratedMature, l
     listReceived.clear();
     listSent.clear();
     strSentAccount = strFromAccount;
-    const bool fCombine = (cUnit == 'S');
+    const bool fCombine = (cUnit == '8');
     map<CTxDestination, int64> mapReceived;
     map<CTxDestination, int64> mapSent;
 
@@ -967,7 +967,7 @@ void CWallet::ResendWalletTransactions()
 
 void CWallet::CheckUnparkableOutputs()
 {
-    if (cUnit == 'S')
+    if (cUnit == '8')
         return;
 
     // Do this infrequently and randomly to avoid giving away
@@ -1952,7 +1952,7 @@ string CWallet::SendMoneyToDestination(const CTxDestination& address, int64 nVal
 
 std::string CWallet::Park(int64 nValue, int64 nDuration, const CBitcoinAddress& unparkAddress, CWalletTx& wtxNew, bool fAskFee)
 {
-    if (cUnit == 'S')
+    if (cUnit == '8')
         return _("Cannot park shares");
 
     if (!ParkDurationRange(nDuration))
@@ -2415,7 +2415,7 @@ void CWallet::GetAllReserveKeys(set<CKeyID>& setAddress)
 
 void CWallet::ExportPeercoinKeys(int &nExportedCount, int &nErrorCount)
 {
-    if (cUnit != 'S')
+    if (cUnit != '8')
         throw runtime_error("Currency wallets will not receive dividends. Refusing to export keys to Peercoin.");
 
     nExportedCount = 0;
@@ -2467,7 +2467,7 @@ void CWallet::ExportPeercoinKeys(int &nExportedCount, int &nErrorCount)
             json_spirit::Array params;
             params.push_back(json_spirit::Value(nRequired));
             params.push_back(vPeercoinAddressStrings);
-            params.push_back("NuShares");
+            params.push_back("BlockShares");
 
             try
             {
@@ -2499,7 +2499,7 @@ void CWallet::ExportPeercoinKeys(int &nExportedCount, int &nErrorCount)
 
             json_spirit::Array params;
             params.push_back(CPeercoinSecret(vchSecret, fCompressed).ToString());
-            params.push_back("NuShares");
+            params.push_back("BlockShares");
             try
             {
                 string result = CallPeercoinRPC("importprivkey", params);

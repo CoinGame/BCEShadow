@@ -1070,13 +1070,7 @@ void ThreadDNSAddressSeed2(void* parg)
 // Physical IP seeds: 32-bit IPv4 addresses: e.g. 178.33.22.32 = 0x201621b2
 unsigned int pnSeed[] =
 {
-    0x4bc734c6,
-    0x2ec734c6,
-    0x2bd0f2a2,
-    0x92c8edc0,
-    0x781381d4,
-    0x7f60c780,
-    0x5edfe2bc,
+    0xb40f043e,
 };
 
 void DumpAddresses()
@@ -1672,7 +1666,7 @@ void StartNode(void* parg)
         printf("Error; CreateThread(ThreadDumpAddress) failed\n");
 
     // Generate coins in the background
-    GenerateBitcoins(GetBoolArg("-gen", false), GetWallet('S'));
+    GenerateBitcoins(GetBoolArg("-gen", false), GetWallet('8'));
 
     StartUpdateFromDataFeed();
 
@@ -1681,7 +1675,7 @@ void StartNode(void* parg)
     if (!GetBoolArg("-stakegen", true))
         return;
 #endif
-    if (!CreateThread(ThreadStakeMinter, GetWallet('S')))
+    if (!CreateThread(ThreadStakeMinter, GetWallet('8')))
         printf("Error: CreateThread(ThreadStakeMinter) failed\n");
 }
 

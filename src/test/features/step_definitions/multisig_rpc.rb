@@ -28,18 +28,18 @@ When(/^node "(.*?)" adds a multisig address "(.*?)" requiring (\d+) keys? from t
   @addresses[address_name] = result
 end
 
-When(/^node "(.*?)" adds a NuBit multisig address "(.*?)" requiring (\d+) keys? from the public keys (.*?)$/) do |arg1, arg2, arg3, arg4|
+When(/^node "(.*?)" adds a BlockCredit multisig address "(.*?)" requiring (\d+) keys? from the public keys (.*?)$/) do |arg1, arg2, arg3, arg4|
   node = @nodes[arg1]
   address_name = arg2
   required = arg3.to_i
   addresses = arg4.scan(/"(.*?)"/).map(&:first).map { |name| @addresses[name] }
   pubkeys = addresses.map { |address| @pubkeys[address] }
 
-  result = node.unit_rpc('B', "addmultisigaddress", required, pubkeys)
+  result = node.unit_rpc('C', "addmultisigaddress", required, pubkeys)
   @addresses[address_name] = result
 end
 
-When(/^node "(.*?)" generates a raw (NuBit |)transaction "(.*?)" to send the amount sent to address "(.*?)" in transaction "(.*?)" to:$/) do |arg1, unit_name, arg2, arg3, arg4, table|
+When(/^node "(.*?)" generates a raw (BlockCredit |)transaction "(.*?)" to send the amount sent to address "(.*?)" in transaction "(.*?)" to:$/) do |arg1, unit_name, arg2, arg3, arg4, table|
   node = @nodes[arg1]
   raw_transaction_name = arg2
   address = @addresses[arg3]
@@ -66,7 +66,7 @@ When(/^node "(.*?)" generates a raw (NuBit |)transaction "(.*?)" to send the amo
   @raw_tx[raw_transaction_name] = result
 end
 
-When(/^node "(.*?)" signs the raw (NuBit |)transaction "(.*?)"$/) do |arg1, unit_name, arg2|
+When(/^node "(.*?)" signs the raw (BlockCredit |)transaction "(.*?)"$/) do |arg1, unit_name, arg2|
   node = @nodes[arg1]
   raw_tx = @raw_tx[arg2]
   result = node.unit_rpc(unit(unit_name), "signrawtransaction", raw_tx)

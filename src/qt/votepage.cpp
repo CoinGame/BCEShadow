@@ -139,7 +139,7 @@ void VotePage::fillParkRateTable()
 
     BOOST_FOREACH(const CParkRateVote& parkRateResult, lastBestBlock->vParkRateResult)
     {
-        if (parkRateResult.cUnit == 'B')
+        if (parkRateResult.cUnit == 'C')
         {
             parkRates = parkRateResult.vParkRate;
             break;
@@ -216,7 +216,7 @@ struct LiquidityTotal
 
 void VotePage::updateLiquidity()
 {
-    unsigned char cUnit = 'B';
+    unsigned char cUnit = 'C';
     LiquidityTotal total;
     QMap<QString, LiquidityTotal> tierMap;
     {

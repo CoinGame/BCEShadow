@@ -207,9 +207,6 @@ bool CalculateParkRateVote(const std::vector<CVote>& vVote, std::vector<CParkRat
 
     BOOST_FOREACH(const CVote& vote, vVote)
     {
-        if (vote.nCoinAgeDestroyed == 0)
-            return error("vote with 0 coin age destroyed");
-
         totalVoteWeight += vote.nCoinAgeDestroyed;
 
         BOOST_FOREACH(const CParkRateVote& parkRateVote, vote.vParkRateVote)
@@ -252,7 +249,7 @@ bool CalculateParkRateVote(const std::vector<CVote>& vVote, std::vector<CParkRat
     }
 
     CParkRateVote parkRateVote;
-    parkRateVote.cUnit = 'B';
+    parkRateVote.cUnit = 'C';
     parkRateVote.vParkRate = result;
     results.push_back(parkRateVote);
 
@@ -263,9 +260,9 @@ bool LimitParkRateChangeV0_5(std::vector<CParkRateVote>& results, const std::map
 {
     map<unsigned char, unsigned int> minPreviousRates;
 
-    if (mapPreviousRates.count('B'))
+    if (mapPreviousRates.count('C'))
     {
-        const std::vector<const CParkRateVote*>& previousUnitRates = mapPreviousRates.find('B')->second;
+        const std::vector<const CParkRateVote*>& previousUnitRates = mapPreviousRates.find('C')->second;
         BOOST_FOREACH(const CParkRateVote* parkRateVote, previousUnitRates)
         {
             BOOST_FOREACH(const CParkRate& parkRate, parkRateVote->vParkRate)
@@ -283,7 +280,7 @@ bool LimitParkRateChangeV0_5(std::vector<CParkRateVote>& results, const std::map
     vector<CParkRate>* presult = NULL;
     BOOST_FOREACH(CParkRateVote& parkRateVote, results)
     {
-        if (parkRateVote.cUnit == 'B')
+        if (parkRateVote.cUnit == 'C')
         {
             presult = &parkRateVote.vParkRate;
             break;
@@ -318,9 +315,9 @@ bool LimitParkRateChangeV2_0(std::vector<CParkRateVote>& results, const std::map
     map<unsigned char, unsigned int> mapPreviousRate;
     set<unsigned char> setCompactDuration;
 
-    if (mapPreviousVotedRate.count('B'))
+    if (mapPreviousVotedRate.count('C'))
     {
-        const CParkRateVote* parkRateVote = mapPreviousVotedRate.find('B')->second;
+        const CParkRateVote* parkRateVote = mapPreviousVotedRate.find('C')->second;
         BOOST_FOREACH(const CParkRate& parkRate, parkRateVote->vParkRate)
         {
             mapPreviousRate[parkRate.nCompactDuration] = parkRate.nRate;
@@ -331,7 +328,7 @@ bool LimitParkRateChangeV2_0(std::vector<CParkRateVote>& results, const std::map
     vector<CParkRate>* presult = NULL;
     BOOST_FOREACH(CParkRateVote& parkRateVote, results)
     {
-        if (parkRateVote.cUnit == 'B')
+        if (parkRateVote.cUnit == 'C')
         {
             presult = &parkRateVote.vParkRate;
             break;
@@ -433,7 +430,7 @@ bool CalculateParkRateResults(const CVote &vote, const CBlockIndex* pindexprev, 
         map<unsigned char, vector<const CParkRateVote*> > mapPreviousRates;
         BOOST_FOREACH(unsigned char cUnit, sAvailableUnits)
         {
-            if (cUnit != 'S')
+            if (cUnit != '8')
                 mapPreviousRates[cUnit].reserve(PARK_RATE_PREVIOUS_VOTES);
         }
 
@@ -559,7 +556,7 @@ typedef map<CCustodianVote, CCustodianVoteCounter> CustodianVoteCounterMap;
 typedef map<CBitcoinAddress, int64> GrantedAmountMap;
 typedef map<unsigned char, GrantedAmountMap> GrantedAmountPerUnitMap;
 
-bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CBitcoinAddress, CBlockIndex*>& mapAlreadyElected, std::vector<CTransaction>& vCurrencyCoinBaseRet)
+bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CBitcoinAddress, CBlockIndex*>& mapAlreadyElected, int nHeight, std::vector<CTransaction>& vCurrencyCoinBaseRet)
 {
     vCurrencyCoinBaseRet.clear();
 
@@ -571,19 +568,13 @@ bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CB
 
     BOOST_FOREACH(const CVote& vote, vVote)
     {
-        if (vote.nCoinAgeDestroyed == 0)
-            return error("vote with 0 coin age destroyed");
-
         totalVoteWeight += vote.nCoinAgeDestroyed;
 
         BOOST_FOREACH(const CCustodianVote& custodianVote, vote.vCustodianVote)
         {
-            if (!mapAlreadyElected.count(custodianVote.GetAddress()))
-            {
-                CCustodianVoteCounter& counter = mapCustodianVoteCounter[custodianVote];
-                counter.nWeight += vote.nCoinAgeDestroyed;
-                counter.nCount++;
-            }
+            CCustodianVoteCounter& counter = mapCustodianVoteCounter[custodianVote];
+            counter.nWeight += vote.nCoinAgeDestroyed;
+            counter.nCount++;
         }
     }
 
@@ -616,7 +607,7 @@ bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CB
 
         CTransaction tx;
         tx.cUnit = cUnit;
-        if (cUnit == 'S')
+        if (cUnit == '8')
             tx.vin.push_back(CTxIn(0, -2));
         else
             tx.vin.push_back(CTxIn());
@@ -626,13 +617,24 @@ bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CB
             const CBitcoinAddress& address = grantedAmount.first;
             int64 amount = grantedAmount.second;
 
+            const std::map<CBitcoinAddress, CBlockIndex*>::const_iterator it =
+                mapAlreadyElected.find(address);
+            if (it != mapAlreadyElected.end())
+            {
+                // Custodian already elected
+                // Ignore it only if it was elected before the current height
+                if (it->second->nHeight < nHeight)
+                    continue;
+            }
+
             CScript scriptPubKey;
             scriptPubKey.SetDestination(address.Get());
 
             tx.vout.push_back(CTxOut(amount, scriptPubKey));
         }
 
-        vCurrencyCoinBaseRet.push_back(tx);
+        if (tx.vout.size() != 0)
+            vCurrencyCoinBaseRet.push_back(tx);
     }
 
     return true;
@@ -712,11 +714,8 @@ int GetProtocolForNextBlock(const CBlockIndex* pPrevIndex)
     if (pPrevIndex != NULL)
         nProtocol = pPrevIndex->nProtocolVersion;
 
-    if (nProtocol < PROTOCOL_V2_0 && IsNuProtocolV20NextBlock(pPrevIndex))
+    if (nProtocol < PROTOCOL_V2_0)
         nProtocol = PROTOCOL_V2_0;
-
-    if (nProtocol < PROTOCOL_V0_5)
-        nProtocol = PROTOCOL_V0_5;
 
     return nProtocol;
 }

@@ -70,7 +70,7 @@ void ParkRateVoteDialog::setModel(WalletModel *model)
 
     CParkRateVote parkRateVote;
     for (int i = 0; i < vote.vParkRateVote.size(); i++)
-        if (vote.vParkRateVote[i].cUnit == 'B')
+        if (vote.vParkRateVote[i].cUnit == 'C')
         {
             parkRateVote = vote.vParkRateVote[i];
             break;
@@ -217,7 +217,7 @@ void ParkRateVoteDialog::accept()
     QTableWidget *table = ui->table;
     int rows = table->rowCount();
     CParkRateVote parkRateVote;
-    parkRateVote.cUnit = 'B';
+    parkRateVote.cUnit = 'C';
     vector<CParkRate>& vParkRate = parkRateVote.vParkRate;
 
     for (int i = 0; i < rows; i++)

@@ -2,7 +2,7 @@
 Given(/^a node "(.*?)" started with a votenotify script$/) do |arg1|
   name = arg1
   options = {
-    image: "nunet/empty",
+    image: "bcenet/empty",
     links: @nodes.values.map(&:name),
     args: {
       debug: true,
@@ -22,14 +22,14 @@ Given(/^the votenotify script of node "(.*?)" is written to dump the vote and si
 
     set -x
 
-    NUD=/code/nud
-    ARGS="--datadir=/root/.nu"
+    DAEMON=/code/bcexchanged
+    ARGS="--datadir=/root/.bcexchange"
     VOTE_PATH=#{node.shared_path_in_container("vote.json")}
     SIGNATURE_PATH=#{node.shared_path_in_container("vote.json.signature")}
     ADDRESS=#{@addresses[arg2]}
 
-    $NUD $ARGS getvote >$VOTE_PATH
-    $NUD $ARGS signmessage $ADDRESS <$VOTE_PATH >$SIGNATURE_PATH
+    $DAEMON $ARGS getvote >$VOTE_PATH
+    $DAEMON $ARGS signmessage $ADDRESS <$VOTE_PATH >$SIGNATURE_PATH
     chmod 666 $VOTE_PATH $SIGNATURE_PATH
   EOF
   script_path = node.shared_path("votenotify.sh")

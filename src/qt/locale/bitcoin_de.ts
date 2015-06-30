@@ -466,7 +466,7 @@ Are you sure you wish to encrypt your wallet?</source>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="296"/>
-        <source>Unlock wallet only for minting. Sending NuShares will still require the passphrase.</source>
+        <source>Unlock wallet only for minting. Sending BlockShares will still require the passphrase.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -506,7 +506,7 @@ Are you sure you wish to encrypt your wallet?</source>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="305"/>
-        <source>Export the Peercoin keys associated with the NuShares addresses to Peercoin via RPC</source>
+        <source>Export the Peercoin keys associated with the BlockShares addresses to Peercoin via RPC</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -556,12 +556,12 @@ Are you sure you wish to encrypt your wallet?</source>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="522"/>
-        <source>NuBits</source>
+        <source>BlockCredits</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="527"/>
-        <source>NuShares</source>
+        <source>BlockShares</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -721,7 +721,7 @@ Adresse: %4</translation>
     </message>
     <message>
         <location filename="../bitcoingui.cpp" line="1074"/>
-        <source>All your NuShares private keys will be converted to Peercoin private keys and imported into your Peercoin wallet.
+        <source>All your BlockShares private keys will be converted to Peercoin private keys and imported into your Peercoin wallet.
 
 The Peercoin wallet must be running, unlocked (if it was encrypted) and accept RPC commands.
 
@@ -1425,7 +1425,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     </message>
     <message>
         <location filename="../forms/parkdialog.ui" line="63"/>
-        <source>Enter a NuBits address where unparked coins will be sent</source>
+        <source>Enter a BlockCredits address where unparked coins will be sent</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

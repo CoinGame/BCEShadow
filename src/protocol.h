@@ -18,7 +18,7 @@
 
 // Nu protocol port
 #define PROTOCOL_PORT     7890
-// Base RPC port used by the NuShare RPC server. Other unit RPC servers listen on RPC_PORT+1, RPC_PORT+2, etc.
+// Base RPC port used by the BlockShare RPC server. BlockCredit RPC server listen ons RPC_PORT+1.
 #define RPC_PORT         14001
 
 // The same rules apply to testnet, but on different ports
