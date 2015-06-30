@@ -1296,7 +1296,7 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CW
         // txdb must be opened before the mapWallet lock
         CTxDB txdb("r");
         {
-            nFeeRet = GetSafeMinTxFee(pindexBest);
+            nFeeRet = 1;
             loop
             {
                 wtxNew.vin.clear();
@@ -1366,12 +1366,11 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CW
                 dPriority /= nBytes;
 
                 // Check that enough fee is included
-                int64 nPayFee = wtxNew.GetSafeUnitMinFee(pindexBest) * (1 + (int64)nBytes / 1000);
                 int64 nMinFee = wtxNew.GetSafeMinFee(pindexBest, nBytes);
 
-                if (nFeeRet < max(nPayFee, nMinFee))
+                if (nFeeRet < nMinFee)
                 {
-                    nFeeRet = max(nPayFee, nMinFee);
+                    nFeeRet = nMinFee;
                     continue;
                 }
 
