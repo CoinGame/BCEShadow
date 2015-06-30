@@ -10,7 +10,7 @@ Feature: Shareholders can vote for the minimum transaction fee of each unit
     When all nodes reach the same height
     And node "Charlie" generates an BKS address "charlie"
     And node "Bob" sends "3" BKS to "charlie" in transaction "tx"
-    Then transaction "tx" on node "Charlie" should have a fee of 0.2
+    Then transaction "tx" on node "Charlie" should have a fee of 0.2 per 1000 bytes
     And all nodes should reach 1 transaction in memory pool
     When node "Alice" finds a block
     Then node "Charlie" should have a balance of "3" BKS

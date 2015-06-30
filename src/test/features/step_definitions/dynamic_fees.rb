@@ -1,3 +1,6 @@
+require 'bigdecimal'
+require 'bigdecimal/util'
+
 Given(/^the network has switched to dynamic fees$/) do
   step 'the network is at protocol 2.0'
 end
@@ -57,19 +60,21 @@ Then(/^the (\w+) fee should be ([\d.]+)$/) do |unit_name, arg1|
   end
 end
 
-Then(/^transaction "(.*?)" on node "(.*?)" should have a fee of ([\d.,]+)$/) do |arg1, arg2, arg3|
+Then(/^transaction "(.*?)" on node "(.*?)" should have a fee of ([\d.,]+) per 1000 bytes$/) do |arg1, arg2, arg3|
   node = @nodes[arg2]
   tx = @tx[arg1]
-  expected_fee = parse_number(arg3)
+  expected_fee_per_kilobyte = parse_number(arg3)
   wait_for do
     info = node.rpc("getrawtransaction", tx, 1)
+    bytes = info["hex"].size / 2
+    expected_fee = (expected_fee_per_kilobyte.to_d / 1000 * bytes).ceil(4)
     total_out = info["vout"].map { |output| output["value"] }.inject(&:+)
     total_in = info["vin"].map do |input|
       in_info = node.rpc("getrawtransaction", input["txid"], 1)
       in_info["vout"][input["vout"]]["value"]
     end.inject(&:+)
     fee = total_in - total_out
-    expect(fee).to be_within(0.00001).of(expected_fee)
+    expect(fee.to_d).to be_within(0.0001).of(expected_fee)
   end
 end
 

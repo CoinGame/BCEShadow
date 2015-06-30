@@ -11,7 +11,7 @@ Feature: BlockCredit change is not reported as a transaction
     And node "Custodian" sends "1000" BlockCredits to "bob"
     Then node "Custodian" should have 2 BlockCredit transactions
     And the 2nd transaction should be a send of "1000" to "bob"
-    And node "Custodian" should have a balance of "998,999.99" BlockCredits
+    And node "Custodian" should have a balance of "999,000" BlockCredits minus the transaction fees
     And node "Bob" should reach an unconfirmed balance of "1000" BlockCredits
     And node "Bob" should have 1 BlockCredit transactions
     And the 1st transaction should be a receive of "1000" to "bob"
@@ -19,5 +19,5 @@ Feature: BlockCredit change is not reported as a transaction
 
     When node "Alice" finds a block
     And all nodes reach the same height
-    Then node "Custodian" should have a balance of "998,999.99" BlockCredits
+    Then node "Custodian" should have a balance of "999,000" BlockCredits minus the transaction fees
     And node "Bob" should reach a balance of "1000" BlockCredits

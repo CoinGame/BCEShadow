@@ -404,29 +404,27 @@ def debug_balance(node, unit_name)
   )
 end
 
-Then(/^node "(.*?)" (?:should reach|reaches) a balance of "([^"]*?)"( BlockCredits| BlockShares| BKS| BKC|)$/) do |arg1, arg2, unit_name|
+Then(/^node "(.*?)" (?:should reach|should have|reaches) a balance of "([^"]*?)"( BlockCredits| BlockShares| BKS| BKC|)(| minus the transaction fees)$/) do |arg1, arg2, unit_name, minus_fees|
   node = @nodes[arg1]
   amount = parse_number(arg2)
   begin
+    fees = nil
     wait_for do
+      if minus_fees != ""
+        fees = node.unit_rpc(unit(unit_name), "listtransactions").map do |tx|
+          if tx["category"] == "send"
+            tx["fee"]
+          else
+            0.0
+          end
+        end.inject(0.0, :+)
+        amount += fees
+      end
       expect(node.unit_rpc(unit(unit_name), "getbalance")).to eq(amount)
       expect(node.unit_rpc(unit(unit_name), "getbalance", "*")).to eq(amount)
     end
   rescue RSpec::Expectations::ExpectationNotMetError
-    debug_balance(node, unit_name)
-    raise
-  end
-end
-
-Then(/^node "(.*?)" should have a balance of "([^"]*?)"( BlockCredits| BlockShares| BKS| BKC|)$/) do |arg1, arg2, unit_name|
-  node = @nodes[arg1]
-  amount = parse_number(arg2)
-  begin
-    wait_for do
-      expect(node.unit_rpc(unit(unit_name), "getbalance")).to eq(amount)
-      expect(node.unit_rpc(unit(unit_name), "getbalance", "*")).to eq(amount)
-    end
-  rescue RSpec::Expectations::ExpectationNotMetError
+    p fees: fees
     debug_balance(node, unit_name)
     raise
   end
