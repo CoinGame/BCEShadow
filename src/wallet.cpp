@@ -1360,7 +1360,7 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CW
                         return false;
 
                 // Limit size
-                unsigned int nBytes = ::GetSerializeSize(*(CTransaction*)&wtxNew, SER_NETWORK, PROTOCOL_VERSION);
+                unsigned int nBytes = wtxNew.GetSize();
                 if (nBytes >= MAX_BLOCK_SIZE/4)
                     return false;
                 dPriority /= nBytes;
