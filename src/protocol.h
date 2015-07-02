@@ -16,7 +16,7 @@
 #include <string>
 #include "uint256.h"
 
-// Nu protocol port
+// B&C Exchange protocol port
 #define PROTOCOL_PORT     7890
 // Base RPC port used by the BlockShare RPC server. BlockCredit RPC server listen ons RPC_PORT+1.
 #define RPC_PORT         14001

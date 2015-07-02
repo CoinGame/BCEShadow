@@ -110,7 +110,7 @@ void AskPassphraseDialog::accept()
                 if(model->setWalletEncrypted(true, newpass1))
                 {
                     QMessageBox::warning(this, tr("Wallet encrypted"),
-                                         tr("Nu will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your %1 from being stolen by malware infecting your computer.").arg(BitcoinUnits::baseName()));
+                                         tr("B&C Exchange will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your %1 from being stolen by malware infecting your computer.").arg(BitcoinUnits::baseName()));
                     QApplication::quit();
                 }
                 else

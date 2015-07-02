@@ -1,4 +1,4 @@
-From the Nu repository root build the bcegitian/base image:
+From the B&C Exchange repository root build the bcegitian/base image:
 
     docker build -t bcegitian/base $PWD/contrib/gitian-docker
 

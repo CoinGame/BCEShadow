@@ -42,7 +42,7 @@ old_nodes = []
 OLD_VERSIONS.each do |version|
   puts "Starting node with old version #{version}"
   node = CoinContainer.new(
-    image: "nubit/#{version}",
+    image: "bcexchange/#{version}",
     bind_code: false,
     links: [seed] + nodes + old_nodes,
     args: {

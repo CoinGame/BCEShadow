@@ -72,7 +72,7 @@ CCriticalSection cs_mapElectedCustodian;
 // Constant stuff for coinbase transactions we create:
 CScript COINBASE_FLAGS;
 
-const string strMessageMagic = "Nu Signed Message:\n";
+const string strMessageMagic = "B&C Exchange Signed Message:\n";
 
 double dHashesPerSec;
 int64 nHPSTimerStart;
@@ -2758,7 +2758,7 @@ bool CheckDiskSpace(uint64 nAdditionalBytes)
         string strMessage = _("Warning: Disk space is low");
         strMiscWarning = strMessage;
         printf("*** %s\n", strMessage.c_str());
-        ThreadSafeMessageBox(strMessage, "Nu", wxOK | wxICON_EXCLAMATION | wxMODAL);
+        ThreadSafeMessageBox(strMessage, "B&C Exchange", wxOK | wxICON_EXCLAMATION | wxMODAL);
         StartShutdown();
         return false;
     }

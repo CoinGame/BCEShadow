@@ -1204,10 +1204,10 @@ void AddTimeData(const CNetAddr& ip, int64 nTime)
                 if (!fMatch)
                 {
                     fDone = true;
-                    string strMessage = _("Warning: Please check that your computer's date and time are correct.  If your clock is wrong Nu will not work properly.");
+                    string strMessage = _("Warning: Please check that your computer's date and time are correct.  If your clock is wrong B&C Exchange will not work properly.");
                     strMiscWarning = strMessage;
                     printf("*** %s\n", strMessage.c_str());
-                    ThreadSafeMessageBox(strMessage+" ", string("Nu"), wxOK | wxICON_EXCLAMATION);
+                    ThreadSafeMessageBox(strMessage+" ", string("B&C Exchange"), wxOK | wxICON_EXCLAMATION);
                 }
             }
         }
@@ -1249,7 +1249,7 @@ std::string FormatSubVersion(const std::string& name, int nClientVersion, const 
     if (!comments.empty())
         ss << "(" << boost::algorithm::join(comments, "; ") << ")";
     ss << "/";
-    ss << "Nu:" << FormatVersion(CLIENT_VERSION);
+    ss << "B&C Exchange:" << FormatVersion(CLIENT_VERSION);
     ss << "(" << CLIENT_BUILD << ")/";
     return ss.str();
 }

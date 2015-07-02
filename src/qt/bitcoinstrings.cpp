@@ -6,10 +6,10 @@
 #define UNUSED
 #endif
 static const char UNUSED *bitcoin_strings[] = {QT_TRANSLATE_NOOP("bitcoin-core", ""
-"Unable to bind to port %d on this computer.  Nu is probably already "
+"Unable to bind to port %d on this computer.  B&C Exchange is probably already "
 "running."),
 QT_TRANSLATE_NOOP("bitcoin-core", "Warning: Disk space is low  "),
-QT_TRANSLATE_NOOP("bitcoin-core", "Nu version"),
+QT_TRANSLATE_NOOP("bitcoin-core", "B&C Exchange version"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Usage:"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Send command to -server or nud"),
 QT_TRANSLATE_NOOP("bitcoin-core", "List commands"),
@@ -76,17 +76,17 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 QT_TRANSLATE_NOOP("bitcoin-core", "This help message"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Usage"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
-"Cannot obtain a lock on data directory %s.  Nu is probably already "
+"Cannot obtain a lock on data directory %s.  B&C Exchange is probably already "
 "running."),
-QT_TRANSLATE_NOOP("bitcoin-core", "Nu"),
+QT_TRANSLATE_NOOP("bitcoin-core", "B&C Exchange"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Loading addresses..."),
 QT_TRANSLATE_NOOP("bitcoin-core", "Error loading addr.dat"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Loading block index..."),
 QT_TRANSLATE_NOOP("bitcoin-core", "Error loading blkindex.dat"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Loading wallet..."),
 QT_TRANSLATE_NOOP("bitcoin-core", "Error loading wallet.dat: Wallet corrupted"),
-QT_TRANSLATE_NOOP("bitcoin-core", "Error loading wallet.dat: Wallet requires newer version of Nu"),
-QT_TRANSLATE_NOOP("bitcoin-core", "Wallet needed to be rewritten: restart Nu to complete"),
+QT_TRANSLATE_NOOP("bitcoin-core", "Error loading wallet.dat: Wallet requires newer version of B&C Exchange"),
+QT_TRANSLATE_NOOP("bitcoin-core", "Wallet needed to be rewritten: restart B&C Exchange to complete"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Error loading wallet.dat"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Cannot downgrade wallet"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Cannot initialize keypool"),
@@ -118,7 +118,7 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 "permissions."),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Warning: Please check that your computer's date and time are correct.  If "
-"your clock is wrong Nu will not work properly."),
+"your clock is wrong B&C Exchange will not work properly."),
 QT_TRANSLATE_NOOP("bitcoin-core", "Error: Wallet locked, unable to create transaction  "),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Error: This transaction requires a transaction fee of at least %s because of "
