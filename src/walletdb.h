@@ -21,7 +21,8 @@ enum DBErrors
     DB_CORRUPT,
     DB_TOO_NEW,
     DB_LOAD_FAIL,
-    DB_NEED_REWRITE
+    DB_NEED_REWRITE,
+    DB_INCORRECT_UNIT
 };
 
 /** Access to the wallet database (wallet.dat) */

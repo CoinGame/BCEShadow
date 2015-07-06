@@ -139,7 +139,7 @@ Value walletimport(const Array& params, bool fHelp)
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
             "walletimport <file> [walletpassword] [rescan=true]\n"
-            "Import wallet.dat from NuBits \n"
+            "Import NuShares walletS.dat\n"
             "Password is only required if wallet is encrypted\n"
         );
 
@@ -167,6 +167,8 @@ Value walletimport(const Array& params, bool fHelp)
             throw JSONRPCError(-4, "Error importing wallet: Wallet corrupted");
         else if (nLoadWalletRet == DB_LOAD_FAIL)
             throw JSONRPCError(-4, "Wallet failed to load");
+        else if (nLoadWalletRet == DB_INCORRECT_UNIT)
+            throw JSONRPCError(-4, "Unsupported wallet unit");
         else if (fDebug)
             printf("Non fatal errors occurred while importing wallet\n");
     }

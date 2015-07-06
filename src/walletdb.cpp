@@ -353,6 +353,7 @@ int CWalletDB::LoadWalletImport(CWallet* pwallet)
 {
     pwallet->vchDefaultKey = CPubKey();
     vector<uint256> vWalletUpgrade;
+    unsigned char cUnit = '?';
 
     //// todo: shouldn't we catch exceptions and try to recover and continue?
     {
@@ -486,8 +487,18 @@ int CWalletDB::LoadWalletImport(CWallet* pwallet)
                     return DB_CORRUPT;
                 }
             }
+            else if (strType == "unit")
+            {
+                ssValue >> cUnit;
+            }
         }
         pcursor->close();
+    }
+
+    if (cUnit != 'S') // unit was never set
+    {
+        printf("Incorrect importing wallet unit '%c'\n", cUnit);
+        return DB_INCORRECT_UNIT;
     }
 
     return DB_LOAD_OK;

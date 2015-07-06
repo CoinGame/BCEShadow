@@ -58,6 +58,7 @@
 #include <QDesktopServices>
 #include <QTimer>
 #include <QSignalMapper>
+#include <QInputDialog>
 
 #include <QDragEnterEvent>
 #include <QUrl>
@@ -1078,7 +1079,7 @@ void BitcoinGUI::walletImport()
 
     /** Attempt to begin the import, and detect fails */
     CWallet *openWallet = new CWallet(filename.toStdString());
-    DBErrors importRet = openWallet->LoadWalletImport(isValidWallet);
+    int importRet = openWallet->LoadWalletImport(isValidWallet);
 
     if (!isValidWallet || importRet != DB_LOAD_OK)
     {
