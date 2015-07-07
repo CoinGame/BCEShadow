@@ -134,11 +134,11 @@ Value exportpeercoinkeys(const Array& params, bool fHelp)
     return ret;
 }
 
-Value walletimport(const Array& params, bool fHelp)
+Value importnusharewallet(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "walletimport <file> [walletpassword] [rescan=true]\n"
+            "importnusharewallet <NuShares wallet file> [walletpassword] [rescan=true]\n"
             "Import NuShares walletS.dat\n"
             "Password is only required if wallet is encrypted\n"
         );
@@ -148,9 +148,11 @@ Value walletimport(const Array& params, bool fHelp)
     if (params.size() > 2)
         fRescan = params[2].get_bool();
 
-    if (pwalletMain->IsLocked())
-            throw JSONRPCError(-13, "Error: Please enter the wallet passphrase with walletpassphrase first.");
-    if (pwalletMain->fWalletUnlockMintOnly) // ppcoin: no dumpprivkey in mint-only mode
+    CWallet *pnuSharesWallet = GetWallet('8');
+
+    if (pnuSharesWallet->IsLocked())
+        throw JSONRPCError(-13, "Error: Please enter the wallet passphrase with walletpassphrase first.");
+    if (pnuSharesWallet->fWalletUnlockMintOnly) // ppcoin: no dumpprivkey in mint-only mode
         throw JSONRPCError(-102, "Wallet is unlocked for minting only.");
 
     bool fFirstRun = false;
@@ -159,7 +161,7 @@ Value walletimport(const Array& params, bool fHelp)
         printf("Importing wallet %s\n", params[0].get_str().c_str());
 
     CWallet *pwalletImport = new CWallet(params[0].get_str().c_str());
-    int nLoadWalletRet = pwalletImport->LoadWalletImport(fFirstRun);
+    int nLoadWalletRet = pwalletImport->LoadWalletImport();
 
     if (nLoadWalletRet != DB_LOAD_OK)
     {
@@ -196,8 +198,8 @@ Value walletimport(const Array& params, bool fHelp)
 
         if (!fGotWalletPass)
             throw runtime_error(
-                "walletimport <file> <walletpassword>\n"
-                "Import encrypted wallet from NuBits \n\n"
+                "importnusharewallet <NuShares wallet file> [walletpassword] [rescan=true]\n"
+                "Import NuShares walletS.dat\n"
                 "You are attempting to import an encrypted wallet\n"
                 "The passphrase must be entered to import the wallet\n"
                 );
@@ -205,7 +207,7 @@ Value walletimport(const Array& params, bool fHelp)
 
     std::string strLabel = "Imported from a wallet";
     {
-        LOCK2(cs_main, pwalletMain->cs_wallet);
+        LOCK2(cs_main, pnuSharesWallet->cs_wallet);
         LOCK(pwalletImport->cs_wallet);
 
         // Import private keys
@@ -218,15 +220,15 @@ Value walletimport(const Array& params, bool fHelp)
             CKey key;
             if (pwalletImport->GetKey(keyid, key)) {
 
-                if (pwalletMain->HaveKey(keyid)) {
-                    if (fDebug) printf("Skipping address %s (key already present)\n", strAddr.c_str());
+                if (pnuSharesWallet->HaveKey(keyid)) {
+                    printf("Skipping address %s (key already present)\n", strAddr.c_str());
                     continue;
                 }
 
-                if (fDebug) printf("Importing key for address %s\n", strAddr.c_str());
+                printf("Importing key for address %s\n", strAddr.c_str());
 
-                pwalletMain->AddKey(key);
-                pwalletMain->SetAddressBookName(keyid, strLabel);
+                pnuSharesWallet->AddKey(key);
+                pnuSharesWallet->SetAddressBookName(keyid, strLabel);
             }
         }
 
@@ -240,34 +242,35 @@ Value walletimport(const Array& params, bool fHelp)
             CScript script;
             if (pwalletImport->GetCScript(hash, script)) {
 
-                if (pwalletMain->HaveCScript(hash)) {
-                    if (fDebug) printf("Skipping P2SH address %s (already present)\n", strAddr.c_str());
+                if (pnuSharesWallet->HaveCScript(hash)) {
+                    printf("Skipping P2SH address %s (already present)\n", strAddr.c_str());
                     continue;
                 }
 
-                if (fDebug) printf("Importing script for P2SH address %s\n", strAddr.c_str());
+                printf("Importing script for P2SH address %s\n", strAddr.c_str());
 
-                pwalletMain->AddCScript(script);
-                pwalletMain->SetAddressBookName(hash, strLabel);
+                pnuSharesWallet->AddCScript(script);
+                pnuSharesWallet->SetAddressBookName(hash, strLabel);
             }
         }
     }
 
-    // FIXME why does the deconstructor of class CDB is not called here but after a shutdown?
     // Clean up unregistered wallet
     UnregisterWallet(pwalletImport);
     delete pwalletImport;
 
-    pwalletMain->MarkDirty();
+    pnuSharesWallet->MarkDirty();
 
     if (fRescan)
     {
         if (fDebug) printf("Scanning for available BKS...\n");
-        pwalletMain->ScanForWalletTransactions(pindexGenesisBlock, true);
-        pwalletMain->ReacceptWalletTransactions();
+        pnuSharesWallet->ScanForWalletTransactions(pindexGenesisBlock, true);
+        pnuSharesWallet->ReacceptWalletTransactions();
     }
 
     if (fDebug) printf("Wallet import complete\n");
+
+    MainFrameRepaint();
 
     return Value::null;
 }

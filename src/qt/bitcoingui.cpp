@@ -298,7 +298,7 @@ void BitcoinGUI::createActions()
     unlockForMintingAction->setCheckable(true);
     backupWalletAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup Wallet"), this);
     backupWalletAction->setToolTip(tr("Backup portfolio to another location"));
-    importAction = new QAction(QIcon(":/icons/import"), tr("&Import Wallet..."), this);
+    importAction = new QAction(QIcon(":/icons/import_nsr_wallet"), tr("&Import NuShares Wallet..."), this);
     importAction->setToolTip(tr("Import an NSR wallet file."));
     changePassphraseAction = new QAction(QIcon(":/icons/key"), tr("&Change Passphrase"), this);
     changePassphraseAction->setToolTip(tr("Change the passphrase used for portfolio encryption"));
@@ -341,6 +341,7 @@ void BitcoinGUI::createMenuBar()
 #ifndef FIRST_CLASS_MESSAGING
     file->addAction(messageAction);
 #endif
+    file->addAction(importAction);
     file->addSeparator();
     file->addAction(quitAction);
 
@@ -1067,7 +1068,6 @@ void BitcoinGUI::walletImport()
     QString filename = fd.selectedFiles().value(0); // incase empty or cancel, use value() instead of at() for safe pointer
     QString passwd;
     QString rpcCmd;
-    bool isValidWallet = false;
 
     /** Cancel pressed */
     if(filename.trimmed().isEmpty())
@@ -1079,11 +1079,14 @@ void BitcoinGUI::walletImport()
 
     /** Attempt to begin the import, and detect fails */
     CWallet *openWallet = new CWallet(filename.toStdString());
-    int importRet = openWallet->LoadWalletImport(isValidWallet);
+    int importRet = openWallet->LoadWalletImport();
 
-    if (!isValidWallet || importRet != DB_LOAD_OK)
+    if (importRet != DB_LOAD_OK)
     {
-        QMessageBox::warning(this, tr("Import Failed"), tr("Wallet import failed."));
+        if (importRet == DB_INCORRECT_UNIT)
+            QMessageBox::warning(this, tr("Import Failed"), tr("Wallet import failed. Only NuShares wallets are supported."));
+        else
+            QMessageBox::warning(this, tr("Import Failed"), tr("Wallet import failed."));
         return;
     }
 
@@ -1093,7 +1096,7 @@ void BitcoinGUI::walletImport()
          passwd = QInputDialog::getText(this, tr("Import Wallet"), tr("Password:"), QLineEdit::Password);
     }
 
-    rpcCmd = QString("walletimport %1 %2")
+    rpcCmd = QString("importnusharewallet %1 %2")
             .arg(filename)
             .arg(passwd);
     passwd.clear();
@@ -1101,6 +1104,8 @@ void BitcoinGUI::walletImport()
     /** Threadlock friendly handoff to RPC */
     rpcConsole->cmdRequestFar(rpcCmd);
     rpcCmd.clear();
+
+    QMessageBox::information(this, tr("Wallet imported"), tr("NuShares wallet imported successfully."));
 }
 
 void BitcoinGUI::changePassphrase()

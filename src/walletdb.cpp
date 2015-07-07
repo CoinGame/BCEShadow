@@ -355,7 +355,6 @@ int CWalletDB::LoadWalletImport(CWallet* pwallet)
     vector<uint256> vWalletUpgrade;
     unsigned char cUnit = '?';
 
-    //// todo: shouldn't we catch exceptions and try to recover and continue?
     {
         LOCK(pwallet->cs_wallet);
         int nMinVersion = 0;
