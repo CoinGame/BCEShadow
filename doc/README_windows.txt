@@ -1,4 +1,4 @@
-BCExchange 2.0.0 BETA
+B&C Exchange 2.0.0 BETA
 Copyright (c) 2014 BCExchange Developers
 
 ## End-User License Agreement
