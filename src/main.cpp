@@ -2897,12 +2897,12 @@ bool LoadBlockIndex(bool fAllowNew)
             block.nNonce++;
         }
      
-        printf("BCExchange Genesis Block Found:\n");
+        printf("B&C Exchange Genesis Block Found:\n");
         printf("genesis hash=%s\n", block.GetHash().ToString().c_str());
         printf("merkle root=%s\n", block.hashMerkleRoot.ToString().c_str());
         block.print();
      
-        printf("End BCExchange Genesis Block\n");
+        printf("End B&C Exchange Genesis Block\n");
 
         //// debug print
         printf("%s\n", block.GetHash().ToString().c_str());

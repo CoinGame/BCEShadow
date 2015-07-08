@@ -196,9 +196,9 @@ int main(int argc, char *argv[])
     app.setOrganizationName("B&C Exchange");
     app.setOrganizationDomain("");
     if(GetBoolArg("-testnet")) // Separate UI settings for testnet
-        app.setApplicationName("BCExchange-Qt-testnet");
+        app.setApplicationName("B&C Exchange-Qt-testnet");
     else
-        app.setApplicationName("BCExchange-Qt");
+        app.setApplicationName("B&C Exchange-Qt");
 
     // ... then GUI settings:
     OptionsModel optionsModel;
