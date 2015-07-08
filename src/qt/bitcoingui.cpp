@@ -1054,7 +1054,7 @@ void BitcoinGUI::backupWallet()
 
 void BitcoinGUI::walletImport()
 {
-    QString workDir = QString::fromStdString(GetDataDir().string());
+    QString workDir = QString::fromStdString(GetNuBitsDataDir().string());
 
     // Make getOpenFileName for one file, unlimited filters
     QFileDialog fd(this);
