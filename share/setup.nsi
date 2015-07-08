@@ -1,4 +1,4 @@
-Name B&C Exchange
+Name "B&C Exchange" "B&&C Exchange"
 
 RequestExecutionLevel highest
 SetCompressor /SOLID lzma
@@ -59,7 +59,7 @@ XPStyle on
 BrandingText " "
 ShowInstDetails show
 VIProductVersion ${VERSION}.0
-VIAddVersionKey ProductName B&C Exchange
+VIAddVersionKey ProductName "B&C Exchange"
 VIAddVersionKey ProductVersion "${VERSION}"
 VIAddVersionKey CompanyName "${COMPANY}"
 VIAddVersionKey CompanyWebsite "${URL}"
