@@ -9,7 +9,7 @@ QToolBar {
 
 QToolBar > .toolbarSpacer {
   min-width: 125px;
-  background: url(:/images/res/images/nushareslogotext) no-repeat;
+  background: url(:/images/res/images/blockshareslogotext) no-repeat;
   border: 1px solid transparent;
   border-bottom: 3px solid #ef3614;
   margin-top: 5px;

@@ -83,7 +83,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     setWindowTitle(tr("B&C Exchange"));
     setStyle(QStyleFactory::create("cleanlooks"));
 #ifndef Q_WS_MAC
-    setWindowIcon(QIcon(":icons/nu"));
+    setWindowIcon(QIcon(":icons/icon"));
 #else
     // nu: setting this breaks the visual styles for the toolbar, so turning off
     setUnifiedTitleAndToolBarOnMac(false);
@@ -387,9 +387,9 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
             QString title_testnet = windowTitle() + QString(" ") + tr("[testnet]");
             setWindowTitle(title_testnet);
 #ifndef Q_WS_MAC
-            setWindowIcon(QIcon(":icons/nu_testnet"));
+            setWindowIcon(QIcon(":icons/icon_testnet"));
 #else
-            MacDockIconHandler::instance()->setIcon(QIcon(":icons/nu_testnet"));
+            MacDockIconHandler::instance()->setIcon(QIcon(":icons/icon_testnet"));
 #endif
             if(trayIcon)
             {
