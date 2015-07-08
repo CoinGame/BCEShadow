@@ -189,7 +189,6 @@ HEADERS += src/qt/bitcoingui.h \
     src/distribution.h \
     src/qt/distributedivdialog.h \
     src/vote.h \
-    src/qt/parkpage.h \
     src/qt/parktablemodel.h \
     src/qt/parkdialog.h \
     src/qt/votepage.h \
@@ -261,7 +260,6 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/scanbalance.cpp \
     src/qt/distributedivdialog.cpp \
     src/vote.cpp \
-    src/qt/parkpage.cpp \
     src/qt/parktablemodel.cpp \
     src/qt/parkdialog.cpp \
     src/qt/votepage.cpp \
@@ -288,7 +286,6 @@ FORMS += \
     src/qt/forms/askpassphrasedialog.ui \
     src/qt/forms/rpcconsole.ui \
     src/qt/forms/distributedivdialog.ui \
-    src/qt/forms/parkpage.ui \
     src/qt/forms/parkdialog.ui \
     src/qt/forms/votepage.ui \
     src/qt/forms/custodianvotedialog.ui \

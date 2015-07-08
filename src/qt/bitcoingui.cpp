@@ -29,7 +29,6 @@
 #include "rpcconsole.h"
 #include "wallet.h"
 #include "distributedivdialog.h"
-#include "parkpage.h"
 #include "votepage.h"
 
 #ifdef Q_WS_MAC
@@ -123,8 +122,6 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
 
     messagePage = new SignVerifyMessageDialog(this);
 
-    parkPage = new ParkPage(this);
-
     votePage = new VotePage(this);
 
     centralWidget = new QStackedWidget(this);
@@ -136,7 +133,6 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
 #ifdef FIRST_CLASS_MESSAGING
     centralWidget->addWidget(messagePage);
 #endif
-    centralWidget->addWidget(parkPage);
     centralWidget->addWidget(votePage);
     setCentralWidget(centralWidget);
 
@@ -237,12 +233,6 @@ void BitcoinGUI::createActions()
 #endif
     tabGroup->addAction(messageAction);
 
-    parkAction = new QAction(tr("&Park"), this);
-    parkAction->setToolTip(tr("Park coins"));
-    parkAction->setCheckable(true);
-    parkAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
-    tabGroup->addAction(parkAction);
-
     voteAction = new QAction(tr("&Vote"), this);
     voteAction->setToolTip(tr("Change your vote"));
     voteAction->setCheckable(true);
@@ -267,8 +257,6 @@ void BitcoinGUI::createActions()
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(gotoSendCoinsPage()));
     connect(messageAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(messageAction, SIGNAL(triggered()), this, SLOT(gotoMessagePage()));
-    connect(parkAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
-    connect(parkAction, SIGNAL(triggered()), this, SLOT(gotoParkPage()));
     connect(voteAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(voteAction, SIGNAL(triggered()), this, SLOT(gotoVotePage()));
 
@@ -382,7 +370,6 @@ void BitcoinGUI::createToolBars()
 #ifdef FIRST_CLASS_MESSAGING
     toolbar->addAction(messageAction);
 #endif
-    toolbar->addAction(parkAction);
     toolbar->addAction(voteAction);
     toolbar->addAction(switchUnitAction);
 
@@ -450,17 +437,11 @@ void BitcoinGUI::setWalletModel(WalletModel *walletModel)
         sendCoinsPage->setModel(walletModel);
         messagePage->setModel(walletModel);
         rpcConsole->setModel(walletModel);
-        parkPage->setModel(walletModel);
         votePage->setModel(walletModel);
-
-        parkAction->setVisible(walletModel->getUnit() != '8');
 
         voteAction->setVisible(walletModel->getUnit() == '8');
 
         if (walletModel->getUnit() != '8' && centralWidget->currentWidget() == votePage)
-            gotoOverviewPage();
-
-        if (walletModel->getUnit() == '8' && centralWidget->currentWidget() == parkPage)
             gotoOverviewPage();
 
         sharesMenu->setEnabled(walletModel->getUnit() == '8');
@@ -903,15 +884,6 @@ void BitcoinGUI::gotoMessagePage()
     messagePage->show();
     messagePage->setFocus();
 #endif
-}
-
-void BitcoinGUI::gotoParkPage()
-{
-    parkAction->setChecked(true);
-    centralWidget->setCurrentWidget(parkPage);
-
-    exportAction->setEnabled(false);
-    disconnect(exportAction, SIGNAL(triggered()), 0, 0);
 }
 
 void BitcoinGUI::gotoVotePage()

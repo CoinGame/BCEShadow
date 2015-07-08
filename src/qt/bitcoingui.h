@@ -12,7 +12,6 @@ class OverviewPage;
 class AddressBookPage;
 class SendCoinsDialog;
 class SignVerifyMessageDialog;
-class ParkPage;
 class VotePage;
 class Notificator;
 class RPCConsole;
@@ -70,7 +69,6 @@ private:
     AddressBookPage *receiveCoinsPage;
     SendCoinsDialog *sendCoinsPage;
     SignVerifyMessageDialog *messagePage;
-    ParkPage *parkPage;
     VotePage *votePage;
 
     QLabel *labelEncryptionIcon;
@@ -100,7 +98,6 @@ private:
     QAction *aboutQtAction;
     QAction *openRPCConsoleAction;
     QAction *distributeDividendsAction;
-    QAction *parkAction;
     QAction *voteAction;
     QAction *switchUnitAction;
     QVector<QAction*> changeUnitActions;
@@ -162,8 +159,6 @@ private slots:
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage();
-    /** Switch to park page */
-    void gotoParkPage();
     /** Switch to vote page */
     void gotoVotePage();
 
