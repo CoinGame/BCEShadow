@@ -1073,10 +1073,6 @@ void BitcoinGUI::walletImport()
     if(filename.trimmed().isEmpty())
         return;
 
-#if defined(WIN32)
-    filename = GUIUtil::toDOSPathFormat(filename);
-#endif
-
     /** Attempt to begin the import, and detect fails */
     CWallet *openWallet = new CWallet(filename.toStdString());
     int importRet = openWallet->LoadWalletImport();

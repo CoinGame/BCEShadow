@@ -148,12 +148,12 @@ Value importnusharewallet(const Array& params, bool fHelp)
     if (params.size() > 2)
         fRescan = params[2].get_bool();
 
-    CWallet *pnuSharesWallet = GetWallet('8');
-
-    if (pnuSharesWallet->IsLocked())
+    if (pwalletMain->IsLocked())
         throw JSONRPCError(-13, "Error: Please enter the wallet passphrase with walletpassphrase first.");
-    if (pnuSharesWallet->fWalletUnlockMintOnly) // ppcoin: no dumpprivkey in mint-only mode
+    if (pwalletMain->fWalletUnlockMintOnly) // ppcoin: no dumpprivkey in mint-only mode
         throw JSONRPCError(-102, "Wallet is unlocked for minting only.");
+    if (pwalletMain->Unit() != '8')
+        throw JSONRPCError(-12, "Error: Can only import to a BlockShares wallet");
 
     bool fFirstRun = false;
 
@@ -207,7 +207,7 @@ Value importnusharewallet(const Array& params, bool fHelp)
 
     std::string strLabel = "Imported from a wallet";
     {
-        LOCK2(cs_main, pnuSharesWallet->cs_wallet);
+        LOCK2(cs_main, pwalletMain->cs_wallet);
         LOCK(pwalletImport->cs_wallet);
 
         // Import private keys
@@ -220,15 +220,15 @@ Value importnusharewallet(const Array& params, bool fHelp)
             CKey key;
             if (pwalletImport->GetKey(keyid, key)) {
 
-                if (pnuSharesWallet->HaveKey(keyid)) {
+                if (pwalletMain->HaveKey(keyid)) {
                     printf("Skipping address %s (key already present)\n", strAddr.c_str());
                     continue;
                 }
 
                 printf("Importing key for address %s\n", strAddr.c_str());
 
-                pnuSharesWallet->AddKey(key);
-                pnuSharesWallet->SetAddressBookName(keyid, strLabel);
+                pwalletMain->AddKey(key);
+                pwalletMain->SetAddressBookName(keyid, strLabel);
             }
         }
 
@@ -242,15 +242,15 @@ Value importnusharewallet(const Array& params, bool fHelp)
             CScript script;
             if (pwalletImport->GetCScript(hash, script)) {
 
-                if (pnuSharesWallet->HaveCScript(hash)) {
+                if (pwalletMain->HaveCScript(hash)) {
                     printf("Skipping P2SH address %s (already present)\n", strAddr.c_str());
                     continue;
                 }
 
                 printf("Importing script for P2SH address %s\n", strAddr.c_str());
 
-                pnuSharesWallet->AddCScript(script);
-                pnuSharesWallet->SetAddressBookName(hash, strLabel);
+                pwalletMain->AddCScript(script);
+                pwalletMain->SetAddressBookName(hash, strLabel);
             }
         }
     }
@@ -259,13 +259,13 @@ Value importnusharewallet(const Array& params, bool fHelp)
     UnregisterWallet(pwalletImport);
     delete pwalletImport;
 
-    pnuSharesWallet->MarkDirty();
+    pwalletMain->MarkDirty();
 
     if (fRescan)
     {
         if (fDebug) printf("Scanning for available BKS...\n");
-        pnuSharesWallet->ScanForWalletTransactions(pindexGenesisBlock, true);
-        pnuSharesWallet->ReacceptWalletTransactions();
+        pwalletMain->ScanForWalletTransactions(pindexGenesisBlock, true);
+        pwalletMain->ReacceptWalletTransactions();
     }
 
     if (fDebug) printf("Wallet import complete\n");
