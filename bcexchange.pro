@@ -194,7 +194,6 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/parkdialog.h \
     src/qt/votepage.h \
     src/qt/custodianvotedialog.h \
-    src/qt/parkratevotedialog.h \
     src/qt/motionvotedialog.h \
     src/liquidityinfo.h \
     src/datafeed.h \
@@ -267,7 +266,6 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/parkdialog.cpp \
     src/qt/votepage.cpp \
     src/qt/custodianvotedialog.cpp \
-    src/qt/parkratevotedialog.cpp \
     src/qt/motionvotedialog.cpp \
     src/liquidityinfo.cpp \
     src/datafeed.cpp \
@@ -294,7 +292,6 @@ FORMS += \
     src/qt/forms/parkdialog.ui \
     src/qt/forms/votepage.ui \
     src/qt/forms/custodianvotedialog.ui \
-    src/qt/forms/parkratevotedialog.ui \
     src/qt/forms/motionvotedialog.ui \
     src/qt/forms/datafeeddialog.ui \
     src/qt/forms/feevotedialog.ui
