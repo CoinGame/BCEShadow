@@ -17,7 +17,7 @@
 // These need to be macro's, as version.cpp's voodoo requires it
 
 // nu version
-#define CLIENT_VERSION_MAJOR       2
+#define CLIENT_VERSION_MAJOR       3
 #define CLIENT_VERSION_MINOR       0
 #define CLIENT_VERSION_REVISION    0
 
