@@ -446,6 +446,8 @@ void BitcoinGUI::setWalletModel(WalletModel *walletModel)
 
         voteAction->setVisible(walletModel->getUnit() == '8');
 
+        importAction->setEnabled(walletModel->getUnit() == '8');
+
         if (walletModel->getUnit() != '8' && centralWidget->currentWidget() == votePage)
             gotoOverviewPage();
 
