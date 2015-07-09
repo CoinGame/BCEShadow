@@ -6,7 +6,7 @@ end
 class DataFeedContainer
   def initialize(options = {})
     default_options = {
-      image: "nubit/data_feed",
+      image: "bcexchange/data_feed",
     }
 
     options = default_options.merge(options)

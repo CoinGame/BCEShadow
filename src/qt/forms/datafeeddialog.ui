@@ -54,7 +54,7 @@
      <item row="0" column="0">
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>URL</string>
+        <string>UR&amp;L</string>
        </property>
        <property name="buddy">
         <cstring>urlEdit</cstring>
@@ -107,13 +107,6 @@ to update</string>
         <widget class="QCheckBox" name="custodiansCheckBox">
          <property name="text">
           <string>Custodians</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="parkRatesCheckBox">
-         <property name="text">
-          <string>Park rates</string>
          </property>
         </widget>
        </item>

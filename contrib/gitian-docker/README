@@ -1,4 +1,4 @@
-From the Nu repository root build the bcegitian/base image:
+From the B&C Exchange repository root build the bcegitian/base image:
 
     docker build -t bcegitian/base $PWD/contrib/gitian-docker
 
@@ -23,7 +23,7 @@ To build from your local repository:
 * modify `contrib/gitian-descriptors/gitian-linux.yml` and `contrib/gitian-descriptors/gitian-win.yml`: replace the line `- "url": "git@bitbucket.org:JordanLeePeershares/bcexchange.git"` with `- "url": "/bcexchange"`
 * start the container with `docker run --privileged -ti -w /gitian-builder -v $PWD:/bcexchange bcegitian/setup bash`
 
-To build from the official repository you must enable your SSH agent inside the container. Start the container with this command:
+To build from the official repository start the container with this command:
 
     docker run --privileged -ti -w /gitian-builder -v $PWD:/bcexchange bcegitian/setup bash
 
@@ -35,5 +35,22 @@ Start apt-cacher-ng:
 
     service apt-cacher-ng start
 
-Then you can follow the instructions after "Build the Nu release packages" here: https://volatility.atlassian.net/wiki/pages/viewpage.action?spaceKey=NU&title=Create+a+Gitian+build+machine+using+Ubuntu+14.04+amd64+desktop
+Then define the version you want to build (v$VERSION must be an annotated tag on the target repository):
 
+    export VERSION=3.0.0-RC1
+
+Then to build the Linux binaries:
+
+    ./bin/gbuild --commit bcexchange=v${VERSION} ../bcexchange/contrib/gitian-descriptors/gitian-linux.yml
+    pushd build/out
+    zip -r bcexchange-${VERSION}-linux-gitian.zip *
+    mv bcexchange-${VERSION}-linux-gitian.zip /bcexchange
+    popd
+
+And to build the Windows binaries:
+
+    ./bin/gbuild --commit bcexchange=v${VERSION} ../bcexchange/contrib/gitian-descriptors/gitian-win.yml
+    pushd build/out
+    zip -r bcexchange-${VERSION}-win-gitian.zip *
+    mv bcexchange-${VERSION}-win-gitian.zip /bcexchange
+    popd

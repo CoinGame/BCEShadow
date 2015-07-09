@@ -323,7 +323,7 @@ void RPCConsole::clear()
                 "b { color: #006060; } "
                 );
 
-    message(CMD_REPLY, tr("Welcome to the Nu RPC console.<br>"
+    message(CMD_REPLY, tr("Welcome to the B&C Exchange RPC console.<br>"
                           "Use up and down arrows to navigate history, and <b>Ctrl-L</b> to clear screen.<br>"
                           "Type <b>help</b> for an overview of available commands."), true);
 }

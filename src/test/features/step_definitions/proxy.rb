@@ -1,7 +1,7 @@
 class ProxyContainer
   def initialize(options = {})
     default_options = {
-      image: "nubit/proxy",
+      image: "bcexchange/proxy",
     }
 
     options = default_options.merge(options)

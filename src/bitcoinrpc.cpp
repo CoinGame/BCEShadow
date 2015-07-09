@@ -562,10 +562,10 @@ Value stop(const Array& params, bool fHelp)
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "stop\n"
-            "Stop Nu server.");
+            "Stop B&C Exchange server.");
     // Shutdown will take long enough that the response should get back
     StartShutdown();
-    return "Nu server stopping";
+    return "B&C Exchange server stopping";
 }
 
 
@@ -2364,7 +2364,7 @@ Value encryptwallet(const Array& params, bool fHelp)
     // slack space in .dat files; that is bad if the old data is
     // unencrypted private keys.  So:
     StartShutdown();
-    return "Portfolio encrypted; Nu server stopping. Please restart server to run with encrypted portfolio";
+    return "Portfolio encrypted; B&C Exchange server stopping. Please restart server to run with encrypted portfolio";
 }
 
 class DescribeAddressVisitor : public boost::static_visitor<Object>
@@ -2444,10 +2444,10 @@ Value getwork(const Array& params, bool fHelp)
             "If [data] is specified, tries to solve the block and returns true if it was successful.");
 
     if (vNodes.empty())
-        throw JSONRPCError(-9, "Nu is not connected!");
+        throw JSONRPCError(-9, "B&C Exchange is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(-10, "Nu is downloading blocks...");
+        throw JSONRPCError(-10, "B&C Exchange is downloading blocks...");
 
     typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
     static mapNewBlock_t mapNewBlock;
@@ -2577,10 +2577,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     {
         if (vNodes.empty())
-            throw JSONRPCError(-9, "Nu is not connected!");
+            throw JSONRPCError(-9, "B&C Exchange is not connected!");
 
         if (IsInitialBlockDownload())
-            throw JSONRPCError(-10, "Nu is downloading blocks...");
+            throw JSONRPCError(-10, "B&C Exchange is downloading blocks...");
 
         // Update block
         static unsigned int nTransactionsUpdatedLast;

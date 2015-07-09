@@ -80,10 +80,10 @@ void Shutdown(void* parg)
         UnregisterAndDeleteAllWallets();
         CreateThread(ExitTimeout, NULL);
         Sleep(50);
-        printf("BCExchange exiting\n\n");
+        printf("B&C Exchange exiting\n\n");
         fExit = true;
 #ifndef QT_GUI
-        // ensure non UI client get's exited here, but let BCExchange-Qt reach return 0; in bitcoin.cpp
+        // ensure non UI client get's exited here, but let B&C Exchange-Qt reach return 0; in bitcoin.cpp
         exit(0);
 #endif
     }
@@ -183,7 +183,7 @@ bool AppInit2(int argc, char* argv[])
     if (mapArgs.count("-?") || mapArgs.count("--help"))
     {
         string strUsage = string() +
-          _("BCExchange version") + " " + FormatFullVersion() + "\n\n" +
+          _("B&C Exchange version") + " " + FormatFullVersion() + "\n\n" +
           _("Usage:") + "\t\t\t\t\t\t\t\t\t\t\n" +
             "  bcexchanged [options]                   \t  " + "\n" +
             "  bcexchanged [options] <command> [params]\t  " + _("Send command to -server or bcexchanged") + "\n" +
@@ -251,7 +251,7 @@ bool AppInit2(int argc, char* argv[])
             "  -checklevel=<n>  \t\t  " + _("How thorough the block verification is (0-6, default: 1)") + "\n";
 
         strUsage += string() +
-            _("\nSSL options: (see the BCExchange Wiki for SSL setup instructions)") + "\n" +
+            _("\nSSL options: (see the B&C Exchange Wiki for SSL setup instructions)") + "\n" +
             "  -rpcssl                                \t  " + _("Use OpenSSL (https) for JSON-RPC connections") + "\n" +
             "  -rpcsslcertificatechainfile=<file.cert>\t  " + _("Server certificate file (default: server.cert)") + "\n" +
             "  -rpcsslprivatekeyfile=<file.pem>       \t  " + _("Server private key (default: server.pem)") + "\n" +
@@ -308,7 +308,7 @@ bool AppInit2(int argc, char* argv[])
 
 #ifndef QT_GUI
     for (int i = 1; i < argc; i++)
-        if (!IsSwitchChar(argv[i][0]) && !(strlen(argv[i]) >= 11 && strncasecmp(argv[i], "BCExchange:", 11) == 0))
+        if (!IsSwitchChar(argv[i][0]) && !(strlen(argv[i]) >= 11 && strncasecmp(argv[i], "B&C Exchange:", 13) == 0))
             fCommandLine = true;
 
     if (fCommandLine)
@@ -343,7 +343,7 @@ bool AppInit2(int argc, char* argv[])
     if (!fDebug)
         ShrinkDebugFile();
     printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-    printf("BCExchange version %s (%s)\n", FormatFullVersion().c_str(), CLIENT_DATE.c_str());
+    printf("B&C Exchange version %s (%s)\n", FormatFullVersion().c_str(), CLIENT_DATE.c_str());
     printf("Default data directory %s\n", GetDefaultDataDir().string().c_str());
 
     if (GetBoolArg("-loadblockindextest"))
@@ -354,14 +354,14 @@ bool AppInit2(int argc, char* argv[])
         return false;
     }
 
-    // Make sure only a single BCExchange process is using the data directory.
+    // Make sure only a single B&C Exchange process is using the data directory.
     boost::filesystem::path pathLockFile = GetDataDir() / ".lock";
     FILE* file = fopen(pathLockFile.string().c_str(), "a"); // empty lock file; created if it doesn't exist.
     if (file) fclose(file);
     static boost::interprocess::file_lock lock(pathLockFile.string().c_str());
     if (!lock.try_lock())
     {
-        ThreadSafeMessageBox(strprintf(_("Cannot obtain a lock on data directory %s.  BCExchange is probably already running."), GetDataDir().string().c_str()), _("BCExchange"), wxOK|wxMODAL);
+        ThreadSafeMessageBox(strprintf(_("Cannot obtain a lock on data directory %s.  B&C Exchange is probably already running."), GetDataDir().string().c_str()), _("B&C Exchange"), wxOK|wxMODAL);
         return false;
     }
 
@@ -370,7 +370,7 @@ bool AppInit2(int argc, char* argv[])
     // Load data files
     //
     if (fDaemon)
-        fprintf(stdout, "BCExchange server starting\n");
+        fprintf(stdout, "B&C Exchange server starting\n");
     int64 nStart;
 
     InitMessage(_("Loading addresses..."));
@@ -387,7 +387,7 @@ bool AppInit2(int argc, char* argv[])
         strErrors << _("Error loading blkindex.dat") << "\n";
 
     // as LoadBlockIndex can take several minutes, it's possible the user
-    // requested to kill BCExchange-Qt during the last operation. If so, exit.
+    // requested to kill B&C Exchange-Qt during the last operation. If so, exit.
     // As the program has not fully started yet, Shutdown() is possibly overkill.
     if (fRequestShutdown)
     {
@@ -417,12 +417,12 @@ bool AppInit2(int argc, char* argv[])
             if (nLoadWalletRet == DB_CORRUPT)
                 strErrors << format(_("Error loading %s: Wallet corrupted")) % walletFilename << "\n";
             else if (nLoadWalletRet == DB_TOO_NEW)
-                strErrors << format(_("Error loading %s: Wallet requires newer version of BCExchange")) % walletFilename << "\n";
+                strErrors << format(_("Error loading %s: Wallet requires newer version of B&C Exchange")) % walletFilename << "\n";
             else if (nLoadWalletRet == DB_NEED_REWRITE)
             {
-                strErrors << _("Wallet needed to be rewritten: restart BCExchange to complete") << "\n";
+                strErrors << _("Wallet needed to be rewritten: restart B&C Exchange to complete") << "\n";
                 printf("%s", strErrors.str().c_str());
-                ThreadSafeMessageBox(strErrors.str(), _("BCExchange"), wxOK | wxICON_ERROR | wxMODAL);
+                ThreadSafeMessageBox(strErrors.str(), _("B&C Exchange"), wxOK | wxICON_ERROR | wxMODAL);
                 return false;
             }
             else
@@ -495,7 +495,7 @@ bool AppInit2(int argc, char* argv[])
 
     if (!strErrors.str().empty())
     {
-        ThreadSafeMessageBox(strErrors.str(), _("BCExchange"), wxOK | wxICON_ERROR | wxMODAL);
+        ThreadSafeMessageBox(strErrors.str(), _("B&C Exchange"), wxOK | wxICON_ERROR | wxMODAL);
         return false;
     }
 
@@ -505,7 +505,7 @@ bool AppInit2(int argc, char* argv[])
         wallet->ReacceptWalletTransactions();
     }
 
-    // Note: BCExchange-Qt stores several settings in the wallet, so we want
+    // Note: B&C Exchange-Qt stores several settings in the wallet, so we want
     // to load the wallet BEFORE parsing command-line arguments, so
     // the command-line/nu.conf settings override GUI setting.
 
@@ -554,7 +554,7 @@ bool AppInit2(int argc, char* argv[])
         addrProxy = CService(mapArgs["-proxy"], 9050);
         if (!addrProxy.IsValid())
         {
-            ThreadSafeMessageBox(_("Invalid -proxy address"), _("BCExchange"), wxOK | wxMODAL);
+            ThreadSafeMessageBox(_("Invalid -proxy address"), _("B&C Exchange"), wxOK | wxMODAL);
             return false;
         }
     }
@@ -590,7 +590,7 @@ bool AppInit2(int argc, char* argv[])
         std::string strError;
         if (!BindListenPort(strError))
         {
-            ThreadSafeMessageBox(strError, _("BCExchange"), wxOK | wxMODAL);
+            ThreadSafeMessageBox(strError, _("B&C Exchange"), wxOK | wxMODAL);
             return false;
         }
     }
@@ -606,20 +606,20 @@ bool AppInit2(int argc, char* argv[])
         }
     }
 
-    if (mapArgs.count("-reservebalance")) // BCExchange: reserve balance amount
+    if (mapArgs.count("-reservebalance")) // B&C Exchange: reserve balance amount
     {
         int64 nReserveBalance = 0;
         if (!ParseMoney(mapArgs["-reservebalance"], nReserveBalance))
         {
-            ThreadSafeMessageBox(_("Invalid amount for -reservebalance=<amount>"), _("BCExchange"), wxOK | wxMODAL);
+            ThreadSafeMessageBox(_("Invalid amount for -reservebalance=<amount>"), _("B&C Exchange"), wxOK | wxMODAL);
             return false;
         }
     }
 
-    if (mapArgs.count("-checkpointkey")) // BCExchange: checkpoint master priv key
+    if (mapArgs.count("-checkpointkey")) // B&C Exchange: checkpoint master priv key
     {
         if (!Checkpoints::SetCheckpointPrivKey(GetArg("-checkpointkey", "")))
-            ThreadSafeMessageBox(_("Unable to sign checkpoint, wrong checkpointkey?\n"), _("BCExchange"), wxOK | wxMODAL);
+            ThreadSafeMessageBox(_("Unable to sign checkpoint, wrong checkpointkey?\n"), _("B&C Exchange"), wxOK | wxMODAL);
     }
 
     //
@@ -631,7 +631,7 @@ bool AppInit2(int argc, char* argv[])
     RandAddSeedPerfmon();
 
     if (!CreateThread(StartNode, NULL))
-        ThreadSafeMessageBox(_("Error: CreateThread(StartNode) failed"), _("BCExchange"), wxOK | wxMODAL);
+        ThreadSafeMessageBox(_("Error: CreateThread(StartNode) failed"), _("B&C Exchange"), wxOK | wxMODAL);
 
     if (fServer)
     {

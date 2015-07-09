@@ -72,7 +72,7 @@ CCriticalSection cs_mapElectedCustodian;
 // Constant stuff for coinbase transactions we create:
 CScript COINBASE_FLAGS;
 
-const string strMessageMagic = "Nu Signed Message:\n";
+const string strMessageMagic = "B&C Exchange Signed Message:\n";
 
 double dHashesPerSec;
 int64 nHPSTimerStart;
@@ -2758,7 +2758,7 @@ bool CheckDiskSpace(uint64 nAdditionalBytes)
         string strMessage = _("Warning: Disk space is low");
         strMiscWarning = strMessage;
         printf("*** %s\n", strMessage.c_str());
-        ThreadSafeMessageBox(strMessage, "Nu", wxOK | wxICON_EXCLAMATION | wxMODAL);
+        ThreadSafeMessageBox(strMessage, "B&C Exchange", wxOK | wxICON_EXCLAMATION | wxMODAL);
         StartShutdown();
         return false;
     }
@@ -2897,12 +2897,12 @@ bool LoadBlockIndex(bool fAllowNew)
             block.nNonce++;
         }
      
-        printf("BCExchange Genesis Block Found:\n");
+        printf("B&C Exchange Genesis Block Found:\n");
         printf("genesis hash=%s\n", block.GetHash().ToString().c_str());
         printf("merkle root=%s\n", block.hashMerkleRoot.ToString().c_str());
         block.print();
      
-        printf("End BCExchange Genesis Block\n");
+        printf("End B&C Exchange Genesis Block\n");
 
         //// debug print
         printf("%s\n", block.GetHash().ToString().c_str());

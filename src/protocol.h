@@ -16,7 +16,7 @@
 #include <string>
 #include "uint256.h"
 
-// BCExchange protocol port. 2239 stands for BCEX on a telephone keypad
+// B&C Exchange protocol port. 2239 stands for BCEX on a telephone keypad
 #define PROTOCOL_PORT     2239
 // Base RPC port used by the BlockShare RPC server. BlockCredit RPC server listen ons RPC_PORT+1.
 #define RPC_PORT          2240

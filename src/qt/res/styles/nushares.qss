@@ -1,4 +1,4 @@
-/* Compiled Styleguide for Nu GUI client */
+/* Compiled Styleguide for B&C Exchange GUI client */
 QMainWindow {
   background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #f9f9ff, stop:0.5 #f8f8f8, stop:1 #f9f9ff); }
 
@@ -9,7 +9,7 @@ QToolBar {
 
 QToolBar > .toolbarSpacer {
   min-width: 125px;
-  background: url(:/images/res/images/nushareslogotext) no-repeat;
+  background: url(:/images/res/images/blockshareslogotext) no-repeat;
   border: 1px solid transparent;
   border-bottom: 3px solid #ef3614;
   margin-top: 5px;

@@ -29,7 +29,6 @@
 #include "rpcconsole.h"
 #include "wallet.h"
 #include "distributedivdialog.h"
-#include "parkpage.h"
 #include "votepage.h"
 
 #ifdef Q_WS_MAC
@@ -82,10 +81,10 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     rpcConsole(0)
 {
     resize(850, 550);
-    setWindowTitle(tr("Nu"));
+    setWindowTitle(tr("B&C Exchange"));
     setStyle(QStyleFactory::create("cleanlooks"));
 #ifndef Q_WS_MAC
-    setWindowIcon(QIcon(":icons/nu"));
+    setWindowIcon(QIcon(":icons/icon"));
 #else
     // nu: setting this breaks the visual styles for the toolbar, so turning off
     setUnifiedTitleAndToolBarOnMac(false);
@@ -124,8 +123,6 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
 
     messagePage = new SignVerifyMessageDialog(this);
 
-    parkPage = new ParkPage(this);
-
     votePage = new VotePage(this);
 
     centralWidget = new QStackedWidget(this);
@@ -137,7 +134,6 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
 #ifdef FIRST_CLASS_MESSAGING
     centralWidget->addWidget(messagePage);
 #endif
-    centralWidget->addWidget(parkPage);
     centralWidget->addWidget(votePage);
     setCentralWidget(centralWidget);
 
@@ -238,12 +234,6 @@ void BitcoinGUI::createActions()
 #endif
     tabGroup->addAction(messageAction);
 
-    parkAction = new QAction(tr("&Park"), this);
-    parkAction->setToolTip(tr("Park coins"));
-    parkAction->setCheckable(true);
-    parkAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
-    tabGroup->addAction(parkAction);
-
     voteAction = new QAction(tr("&Vote"), this);
     voteAction->setToolTip(tr("Change your vote"));
     voteAction->setCheckable(true);
@@ -268,8 +258,6 @@ void BitcoinGUI::createActions()
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(gotoSendCoinsPage()));
     connect(messageAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(messageAction, SIGNAL(triggered()), this, SLOT(gotoMessagePage()));
-    connect(parkAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
-    connect(parkAction, SIGNAL(triggered()), this, SLOT(gotoParkPage()));
     connect(voteAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(voteAction, SIGNAL(triggered()), this, SLOT(gotoVotePage()));
 
@@ -278,16 +266,16 @@ void BitcoinGUI::createActions()
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
     aboutAction = new QAction(QIcon(":/icons/ppcoin"), tr("&About %1").arg(qApp->applicationName()), this);
-    aboutAction->setToolTip(tr("Show information about Nu"));
+    aboutAction->setToolTip(tr("Show information about B&C Exchange"));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(tr("About &Qt"), this);
     aboutQtAction->setToolTip(tr("Show information about Qt"));
     aboutQtAction->setMenuRole(QAction::AboutQtRole);
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
-    optionsAction->setToolTip(tr("Modify configuration options for Nu"));
+    optionsAction->setToolTip(tr("Modify configuration options for B&C Exchange"));
     optionsAction->setMenuRole(QAction::PreferencesRole);
-    toggleHideAction = new QAction(QIcon(":/icons/ppcoin"), tr("Show/Hide &Nu"), this);
-    toggleHideAction->setToolTip(tr("Show or hide the Nu window"));
+    toggleHideAction = new QAction(QIcon(":/icons/ppcoin"), tr("Show/Hide &B\\&C Exchange"), this);
+    toggleHideAction->setToolTip(tr("Show or hide the B&C Exchange window"));
     exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
     exportAction->setToolTip(tr("Export the data in the current tab to a file"));
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Portfolio"), this);
@@ -387,7 +375,6 @@ void BitcoinGUI::createToolBars()
 #ifdef FIRST_CLASS_MESSAGING
     toolbar->addAction(messageAction);
 #endif
-    toolbar->addAction(parkAction);
     toolbar->addAction(voteAction);
     toolbar->addAction(switchUnitAction);
 
@@ -405,9 +392,9 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
             QString title_testnet = windowTitle() + QString(" ") + tr("[testnet]");
             setWindowTitle(title_testnet);
 #ifndef Q_WS_MAC
-            setWindowIcon(QIcon(":icons/nu_testnet"));
+            setWindowIcon(QIcon(":icons/icon_testnet"));
 #else
-            MacDockIconHandler::instance()->setIcon(QIcon(":icons/nu_testnet"));
+            MacDockIconHandler::instance()->setIcon(QIcon(":icons/icon_testnet"));
 #endif
             if(trayIcon)
             {
@@ -455,17 +442,11 @@ void BitcoinGUI::setWalletModel(WalletModel *walletModel)
         sendCoinsPage->setModel(walletModel);
         messagePage->setModel(walletModel);
         rpcConsole->setModel(walletModel);
-        parkPage->setModel(walletModel);
         votePage->setModel(walletModel);
-
-        parkAction->setVisible(walletModel->getUnit() != '8');
 
         voteAction->setVisible(walletModel->getUnit() == '8');
 
         if (walletModel->getUnit() != '8' && centralWidget->currentWidget() == votePage)
-            gotoOverviewPage();
-
-        if (walletModel->getUnit() == '8' && centralWidget->currentWidget() == parkPage)
             gotoOverviewPage();
 
         sharesMenu->setEnabled(walletModel->getUnit() == '8');
@@ -561,7 +542,7 @@ void BitcoinGUI::createTrayIcon()
     trayIcon = new QSystemTrayIcon(this);
     trayIconMenu = new QMenu(this);
     trayIcon->setContextMenu(trayIconMenu);
-    trayIcon->setToolTip(tr("Nu client"));
+    trayIcon->setToolTip(tr("B&C Exchange client"));
     trayIcon->setIcon(QIcon(":/icons/toolbar"));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
             this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
@@ -589,7 +570,7 @@ void BitcoinGUI::createTrayIcon()
     trayIconMenu->addAction(quitAction);
 #endif
 
-    notificator = new Notificator(tr("Nu-qt"), trayIcon);
+    notificator = new Notificator(tr("B&C Exchange-qt"), trayIcon);
 }
 
 #ifndef Q_WS_MAC
@@ -653,7 +634,7 @@ void BitcoinGUI::setNumConnections(int count)
     default: icon = ":/icons/connect_4"; break;
     }
     labelConnectionsIcon->setPixmap(QIcon(icon).pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-    labelConnectionsIcon->setToolTip(tr("%n active connection(s) to Nu network", "", count));
+    labelConnectionsIcon->setToolTip(tr("%n active connection(s) to B&C Exchange network", "", count));
 }
 
 void BitcoinGUI::setNumBlocks(int count)
@@ -908,15 +889,6 @@ void BitcoinGUI::gotoMessagePage()
     messagePage->show();
     messagePage->setFocus();
 #endif
-}
-
-void BitcoinGUI::gotoParkPage()
-{
-    parkAction->setChecked(true);
-    centralWidget->setCurrentWidget(parkPage);
-
-    exportAction->setEnabled(false);
-    disconnect(exportAction, SIGNAL(triggered()), 0, 0);
 }
 
 void BitcoinGUI::gotoVotePage()

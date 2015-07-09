@@ -1,6 +1,6 @@
 TEMPLATE = app
 TARGET = bcexchange
-VERSION = 2.0.0
+VERSION = 3.0.0
 INCLUDEPATH += src src/json src/qt
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE
 CONFIG += no_include_pwd
@@ -189,12 +189,10 @@ HEADERS += src/qt/bitcoingui.h \
     src/distribution.h \
     src/qt/distributedivdialog.h \
     src/vote.h \
-    src/qt/parkpage.h \
     src/qt/parktablemodel.h \
     src/qt/parkdialog.h \
     src/qt/votepage.h \
     src/qt/custodianvotedialog.h \
-    src/qt/parkratevotedialog.h \
     src/qt/motionvotedialog.h \
     src/liquidityinfo.h \
     src/datafeed.h \
@@ -262,12 +260,10 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/scanbalance.cpp \
     src/qt/distributedivdialog.cpp \
     src/vote.cpp \
-    src/qt/parkpage.cpp \
     src/qt/parktablemodel.cpp \
     src/qt/parkdialog.cpp \
     src/qt/votepage.cpp \
     src/qt/custodianvotedialog.cpp \
-    src/qt/parkratevotedialog.cpp \
     src/qt/motionvotedialog.cpp \
     src/liquidityinfo.cpp \
     src/datafeed.cpp \
@@ -290,11 +286,9 @@ FORMS += \
     src/qt/forms/askpassphrasedialog.ui \
     src/qt/forms/rpcconsole.ui \
     src/qt/forms/distributedivdialog.ui \
-    src/qt/forms/parkpage.ui \
     src/qt/forms/parkdialog.ui \
     src/qt/forms/votepage.ui \
     src/qt/forms/custodianvotedialog.ui \
-    src/qt/forms/parkratevotedialog.ui \
     src/qt/forms/motionvotedialog.ui \
     src/qt/forms/datafeeddialog.ui \
     src/qt/forms/feevotedialog.ui
@@ -393,7 +387,7 @@ macx:HEADERS += src/qt/macdockiconhandler.h
 macx:OBJECTIVE_SOURCES += src/qt/macdockiconhandler.mm
 macx:LIBS += -framework Foundation -framework ApplicationServices -framework AppKit
 macx:DEFINES += MAC_OSX MSG_NOSIGNAL=0
-macx:ICON = src/qt/res/icons/nu.icns
+macx:ICON = src/qt/res/icons/bcexchange.icns
 macx:TARGET = "bcexchange"
 
 # Set libraries and includes at end, to use platform-defined defaults if not overridden

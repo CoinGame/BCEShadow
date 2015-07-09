@@ -4,7 +4,7 @@ require 'httparty'
 class CoinContainer
   def initialize(options = {})
     default_options = {
-      image: "nubit/base",
+      image: "bcexchange/base",
       bind_code: true,
       shutdown_at_exit: true,
       delete_at_exit: false,

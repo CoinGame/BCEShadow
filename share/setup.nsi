@@ -1,16 +1,16 @@
-Name BCExchange
+Name "B&C Exchange" "B&&C Exchange"
 
 RequestExecutionLevel highest
 SetCompressor /SOLID lzma
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 2.0.0
-!define COMPANY "BCExchange project"
+!define VERSION 3.0.0
+!define COMPANY "B&C Exchange project"
 !define URL http://FIXME/
 
 # MUI Symbol Definitions
-!define MUI_ICON "../share/pixmaps/nu.ico"
+!define MUI_ICON "../share/pixmaps/bcexchange.ico"
 !define MUI_WELCOMEFINISHPAGE_BITMAP "../share/pixmaps/nsis-wizard.bmp"
 !define MUI_HEADERIMAGE
 !define MUI_HEADERIMAGE_RIGHT
@@ -59,7 +59,7 @@ XPStyle on
 BrandingText " "
 ShowInstDetails show
 VIProductVersion ${VERSION}.0
-VIAddVersionKey ProductName BCExchange
+VIAddVersionKey ProductName "B&C Exchange"
 VIAddVersionKey ProductVersion "${VERSION}"
 VIAddVersionKey CompanyName "${COMPANY}"
 VIAddVersionKey CompanyWebsite "${URL}"
