@@ -49,7 +49,7 @@ Given(/^a network with nodes? (.+)(?: able to mint)?$/) do |node_names|
     node.wait_for_boot
   end
 
-  wait_for(10) do
+  wait_for(2.0) do
     @nodes.values.all? do |node|
       count = node.connection_count
       count == @nodes.size - 1
@@ -312,7 +312,7 @@ end
 
 When(/^node "(.*?)" finds blocks until custodian "(.*?)" is elected$/) do |arg1, arg2|
   node = @nodes[arg1]
-  wait_for do
+  wait_for(2.0) do
     done = false
     block = node.generate_stake
     time_travel(60)
@@ -344,7 +344,7 @@ end
 When(/^node "(.*?)" finds blocks until custodian "(.*?)" is elected in transaction "(.*?)"$/) do |arg1, arg2, arg3|
   node = @nodes[arg1]
   address = @addresses[arg2]
-  wait_for do
+  wait_for(2.0) do
     done = false
     block = node.generate_stake
     time_travel(60)
@@ -408,29 +408,27 @@ def debug_balance(node, unit_name)
   )
 end
 
-Then(/^node "(.*?)" (?:should reach|reaches) a balance of "([^"]*?)"( BlockCredits| BlockShares| BKS| BKC|)$/) do |arg1, arg2, unit_name|
+Then(/^node "(.*?)" (?:should reach|should have|reaches) a balance of "([^"]*?)"( BlockCredits| BlockShares| BKS| BKC|)(| minus the transaction fees)$/) do |arg1, arg2, unit_name, minus_fees|
   node = @nodes[arg1]
   amount = parse_number(arg2)
   begin
+    fees = nil
     wait_for do
+      if minus_fees != ""
+        fees = node.unit_rpc(unit(unit_name), "listtransactions").map do |tx|
+          if tx["category"] == "send"
+            tx["fee"]
+          else
+            0.0
+          end
+        end.inject(0.0, :+)
+        amount += fees
+      end
       expect(node.unit_rpc(unit(unit_name), "getbalance")).to eq(amount)
       expect(node.unit_rpc(unit(unit_name), "getbalance", "*")).to eq(amount)
     end
   rescue RSpec::Expectations::ExpectationNotMetError
-    debug_balance(node, unit_name)
-    raise
-  end
-end
-
-Then(/^node "(.*?)" should have a balance of "([^"]*?)"( BlockCredits| BlockShares| BKS| BKC|)$/) do |arg1, arg2, unit_name|
-  node = @nodes[arg1]
-  amount = parse_number(arg2)
-  begin
-    wait_for do
-      expect(node.unit_rpc(unit(unit_name), "getbalance")).to eq(amount)
-      expect(node.unit_rpc(unit(unit_name), "getbalance", "*")).to eq(amount)
-    end
-  rescue RSpec::Expectations::ExpectationNotMetError
+    p fees: fees
     debug_balance(node, unit_name)
     raise
   end

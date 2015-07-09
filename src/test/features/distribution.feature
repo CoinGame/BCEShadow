@@ -23,8 +23,8 @@ Feature: Distribution to shareholders
 
     When node "Bob" generates a BlockShare address "above"
     And node "Bob" generates a BlockShare address "below"
-    And node "Alice" sends "0.035" BlockShares to "above"
-    And node "Alice" sends "0.034" BlockShares to "below"
+    And node "Alice" sends "0.030" BlockShares to "above"
+    And node "Alice" sends "0.029" BlockShares to "below"
     And node "Alice" finds 2 blocks
     And node "Alice" distributes "72,000" Peercoins
 
