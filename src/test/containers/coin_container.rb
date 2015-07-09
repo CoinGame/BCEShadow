@@ -46,7 +46,7 @@ class CoinContainer
     end
     connects = links.map do |linked_name, alias_name|
       upname = alias_name.upcase
-      "-#{connect_method}=$#{upname}_PORT_7895_TCP_ADDR:$#{upname}_PORT_7895_TCP_PORT"
+      "-#{connect_method}=$#{upname}_PORT_12239_TCP_ADDR:$#{upname}_PORT_12239_TCP_PORT"
     end
 
     default_args = {
@@ -115,9 +115,9 @@ class CoinContainer
       'Tty' => true,
       'Cmd' => command,
       'ExposedPorts' => {
-        "7895/tcp" => {},
-        "15001/tcp" => {},
-        "15002/tcp" => {},
+        "12239/tcp" => {},
+        "12240/tcp" => {},
+        "12241/tcp" => {},
       },
     }
     node_container = Docker::Container.create(create_options)
@@ -146,9 +146,9 @@ class CoinContainer
 
     start_options = {
       'PortBindings' => {
-        "15001/tcp" => ['127.0.0.1'],
-        "15002/tcp" => ['127.0.0.1'],
-        "7895/tcp" => ['127.0.0.1'],
+        "12240/tcp" => ['127.0.0.1'],
+        "12241/tcp" => ['127.0.0.1'],
+        "12239/tcp" => ['127.0.0.1'],
       },
       'Links' => links.map { |link_name, alias_name| "#{link_name}:#{alias_name}" },
     }
@@ -185,11 +185,11 @@ class CoinContainer
     end
 
     @rpc_ports = {
-      '8' => ports["15001/tcp"].first["HostPort"].to_i,
-      'C' => ports["15002/tcp"].first["HostPort"].to_i,
+      '8' => ports["12240/tcp"].first["HostPort"].to_i,
+      'C' => ports["12241/tcp"].first["HostPort"].to_i,
     }
     @rpc_port = @rpc_ports['8']
-    @port= ports["7895/tcp"].first["HostPort"].to_i
+    @port= ports["12239/tcp"].first["HostPort"].to_i
   end
 
   attr_reader :rpc_port, :port, :container, :name

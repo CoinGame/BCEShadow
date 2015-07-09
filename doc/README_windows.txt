@@ -36,7 +36,7 @@ applications if necessary.
 
 The software automatically finds other nodes to connect to.  You can
 enable Universal Plug and Play (UPnP) with your router/firewall
-or forward port 7890 (TCP) to your computer so you can receive
+or forward port 2239 (TCP) to your computer so you can receive
 incoming connections.  BCExchange works without incoming connections,
 but allowing incoming connections helps the BCExchange network.
 

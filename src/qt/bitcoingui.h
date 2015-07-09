@@ -89,6 +89,7 @@ private:
     QAction *receiveCoinsAction;
     QAction *optionsAction;
     QAction *toggleHideAction;
+    QAction *importAction;
     QAction *exportAction;
     QAction *exportPeercoinKeysAction;
     QAction *encryptWalletAction;
@@ -183,6 +184,8 @@ private slots:
     void unlockForMinting(bool status);
     /** Backup the wallet */
     void backupWallet();
+    /** Import a wallet */
+    void walletImport();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
     /** Ask for pass phrase to unlock wallet temporarily */

@@ -2063,6 +2063,17 @@ int CWallet::LoadWallet(bool& fFirstRunRet)
     return DB_LOAD_OK;
 }
 
+int CWallet::LoadWalletImport()
+{
+    if (!fFileBacked)
+        return DB_LOAD_OK;
+    int nLoadWalletRet = CWalletDB(strWalletFile,"r+").LoadWalletImport(this);
+    if (nLoadWalletRet != DB_LOAD_OK) {
+        return nLoadWalletRet;
+    }
+
+    return DB_LOAD_OK;
+}
 
 bool CWallet::SetAddressBookName(const CTxDestination& address, const string& strName)
 {

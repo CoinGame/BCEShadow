@@ -939,6 +939,35 @@ boost::filesystem::path GetDefaultPeercoinDataDir()
 #endif
 }
 
+boost::filesystem::path GetDefaultNuBitsDataDir()
+{
+    namespace fs = boost::filesystem;
+
+    // Windows: C:\Documents and Settings\username\Application Data\Nu
+    // Mac: ~/Library/Application Support/Nu
+    // Unix: ~/.nu
+#ifdef WIN32
+    // Windows
+    return MyGetSpecialFolderPath(CSIDL_APPDATA, true) / "Nu";
+#else
+    fs::path pathRet;
+    char* pszHome = getenv("HOME");
+    if (pszHome == NULL || strlen(pszHome) == 0)
+        pathRet = fs::path("/");
+    else
+        pathRet = fs::path(pszHome);
+#ifdef MAC_OSX
+    // Mac
+    pathRet /= "Library/Application Support";
+    fs::create_directory(pathRet);
+    return pathRet / "Nu";
+#else
+    // Unix
+    return pathRet / ".nu";
+#endif
+#endif
+}
+
 const boost::filesystem::path &GetDataDir(bool fNetSpecific)
 {
     namespace fs = boost::filesystem;
@@ -999,6 +1028,39 @@ const boost::filesystem::path &GetPeercoinDataDir(bool fNetSpecific)
         }
     } else {
         path = GetDefaultPeercoinDataDir();
+    }
+    if (fNetSpecific && GetBoolArg("-testnet", false))
+        path /= "testnet";
+
+    cachedPath[fNetSpecific]=true;
+    return path;
+}
+
+const boost::filesystem::path &GetNuBitsDataDir(bool fNetSpecific)
+{
+    namespace fs = boost::filesystem;
+
+    static fs::path pathCached[2];
+    static CCriticalSection csPathCached;
+    static bool cachedPath[2] = {false, false};
+
+    fs::path &path = pathCached[fNetSpecific];
+
+    // This can be called during exceptions by printf, so we cache the
+    // value so we don't have to do memory allocations after that.
+    if (cachedPath[fNetSpecific])
+        return path;
+
+    LOCK(csPathCached);
+
+    if (mapArgs.count("-nubitsdatadir")) {
+        path = fs::system_complete(mapArgs["-nubitsdatadir"]);
+        if (!fs::is_directory(path)) {
+            path = "";
+            return path;
+        }
+    } else {
+        path = GetDefaultNuBitsDataDir();
     }
     if (fNetSpecific && GetBoolArg("-testnet", false))
         path /= "testnet";

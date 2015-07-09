@@ -71,6 +71,7 @@ CWallet *GetThreadWallet()
 extern Value dumpprivkey(const Array& params, bool fHelp);
 extern Value importprivkey(const Array& params, bool fHelp);
 extern Value exportpeercoinkeys(const Array& params, bool fHelp);
+extern Value importnusharewallet(const Array& params, bool fHelp);
 
 Object JSONRPCError(int code, const string& message)
 {
@@ -4705,6 +4706,7 @@ static const CRPCCommand vRPCCommands[] =
     { "dumpprivkey",            &dumpprivkey,            false },
     { "importprivkey",          &importprivkey,          false },
     { "exportpeercoinkeys",     &exportpeercoinkeys,     false },
+    { "importnusharewallet",    &importnusharewallet,    false },
     { "getcheckpoint",          &getcheckpoint,          true },
     { "reservebalance",         &reservebalance,         false},
     { "checkwallet",            &checkwallet,            false},
