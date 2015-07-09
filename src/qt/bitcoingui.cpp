@@ -265,7 +265,7 @@ void BitcoinGUI::createActions()
     quitAction->setToolTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(QIcon(":/icons/ppcoin"), tr("&About %1").arg(qApp->applicationName()), this);
+    aboutAction = new QAction(QIcon(":/icons/ppcoin"), tr("&About %1").arg(qApp->applicationName().replace("&", "&&")), this);
     aboutAction->setToolTip(tr("Show information about B&C Exchange"));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(tr("About &Qt"), this);
