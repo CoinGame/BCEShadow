@@ -16,14 +16,14 @@
 #include <string>
 #include "uint256.h"
 
-// Nu protocol port
-#define PROTOCOL_PORT     7890
+// BCExchange protocol port. 2239 stands for BCEX on a telephone keypad
+#define PROTOCOL_PORT     2239
 // Base RPC port used by the BlockShare RPC server. BlockCredit RPC server listen ons RPC_PORT+1.
-#define RPC_PORT         14001
+#define RPC_PORT          2240
 
 // The same rules apply to testnet, but on different ports
-#define TESTNET_PORT      7895
-#define TESTNET_RPC_PORT 15001
+#define TESTNET_PORT      12239
+#define TESTNET_RPC_PORT  12240
 
 #define PEERCOIN_RPC_PORT         9902
 #define PEERCOIN_TESTNET_RPC_PORT 9904
