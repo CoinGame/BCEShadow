@@ -387,7 +387,7 @@ macx:HEADERS += src/qt/macdockiconhandler.h
 macx:OBJECTIVE_SOURCES += src/qt/macdockiconhandler.mm
 macx:LIBS += -framework Foundation -framework ApplicationServices -framework AppKit
 macx:DEFINES += MAC_OSX MSG_NOSIGNAL=0
-macx:ICON = src/qt/res/icons/nu.icns
+macx:ICON = src/qt/res/icons/bcexchange.icns
 macx:TARGET = "bcexchange"
 
 # Set libraries and includes at end, to use platform-defined defaults if not overridden
