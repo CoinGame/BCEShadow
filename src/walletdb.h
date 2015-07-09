@@ -21,7 +21,8 @@ enum DBErrors
     DB_CORRUPT,
     DB_TOO_NEW,
     DB_LOAD_FAIL,
-    DB_NEED_REWRITE
+    DB_NEED_REWRITE,
+    DB_INCORRECT_UNIT
 };
 
 /** Access to the wallet database (wallet.dat) */
@@ -209,6 +210,7 @@ public:
     }
 
     int LoadWallet(CWallet* pwallet);
+    int LoadWalletImport(CWallet* pwallet);
 };
 
 #endif // BITCOIN_WALLETDB_H
