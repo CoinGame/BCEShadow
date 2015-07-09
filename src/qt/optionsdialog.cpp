@@ -168,7 +168,7 @@ MainOptionsPage::MainOptionsPage(QWidget *parent):
 {
     QVBoxLayout *layout = new QVBoxLayout();
 
-    bitcoin_at_startup = new QCheckBox(tr("&Start B&amp;C Exchange on window system startup"));
+    bitcoin_at_startup = new QCheckBox(tr("&Start B&&C Exchange on window system startup"));
     bitcoin_at_startup->setToolTip(tr("Automatically start B&C Exchange after the computer is turned on"));
     layout->addWidget(bitcoin_at_startup);
 
