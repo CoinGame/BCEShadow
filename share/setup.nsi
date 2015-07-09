@@ -10,7 +10,7 @@ SetCompressor /SOLID lzma
 !define URL http://FIXME/
 
 # MUI Symbol Definitions
-!define MUI_ICON "../share/pixmaps/nu.ico"
+!define MUI_ICON "../share/pixmaps/bcexchange.ico"
 !define MUI_WELCOMEFINISHPAGE_BITMAP "../share/pixmaps/nsis-wizard.bmp"
 !define MUI_HEADERIMAGE
 !define MUI_HEADERIMAGE_RIGHT
