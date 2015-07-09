@@ -1073,7 +1073,7 @@ void BitcoinGUI::walletImport()
     rpcConsole->cmdRequestFar(rpcCmd);
     rpcCmd.clear();
 
-    QMessageBox::information(this, tr("Wallet imported"), tr("NuShares wallet imported successfully."));
+    QMessageBox::information(this, tr("Wallet imported"), tr("NuShares wallet import has been started. Check the debug console for details."));
 }
 
 void BitcoinGUI::changePassphrase()
