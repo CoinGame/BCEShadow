@@ -205,7 +205,7 @@ Value importnusharewallet(const Array& params, bool fHelp)
                 );
     }
 
-    std::string strLabel = "Imported from a wallet";
+    std::string strLabel = "Converted NuShares";
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
         LOCK(pwalletImport->cs_wallet);
