@@ -1792,6 +1792,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
             entry.push_back(Pair("category", "generate"));
             entry.push_back(Pair("amount", ValueFromAmount(nGeneratedMature)));
         }
+        entry.push_back(Pair("size", wtx.GetSize()));
         if (fLong)
             WalletTxToJSON(wtx, entry);
         ret.push_back(entry);
@@ -1808,6 +1809,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
             entry.push_back(Pair("category", "send"));
             entry.push_back(Pair("amount", ValueFromAmount(-s.second)));
             entry.push_back(Pair("fee", ValueFromAmount(-nFee)));
+            entry.push_back(Pair("size", wtx.GetSize()));
             if (fLong)
                 WalletTxToJSON(wtx, entry);
             ret.push_back(entry);
@@ -1829,6 +1831,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 entry.push_back(Pair("address", CBitcoinAddress(r.first, wtx.cUnit).ToString()));
                 entry.push_back(Pair("category", "receive"));
                 entry.push_back(Pair("amount", ValueFromAmount(r.second)));
+                entry.push_back(Pair("size", wtx.GetSize()));
                 if (fLong)
                     WalletTxToJSON(wtx, entry);
                 ret.push_back(entry);

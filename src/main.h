@@ -714,14 +714,15 @@ public:
         return MinTxOutAmount(cUnit);
     }
 
+    int GetSize() const { return ::GetSerializeSize((const CTransaction&)*this, SER_NETWORK, PROTOCOL_VERSION); }
     int64 GetMinFee(int64 nBaseFee, unsigned int nBytes) const;
-    int64 GetMinFee(int64 nBaseFee) const { return GetMinFee(nBaseFee, ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION)); }
+    int64 GetMinFee(int64 nBaseFee) const { return GetMinFee(nBaseFee, GetSize()); }
     // nubit: Returns the minimum fee required for this transaction in this block
     int64 GetMinFee(const CBlockIndex *pindex, unsigned int nBytes) const;
-    int64 GetMinFee(const CBlockIndex *pindex) const { return GetMinFee(pindex, ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION)); }
+    int64 GetMinFee(const CBlockIndex *pindex) const { return GetMinFee(pindex, GetSize()); }
     // nubit: Returns the minimum fee that's safe to use in the next few blocks after pindex
     int64 GetSafeMinFee(const CBlockIndex *pindex, unsigned int nBytes) const;
-    int64 GetSafeMinFee(const CBlockIndex *pindex) const { return GetSafeMinFee(pindex, ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION)); }
+    int64 GetSafeMinFee(const CBlockIndex *pindex) const { return GetSafeMinFee(pindex, GetSize()); }
 
     bool ReadFromDisk(CDiskTxPos pos, FILE** pfileRet=NULL)
     {
@@ -777,14 +778,15 @@ public:
     {
         std::string str;
         str += IsCoinBase()? "Coinbase" : (IsCoinStake()? "Coinstake" : "CTransaction");
-        str += strprintf("(hash=%s, unit=%c nTime=%d, ver=%d, vin.size=%d, vout.size=%d, nLockTime=%d)\n",
+        str += strprintf("(hash=%s, unit=%c nTime=%d, ver=%d, vin.size=%d, vout.size=%d, nLockTime=%d size=%d)\n",
             GetHash().ToString().substr(0,10).c_str(),
             cUnit,
             nTime,
             nVersion,
             vin.size(),
             vout.size(),
-            nLockTime);
+            nLockTime,
+            GetSize());
         for (unsigned int i = 0; i < vin.size(); i++)
             str += "    " + vin[i].ToString() + "\n";
         for (unsigned int i = 0; i < vout.size(); i++)

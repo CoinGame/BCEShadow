@@ -64,7 +64,7 @@ Feature: Ability to sign multisignature transaction without all the keys
     And node "Cust1" generates a raw BlockCredit transaction "raw" to send the amount sent to address "cust" in transaction "grant" to:
       | Address   | Value      |
       | recipient | 100,000.00 |
-      | cust      | 899,999.99 |
+      | cust      | 899,990.00 |
     And node "Cust1" signs the raw BlockCredit transaction "raw"
     And node "Cust2" signs the raw BlockCredit transaction "raw"
     Then the raw transaction "raw" should be complete

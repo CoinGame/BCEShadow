@@ -3,7 +3,7 @@ Feature: Split money supply
 
   Scenario: Initial money supply of the network
     Given a network with node "A" able to mint
-    Then the "BlockShare" supply should be between "251,000" and "252,000"
+    Then the "BlockShare" supply should be between "209,990" and "210,010"
     And the "BlockCredit" supply should be "0"
 
   Scenario: Money supply after a block is found
@@ -16,7 +16,7 @@ Feature: Split money supply
     When node "B" generates a BlockCredit address "cust"
     And node "A" votes an amount of "1,000,000" for custodian "cust"
     And node "A" finds blocks until custodian "cust" is elected
-    Then the "BlockShare" supply should be between "251,000" and "252,000"
+    Then the "BlockShare" supply should be between "209,990" and "210,010"
     And the "BlockCredit" supply should be "1,000,000"
 
   Scenario: Money supply after a BlockShares custodian is elected
@@ -25,5 +25,5 @@ Feature: Split money supply
     When node "B" generates a BlockShares address "cust"
     And node "A" votes an amount of "10,000" for custodian "cust"
     And node "A" finds blocks until custodian "cust" is elected
-    Then the "BlockShare" supply should be between "261,000" and "262,000"
+    Then the "BlockShare" supply should be between "219,990" and "220,010"
     And the "BlockCredit" supply should be "0"
