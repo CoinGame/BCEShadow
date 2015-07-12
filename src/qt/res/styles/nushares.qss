@@ -3,22 +3,22 @@ QMainWindow {
   background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #f9f9ff, stop:0.5 #f8f8f8, stop:1 #f9f9ff); }
 
 QToolBar {
-  background-color: #211f20;
+  background-color: #2c4055;
   height: 125px;
-  border-bottom: 4px solid #ef3614; }
+  border-bottom: 4px solid #3bba85; }
 
 QToolBar > .toolbarSpacer {
   min-width: 125px;
   background: url(:/images/res/images/blockshareslogotext) no-repeat;
   border: 1px solid transparent;
-  border-bottom: 3px solid #ef3614;
+  border-bottom: 3px solid #3bba85;
   margin-top: 5px;
   margin-left: 15px;
   margin-right: 40px; }
 
 QToolBar > QToolButton {
   border: 0px;
-  background-color: #211f20;
+  background-color: #2c4055;
   color: white;
   margin-top: 15px;
   margin-bottom: 15px;
@@ -33,7 +33,7 @@ QToolBar > QToolButton {
   padding-right: 5px; }
 
 QToolBar > QToolButton:checked {
-  border-bottom: 2px solid #ef3614;
+  border-bottom: 2px solid #3bba85;
   color: white;
   margin-top: 17px;
   margin-bottom: 15px;
@@ -45,10 +45,10 @@ QToolBar > QToolButton:checked {
   padding-right: 5px; }
 
 QToolBar > QToolButton:checked:hover {
-  background-color: #322f30; }
+  background-color: #1e2c3a; }
 
 QToolBar > QToolButton:hover {
-  background-color: #322f30; }
+  background-color: #1e2c3a; }
 
 QGroupBox {
   background: transparent;
@@ -59,15 +59,15 @@ QTableView {
   selection-color: black; }
 
 QPushButton {
-  background-color: #0074a0;
-  border: 1px solid #006287;
+  background-color: #1e2c3a;
+  border: 1px solid #1e2c3a;
   border-radius: 3px;
   font-weight: 600;
   color: white;
   padding: 4px; }
 
 QPushButton:hover {
-  background-color: #004f6d; }
+  background-color: #1e2c3a; }
 
 QPushButton:disabled {
   background-color: #dddddd;
@@ -93,11 +93,11 @@ QMessageBox {
   background-color: #f8f8f8; }
 
 QSizeGrip {
-  background-color: #211f20; }
+  background-color: #2c4055; }
 
 QStatusBar {
   color: white;
-  background-color: #211f20; }
+  background-color: #2c4055; }
 
 QStatusBar .progressBarLabel {
   color: #ffffff; }
@@ -110,11 +110,11 @@ QTimeEdit {
   background-color: #f8f8f8; }
 
 QToolButton {
-  background-color: #0074a0;
-  border: 1px solid #006287; }
+  background-color: #1e2c3a;
+  border: 1px solid #1e2c3a; }
 
 QToolButton:hover {
-  background-color: #004f6d; }
+  background-color: #1e2c3a; }
 
 QToolButton:disabled {
   background-color: #dddddd;
@@ -130,5 +130,5 @@ QProgressBar {
 }
 
 .switchUnitToggleBtn {
-  color: #ffb800;
+  color: #3bba85;
 }
