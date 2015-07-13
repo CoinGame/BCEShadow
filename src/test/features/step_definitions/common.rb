@@ -220,6 +220,14 @@ When(/^node "(.*?)" finds a block "([^"]*?)" not received by node "([^"]*?)"$/) 
   @blocks[block] = @nodes[node].generate_stake
 end
 
+When(/^node "(.*?)" ignores all new blocks$/) do |arg1|
+  @nodes[arg1].rpc("ignorenextblock", "all")
+end
+
+When(/^node "(.*?)" stops ignoring new blocks$/) do |arg1|
+  @nodes[arg1].rpc("ignorenextblock", "0")
+end
+
 When(/^node "(.*?)" finds a block$/) do |node|
   time_travel(5)
   @nodes[node].generate_stake

@@ -728,11 +728,12 @@ bool CTxDB::LoadBlockIndex()
 
     // nubit: rebuild list of elected custodians
     {
-        LOCK(cs_mapElectedCustodian);
-        for (CBlockIndex* pindex = pindexBest; pindex && pindex->pprev; pindex = pindex->pprev)
+        for (CBlockIndex* pindex = pindexGenesisBlock->pnext; pindex; pindex = pindex->pnext)
         {
-            BOOST_FOREACH(const CCustodianVote& custodianVote, pindex->vElectedCustodian)
-                mapElectedCustodian[custodianVote.GetAddress()] = pindex;
+            if (pindex->pprev->vElectedCustodian.size())
+                pindex->pprevElected = pindex->pprev;
+            else
+                pindex->pprevElected = pindex->pprev->pprevElected;
         }
     }
 

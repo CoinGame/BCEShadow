@@ -66,9 +66,6 @@ map<uint256, uint256> mapProofOfStake;
 map<uint256, CDataStream*> mapOrphanTransactions;
 map<uint256, map<uint256, CDataStream*> > mapOrphanTransactionsByPrev;
 
-map<CBitcoinAddress, CBlockIndex*> mapElectedCustodian;
-CCriticalSection cs_mapElectedCustodian;
-
 // Constant stuff for coinbase transactions we create:
 CScript COINBASE_FLAGS;
 
@@ -1772,6 +1769,59 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
     return true;
 }
 
+void CBlockIndex::GetElectedCustodians(std::map<CBitcoinAddress, CBlockIndex*>& mapElectedCustodian) const
+{
+    mapElectedCustodian.clear();
+    for (const CBlockIndex* pindex = this; pindex; pindex = pindex->pprevElected)
+    {
+        BOOST_FOREACH(const CCustodianVote& custodianVote, pindex->vElectedCustodian)
+            mapElectedCustodian[custodianVote.GetAddress()] = const_cast<CBlockIndex*>(pindex);
+    }
+}
+
+bool CBlock::CheckCustodianGrants(const CBlockIndex* pindex) const
+{
+    const CBlockIndex* pindexPrev = pindex->pprev;
+    std::map<CBitcoinAddress, CBlockIndex*> mapElectedCustodian;
+    pindex->pprev->GetElectedCustodians(mapElectedCustodian);
+    {
+        vector<CTransaction> vExpectedCurrencyCoinBase;
+        if (IsProofOfStake())
+        {
+            vector<CVote> vVote;
+            if (!ExtractVotes(*this, pindexPrev, CUSTODIAN_VOTES, vVote))
+                return error("CheckCustodianGrants() : unable to extract votes");
+
+            if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, vExpectedCurrencyCoinBase))
+                return error("CheckCustodianGrants() : unable to generate currency coin bases");
+        }
+        vector<CTransaction> vActualCurrencyCoinBase;
+        BOOST_FOREACH(const CTransaction& tx, vtx)
+        {
+            if (tx.IsCustodianGrant())
+                vActualCurrencyCoinBase.push_back(tx);
+        }
+        if (vActualCurrencyCoinBase.size() != vExpectedCurrencyCoinBase.size())
+            return DoS(100, error("CheckCustodianGrants() : unexpected number of expansion transaction"));
+        for (int i = 0; i < vActualCurrencyCoinBase.size(); i++)
+        {
+            const CTransaction& actualTx = vActualCurrencyCoinBase[i];
+
+            CTransaction& expectedTx = vExpectedCurrencyCoinBase[i];
+            expectedTx.nTime = actualTx.nTime;
+
+            if (actualTx != expectedTx)
+            {
+                printf("expected tx: %s\n", expectedTx.ToString().c_str());
+                printf("actual tx:   %s\n", actualTx.ToString().c_str());
+                return DoS(100, error("CheckCustodianGrants() : invalid expansion transaction found"));
+            }
+        }
+    }
+
+    return true;
+}
+
 bool Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
 {
     printf("REORGANIZE\n");
@@ -1864,31 +1914,6 @@ bool Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
     BOOST_FOREACH(CTransaction& tx, vDelete)
         mempool.remove(tx);
 
-    // nubit: update elected custodians
-    {
-        BOOST_FOREACH(CBlockIndex* pindex, vDisconnect)
-        {
-            BOOST_FOREACH(const CCustodianVote& custodianVote, pindex->vElectedCustodian)
-            {
-                const CBitcoinAddress& address(custodianVote.GetAddress());
-                {
-                    LOCK(cs_mapElectedCustodian);
-                    mapElectedCustodian.erase(address);
-                }
-                RemoveLiquidityInfoFromCustodian(address);
-            }
-        }
-        BOOST_FOREACH(CBlockIndex* pindex, vConnect)
-        {
-            BOOST_FOREACH(const CCustodianVote& custodianVote, pindex->vElectedCustodian)
-            {
-                const CBitcoinAddress& address(custodianVote.GetAddress());
-                LOCK(cs_mapElectedCustodian);
-                mapElectedCustodian[address] = pindex;
-            }
-        }
-    }
-
     printf("REORGANIZE: done\n");
 
     return true;
@@ -1917,19 +1942,14 @@ bool CBlock::SetBestChainInner(CTxDB& txdb, CBlockIndex *pindexNew)
     BOOST_FOREACH(CTransaction& tx, vtx)
         mempool.remove(tx);
 
-    // nubit: update elected custodians
-    BOOST_FOREACH(const CCustodianVote& custodianVote, pindexNew->vElectedCustodian)
-    {
-        const CBitcoinAddress& address(custodianVote.GetAddress());
-        LOCK(cs_mapElectedCustodian);
-        mapElectedCustodian[address] = pindexNew;
-    }
-
     return true;
 }
 
 bool CBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
 {
+    if (!CheckCustodianGrants(pindexNew))
+        return error("SetBestChain() : custodian grant check failed");
+
     uint256 hash = GetHash();
 
     if (!txdb.TxnBegin())
@@ -2138,6 +2158,15 @@ bool CBlock::AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos)
         printf("Protocol version update %d -> %d on height=%d\n",
                 pindexNew->pprev->nProtocolVersion, pindexNew->nProtocolVersion, pindexNew->nHeight);
 
+
+    // nubit: store previous block with an elected custodian
+    if (pindexNew->pprev)
+    {
+        if (pindexNew->pprev->vElectedCustodian.size())
+            pindexNew->pprevElected = pindexNew->pprev;
+        else
+            pindexNew->pprevElected = pindexNew->pprev->pprevElected;
+    }
 
     // ppcoin: compute chain trust score
     pindexNew->bnChainTrust = (pindexNew->pprev ? pindexNew->pprev->bnChainTrust : 0) + pindexNew->GetBlockTrust();
@@ -2403,46 +2432,6 @@ bool CBlock::AcceptBlock()
                     vote.nVersionVote, PROTOCOL_V2_0);
     }
 
-    // nubit: check the expansion transactions match the expected ones
-    {
-        vector<CTransaction> vExpectedCurrencyCoinBase;
-        if (IsProofOfStake())
-        {
-            vector<CVote> vVote;
-            if (!ExtractVotes(*this, pindexPrev, CUSTODIAN_VOTES, vVote))
-                return error("AcceptBlock() : unable to extract votes");
-
-            {
-                LOCK(cs_mapElectedCustodian);
-
-                if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, nHeight, vExpectedCurrencyCoinBase))
-                    return error("AcceptBlock() : unable to generate currency coin bases");
-            }
-        }
-        vector<CTransaction> vActualCurrencyCoinBase;
-        BOOST_FOREACH(const CTransaction& tx, vtx)
-        {
-            if (tx.IsCustodianGrant())
-                vActualCurrencyCoinBase.push_back(tx);
-        }
-        if (vActualCurrencyCoinBase.size() != vExpectedCurrencyCoinBase.size())
-            return DoS(100, error("AcceptBlock() : unexpected number of expansion transaction"));
-        for (int i = 0; i < vActualCurrencyCoinBase.size(); i++)
-        {
-            const CTransaction& actualTx = vActualCurrencyCoinBase[i];
-
-            CTransaction& expectedTx = vExpectedCurrencyCoinBase[i];
-            expectedTx.nTime = actualTx.nTime;
-
-            if (actualTx != expectedTx)
-            {
-                printf("expected tx: %s\n", expectedTx.ToString().c_str());
-                printf("actual tx:   %s\n", actualTx.ToString().c_str());
-                return DoS(100, error("AcceptBlock() : invalid expansion transaction found"));
-            }
-        }
-    }
-
     // Write block to history file
     if (!CheckDiskSpace(::GetSerializeSize(*this, SER_DISK, CLIENT_VERSION)))
         return error("AcceptBlock() : out of disk space");
@@ -2491,9 +2480,10 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
 {
 #ifdef TESTING
     static set<uint256> setIgnoredBlockHashes;
-    if (nBlocksToIgnore)
+    if (nBlocksToIgnore != 0)
     {
-        nBlocksToIgnore--;
+        if (nBlocksToIgnore > 0)
+            nBlocksToIgnore--;
         setIgnoredBlockHashes.insert(pblock->GetHash());
         return error("ProcessBlock() : block ignored");
     }
@@ -4323,14 +4313,11 @@ CBlock* CreateNewBlock(CReserveKey& reservekey, CWallet* pwallet, bool fProofOfS
         }
 
         vector<CTransaction> vCurrencyCoinBase;
-        {
-            LOCK(cs_mapElectedCustodian);
 
-            if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, pindexPrev->nHeight + 1, vCurrencyCoinBase))
-            {
-                printf("CreateNewBlock(): unable to generate currency coin bases");
-                return NULL;
-            }
+        if (!GenerateCurrencyCoinBases(vVote, pindexBest->GetElectedCustodians(), vCurrencyCoinBase))
+        {
+            printf("CreateNewBlock(): unable to generate currency coin bases");
+            return NULL;
         }
 
         BOOST_FOREACH(CTransaction& tx, vCurrencyCoinBase)

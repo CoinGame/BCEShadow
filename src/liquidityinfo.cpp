@@ -60,12 +60,13 @@ bool CLiquidityInfo::ProcessLiquidityInfo()
     CBitcoinAddress address(GetCustodianAddress());
 
     {
-        LOCK2(cs_main, cs_mapElectedCustodian);
+        LOCK(cs_main);
 
         if (pindexBest->nProtocolVersion >= PROTOCOL_V2_0 && nVersion > pindexBest->nProtocolVersion)
             return false;
 
-        map<const CBitcoinAddress, CBlockIndex*>::iterator it;
+        map<CBitcoinAddress, CBlockIndex*> mapElectedCustodian = pindexBest->GetElectedCustodians();
+        map<CBitcoinAddress, CBlockIndex*>::iterator it;
         it = mapElectedCustodian.find(address);
         if (it == mapElectedCustodian.end())
             return false;
@@ -124,9 +125,9 @@ void RemoveExpiredLiquidityInfo(int nCurrentHeight)
 {
     bool fAnyRemoved = false;
     {
-        LOCK(cs_mapLiquidityInfo);
-        LOCK2(cs_main, cs_mapElectedCustodian);
+        LOCK2(cs_main, cs_mapLiquidityInfo);
 
+        map<CBitcoinAddress, CBlockIndex*> mapElectedCustodian = pindexBest->GetElectedCustodians();
         map<const CLiquiditySource, CLiquidityInfo>::iterator it;
         it = mapLiquidityInfo.begin();
         while (it != mapLiquidityInfo.end())
