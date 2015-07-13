@@ -316,6 +316,12 @@ void CleanStakeModifierCache()
     }
 }
 
+void ClearStakeModifierCache()
+{
+    mapStakeModifier.clear();
+    mapStakeModifierLastUse.clear();
+}
+
 // Peershares kernel protocol
 // coinstake must meet hash target according to the protocol:
 // kernel (input 0) must meet the formula
