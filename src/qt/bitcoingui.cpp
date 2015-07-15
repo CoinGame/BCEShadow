@@ -1066,7 +1066,7 @@ void BitcoinGUI::walletImport()
          passwd = QInputDialog::getText(this, tr("Import Wallet"), tr("Password:"), QLineEdit::Password);
     }
 
-    rpcCmd = QString("importnusharewallet %1 %2")
+    rpcCmd = QString("importnusharewallet \"%1\" \"%2\"")
             .arg(filename)
             .arg(passwd);
     passwd.clear();
