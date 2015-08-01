@@ -17,7 +17,7 @@ class ProxyContainer
 
     start_options = {
       'PortBindings' => {
-        "1080/tcp" => ['127.0.0.1'],
+        "1080/tcp" => [{}],
       },
     }
 

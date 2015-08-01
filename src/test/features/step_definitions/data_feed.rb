@@ -34,7 +34,7 @@ class DataFeedContainer
 
     start_options = {
       'PortBindings' => {
-        "4567/tcp" => ['127.0.0.1'],
+        "4567/tcp" => [{}],
       },
     }
 
