@@ -703,6 +703,15 @@ bool IsNuProtocolV20NextBlock(const CBlockIndex* pPrevIndex)
 }
 
 /*
+ * Check if the V3.1 protocol is active on the next block
+ */
+bool IsProtocolV3_1NextBlock(const CBlockIndex* pPrevIndex)
+{
+    return IsProtocolActiveForNextBlock(pPrevIndex,
+            fTestNet ? PROTOCOL_V3_1_TEST_VOTE_TIME : PROTOCOL_V3_1_VOTE_TIME, PROTOCOL_V3_1);
+}
+
+/*
  * Calculate what should be the protocol version for the next block.
  * The minimum version that it will return is v0.5 (50000) so checks
  * for older versions should be done separately.
@@ -716,6 +725,9 @@ int GetProtocolForNextBlock(const CBlockIndex* pPrevIndex)
 
     if (nProtocol < PROTOCOL_V2_0)
         nProtocol = PROTOCOL_V2_0;
+
+    if (nProtocol < PROTOCOL_V3_1 && IsProtocolV3_1NextBlock(pPrevIndex))
+        nProtocol = PROTOCOL_V3_1;
 
     return nProtocol;
 }

@@ -52,6 +52,11 @@ static const int PROTOCOL_V2_0 = 2000000;
 static const unsigned int PROTOCOL_V2_0_VOTE_TIME      = 1438696800; // 2015-08-04 14:00:00 UTC
 static const unsigned int PROTOCOL_V2_0_TEST_VOTE_TIME = 1433858400; // 2015-06-09 14:00:00 UTC
 
+// V3.1
+static const int PROTOCOL_V3_1 = 3010000;
+static const unsigned int PROTOCOL_V3_1_VOTE_TIME      = 1442325600; // 2015-09-15 14:00:00 UTC
+static const unsigned int PROTOCOL_V3_1_TEST_VOTE_TIME = 1441116000; // 2015-09-01 14:00:00 UTC
+
 #ifdef TESTING
 static const unsigned int PROTOCOL_SWITCH_REQUIRE_VOTES = 9;
 static const unsigned int PROTOCOL_SWITCH_COUNT_VOTES = 10;
@@ -61,7 +66,7 @@ static const unsigned int PROTOCOL_SWITCH_COUNT_VOTES = 2000;
 #endif
 
 // Current client protocol
-static const int PROTOCOL_VERSION = PROTOCOL_V2_0;
+static const int PROTOCOL_VERSION = PROTOCOL_V3_1;
 
 // earlier versions not supported as of Feb 2012, and are disconnected
 // NOTE: as of bitcoin v0.6 message serialization (vSend, vRecv) still
