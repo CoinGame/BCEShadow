@@ -2166,7 +2166,7 @@ bool CBlock::AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos)
     {
         if (!ExtractVote(*this, pindexNew->vote, pindexNew->nProtocolVersion))
             return error("AddToBlockIndex() : Unable to extract vote");
-        if (!pindexNew->vote.IsValid(pindexNew->nProtocolVersion))
+        if (!pindexNew->vote.IsValidInBlock(pindexNew->nProtocolVersion))
             return error("AddToBlockIndex() : Invalid vote");
 
         if (!GetCoinStakeAge(pindexNew->nCoinAgeDestroyed))

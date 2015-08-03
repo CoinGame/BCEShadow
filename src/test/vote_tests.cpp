@@ -1039,4 +1039,53 @@ BOOST_AUTO_TEST_CASE(fee_vote_calculation)
     ResetFeeVoteBlocks();
 }
 
+BOOST_AUTO_TEST_CASE(reputation_vote_distribution)
+{
+    CUserVote vote;
+    CReputationVote reputationVote;
+
+    CBitcoinAddress address1("8VZRy4CAWKVC2HBWFE9YppLki5FJJhfrkY");
+    reputationVote.SetAddress(address1);
+    reputationVote.nWeight = 5;
+    vote.vReputationVote.push_back(reputationVote);
+
+    CBitcoinAddress address2("8FJryeHhudFYJQvPvJ3CgCMkc2oHNLtNhj");
+    reputationVote.SetAddress(address2);
+    reputationVote.nWeight = 10;
+    vote.vReputationVote.push_back(reputationVote);
+
+    CBitcoinAddress address3("9EQRQJaFeFNu5yiGrDEvmMjSLf2aiYuLTN");
+    reputationVote.SetAddress(address3);
+    reputationVote.nWeight = 1;
+    vote.vReputationVote.push_back(reputationVote);
+
+    CBitcoinAddress address4("8XHmT2idfoCPRs939XBrxiPbE3VLedg2cj");
+    reputationVote.SetAddress(address4);
+    reputationVote.nWeight = -5;
+    vote.vReputationVote.push_back(reputationVote);
+
+    int nTotalWeight = 5 + 10 + 1 + 5;
+
+    map<CBitcoinAddress, int> mapAddressCount;
+    for (int i = 0; i < 10000; i++)
+    {
+        CVote blockVote = vote.GenerateBlockVote(PROTOCOL_V3_1);
+        BOOST_CHECK_EQUAL(3, blockVote.vReputationVote.size());
+        BOOST_FOREACH(const CReputationVote& reputationVote, blockVote.vReputationVote)
+        {
+            CBitcoinAddress address = reputationVote.GetAddress();
+            if (address == address4)
+                BOOST_CHECK_EQUAL(-1, reputationVote.nWeight);
+            else
+                BOOST_CHECK_EQUAL( 1, reputationVote.nWeight);
+            mapAddressCount[address]++;
+        }
+    }
+
+    BOOST_CHECK_CLOSE((double)3 * 10000 *  5 / nTotalWeight, (double)mapAddressCount[address1], 10);
+    BOOST_CHECK_CLOSE((double)3 * 10000 * 10 / nTotalWeight, (double)mapAddressCount[address2], 10);
+    BOOST_CHECK_CLOSE((double)3 * 10000 *  1 / nTotalWeight, (double)mapAddressCount[address3], 10);
+    BOOST_CHECK_CLOSE((double)3 * 10000 *  5 / nTotalWeight, (double)mapAddressCount[address4], 10);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

@@ -1685,23 +1685,25 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     pindexdummy.pprev = pindexprev;
     pindexdummy.nTime = txNew.nTime;
 
-    // nubit: Add current vote
-    if (!vote.IsValid(nProtocolVersion))
-        return error("CreateCoinStake : current vote is invalid");
+    CVote blockVote = vote.GenerateBlockVote(nProtocolVersion);
 
-    txNew.vout.push_back(CTxOut(0, vote.ToScript(nProtocolVersion)));
+    // nubit: Add current vote
+    if (!blockVote.IsValidInBlock(nProtocolVersion))
+        return error("CreateCoinStake : generated vote is invalid");
+
+    txNew.vout.push_back(CTxOut(0, blockVote.ToScript(nProtocolVersion)));
 
     // nubit: The result of the vote is stored in the CoinStake transaction
     CParkRateVote parkRateResult;
 
     {
         CTxDB txdb("r");
-        if (!txNew.GetCoinAge(txdb, vote.nCoinAgeDestroyed))
+        if (!txNew.GetCoinAge(txdb, blockVote.nCoinAgeDestroyed))
             return error("CreateCoinStake : failed to calculate coin age");
     }
 
     vector<CParkRateVote> vParkRateResult;
-    if (!CalculateParkRateResults(vote, pindexprev, nProtocolVersion, vParkRateResult))
+    if (!CalculateParkRateResults(blockVote, pindexprev, nProtocolVersion, vParkRateResult))
         return error("CalculateParkRateResults failed");
 
     BOOST_FOREACH(const CParkRateVote& parkRateResult, vParkRateResult)

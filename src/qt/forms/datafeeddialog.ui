@@ -124,6 +124,13 @@ to update</string>
          </property>
         </widget>
        </item>
+       <item>
+        <widget class="QCheckBox" name="reputationsCheckBox">
+         <property name="text">
+          <string>Reputations</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
     </layout>

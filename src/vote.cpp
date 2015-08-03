@@ -8,6 +8,8 @@
 #include "vote.h"
 #include "main.h"
 
+#define REPUTATION_VOTES_PER_BLOCK 3
+
 using namespace std;
 
 CScript CVote::ToScript(int nProtocolVersion) const
@@ -517,6 +519,68 @@ bool CVote::IsValid(int nProtocolVersion) const
     }
 
     return true;
+}
+
+bool CVote::IsValidInBlock(int nProtocolVersion) const
+{
+    if (!IsValid(nProtocolVersion))
+        return false;
+
+    if (vReputationVote.size() && nProtocolVersion < PROTOCOL_V3_1)
+        return false;
+
+    if (vReputationVote.size() > REPUTATION_VOTES_PER_BLOCK)
+        return false;
+
+    BOOST_FOREACH(const CReputationVote& reputationVote, vReputationVote)
+    {
+        if (reputationVote.nWeight != -1 && reputationVote.nWeight != 1)
+            return false;
+    }
+
+    return true;
+}
+
+CVote CUserVote::GenerateBlockVote(int nProtocolVersion) const
+{
+    CVote blockVote(*this);
+    blockVote.vReputationVote.clear();
+    if (nProtocolVersion >= PROTOCOL_V3_1 && vReputationVote.size())
+    {
+        int nTotalWeight = 0;
+        BOOST_FOREACH(const CReputationVote& reputationVote, vReputationVote)
+            nTotalWeight += abs(reputationVote.nWeight);
+
+        if (nTotalWeight > 0)
+        {
+            for (int i = 0; i < REPUTATION_VOTES_PER_BLOCK; i++)
+            {
+                CReputationVote reputationVote;
+
+                int nRandomWeight = GetRandInt(nTotalWeight);
+                int nAccumulatedWeight = 0;
+                for (vector<CReputationVote>::const_iterator it = vReputationVote.begin(); it != vReputationVote.end(); it++)
+                {
+                    const CReputationVote& currentReputationVote = *it;
+                    nAccumulatedWeight += abs(currentReputationVote.nWeight);
+
+                    if (nRandomWeight < nAccumulatedWeight)
+                    {
+                        reputationVote = currentReputationVote;
+                        break;
+                    }
+                }
+
+                if (reputationVote.nWeight >= 0)
+                    reputationVote.nWeight = 1;
+                else
+                    reputationVote.nWeight = -1;
+
+                blockVote.vReputationVote.push_back(reputationVote);
+            }
+        }
+    }
+    return blockVote;
 }
 
 bool ExtractVotes(const CBlock& block, const CBlockIndex *pindexprev, unsigned int nCount, std::vector<CVote> &vVoteRet)

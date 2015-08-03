@@ -302,6 +302,36 @@ CVote ParseVote(const Object& objVote)
             }
             vote.mapFeeVote = feeVotes;
         }
+        else if (voteAttribute.name_ == "reputations")
+        {
+            BOOST_FOREACH(const Value& reputationVoteObject, voteAttribute.value_.get_array())
+            {
+                CReputationVote reputationVote;
+                BOOST_FOREACH(const Pair& reputationVoteAttribute, reputationVoteObject.get_obj())
+                {
+                    if (reputationVoteAttribute.name_ == "address")
+                    {
+                        CBitcoinAddress address(reputationVoteAttribute.value_.get_str());
+                        if (!address.IsValid())
+                            throw runtime_error("Invalid address");
+                        if (address.GetUnit() != '8')
+                            throw runtime_error("Invalid address unit");
+
+                        reputationVote.SetAddress(address);
+                    }
+                    else if (reputationVoteAttribute.name_ == "weight")
+                    {
+                        int nWeight = reputationVoteAttribute.value_.get_int();
+                        if (nWeight < -127 || nWeight > 127)
+                            throw runtime_error("Invalid reputation weight");
+                        reputationVote.nWeight = nWeight;
+                    }
+                    else
+                        throw runtime_error("Invalid reputation vote object");
+                }
+                vote.vReputationVote.push_back(reputationVote);
+            }
+        }
         else
             throw runtime_error("Invalid vote object");
     }
@@ -338,6 +368,8 @@ void UpdateFromDataFeed()
                 newVote.vMotion = feedVote.vMotion;
             else if (sPart == "fees")
                 newVote.mapFeeVote = feedVote.mapFeeVote;
+            else if (sPart == "reputations")
+                newVote.vReputationVote = feedVote.vReputationVote;
             else
                 throw runtime_error("Invalid part");
         }

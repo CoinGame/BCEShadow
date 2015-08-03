@@ -88,6 +88,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="reputationVote">
+       <property name="text">
+        <string>Reputation vote...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="dataFeedButton">
        <property name="text">
         <string>Data feed...</string>

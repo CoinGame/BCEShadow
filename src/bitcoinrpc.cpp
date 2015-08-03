@@ -410,6 +410,16 @@ Object voteToJSON(const CVote& vote)
         feeVotes.push_back(Pair(string(1, feeVote.first), (double)feeVote.second / COIN));
     result.push_back(Pair("fees", feeVotes));
 
+    Array reputationVotes;
+    BOOST_FOREACH(const CReputationVote& reputationVote, vote.vReputationVote)
+    {
+        Object object;
+        object.push_back(Pair("address", reputationVote.GetAddress().ToString()));
+        object.push_back(Pair("weight", (int)reputationVote.nWeight));
+        reputationVotes.push_back(object);
+    }
+    result.push_back(Pair("reputations", reputationVotes));
+
     return result;
 }
 
@@ -4322,7 +4332,7 @@ Value setdatafeed(const Array& params, bool fHelp)
             "setdatafeed <url> [<signature url> <address>] [<parts>]\n"
             "Change the vote data feed. Set <url> to an empty string to disable.\n"
             "If <signature url> and <address> are specified and not empty strings a signature will also be retrieved at <signature url> and verified.\n"
-            "Parts is the list of the top level vote parts that will be taken from the feed, separated by a coma. The other parts will not affect the vote. Default is \"custodians,parkrates,motions,fees\".");
+            "Parts is the list of the top level vote parts that will be taken from the feed, separated by a coma. The other parts will not affect the vote. Default is \"custodians,parkrates,motions,fees,reputations\".");
 
     string sURL = params[0].get_str();
 
@@ -4334,7 +4344,7 @@ Value setdatafeed(const Array& params, bool fHelp)
     if (params.size() > 2)
         sAddress = params[2].get_str();
 
-    string sParts("custodians,parkrates,motions,fees");
+    string sParts("custodians,parkrates,motions,fees,reputations");
     if (params.size() > 3)
         sParts = params[3].get_str();
     vector<string> vParts;
@@ -4342,7 +4352,7 @@ Value setdatafeed(const Array& params, bool fHelp)
 
     BOOST_FOREACH(const string sPart, vParts)
     {
-        if (sPart != "custodians" && sPart != "parkrates" && sPart != "motions" && sPart != "fees")
+        if (sPart != "custodians" && sPart != "parkrates" && sPart != "motions" && sPart != "fees" && sPart != "reputations")
             throw runtime_error("Invalid parts");
     }
 
