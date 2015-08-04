@@ -154,7 +154,7 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
     walletdb.WriteBestBlock(loc);
 }
 
-void CWallet::SetVote(const CVote& vote)
+void CWallet::SetVote(const CUserVote& vote)
 {
     if (!vote.IsValid(pindexBest->nProtocolVersion))
         throw runtime_error("Cannot set invalid vote");

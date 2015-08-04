@@ -310,9 +310,17 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
             {
                 ssValue >> pwallet->setParked;
             }
-            else if (strType == "vote")
+            else if (strType == "uservote")
             {
                 ssValue >> pwallet->vote;
+                pwallet->vote.Upgrade();
+            }
+            else if (strType == "vote") // old structure
+            {
+                CVote vote;
+                ssValue.nVersion = PROTOCOL_V2_0;
+                ssValue >> vote;
+                pwallet->vote = CUserVote(vote);
                 pwallet->vote.Upgrade();
             }
             else if (strType == "datafeed")
