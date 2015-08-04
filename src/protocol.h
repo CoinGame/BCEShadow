@@ -25,8 +25,8 @@
 #define TESTNET_PORT      12239
 #define TESTNET_RPC_PORT  12240
 
-#define PEERCOIN_RPC_PORT         9902
-#define PEERCOIN_TESTNET_RPC_PORT 9904
+#define DIVIDEND_RPC_PORT         9902
+#define DIVIDEND_TESTNET_RPC_PORT 9904
 
 extern bool fTestNet;
 

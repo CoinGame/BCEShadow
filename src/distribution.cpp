@@ -79,7 +79,7 @@ void DividendDistributor::GenerateOutputs(int nTransactions, vector<Object> &vTr
     BOOST_FOREACH(const Distribution &distribution, vDistribution)
     {
         double amount = distribution.GetDividendAmount();
-        string address = distribution.GetPeercoinAddress().ToString();
+        string address = distribution.GetDividendAddress().ToString();
         Object &out = vTransactionOuts[nTransactionIndex];
 
         out.push_back(Pair(address, (double)amount));
@@ -164,7 +164,7 @@ Array SendDistribution(const DividendDistributor &distributor)
             sendmanyParams.push_back(output);
             std::string result;
             printf("Sending output %d from account \"%s\"\n", i, sAccount.c_str());
-            result = CallPeercoinRPC("sendmany", sendmanyParams);
+            result = CallDividendRPC("sendmany", sendmanyParams);
             printf("Successfully sent output %d: %s\n", i, result.c_str());
             results.push_back(result);
             i++;
@@ -185,5 +185,5 @@ double GetDistributionBalance()
 
     Array params;
     params.push_back(sAccount);
-    return boost::lexical_cast<double>(Value(CallPeercoinRPC("getbalance", params)).get_str());
+    return boost::lexical_cast<double>(Value(CallDividendRPC("getbalance", params)).get_str());
 }

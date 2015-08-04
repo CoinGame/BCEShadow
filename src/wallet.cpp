@@ -2423,7 +2423,7 @@ void CWallet::GetAllReserveKeys(set<CKeyID>& setAddress)
     }
 }
 
-void CWallet::ExportPeercoinKeys(int &nExportedCount, int &nErrorCount)
+void CWallet::ExportDividendKeys(int &nExportedCount, int &nErrorCount)
 {
     if (cUnit != '8')
         throw runtime_error("Currency wallets will not receive dividends. Refusing to export keys to Peercoin.");
@@ -2470,22 +2470,22 @@ void CWallet::ExportPeercoinKeys(int &nExportedCount, int &nErrorCount)
                 continue;
             }
 
-            json_spirit::Array vPeercoinAddressStrings;
+            json_spirit::Array vDividendAddressStrings;
             BOOST_FOREACH(const CTxDestination &destination, vDestination)
-                vPeercoinAddressStrings.push_back(CPeercoinAddress(destination).ToString());
+                vDividendAddressStrings.push_back(CDividendAddress(destination).ToString());
 
             json_spirit::Array params;
             params.push_back(json_spirit::Value(nRequired));
-            params.push_back(vPeercoinAddressStrings);
+            params.push_back(vDividendAddressStrings);
             params.push_back("BlockShares");
 
             try
             {
-                string result = CallPeercoinRPC("addmultisigaddress", params);
+                string result = CallDividendRPC("addmultisigaddress", params);
                 printf("Exported multisig address %s: %s\n", address.ToString().c_str(), result.c_str());
                 nExportedCount++;
             }
-            catch (peercoin_rpc_error &error)
+            catch (dividend_rpc_error &error)
             {
                 printf("Failed to add multisig address of address %s: %s\n", address.ToString().c_str(), error.what());
                 nErrorCount++;
@@ -2508,15 +2508,15 @@ void CWallet::ExportPeercoinKeys(int &nExportedCount, int &nErrorCount)
             }
 
             json_spirit::Array params;
-            params.push_back(CPeercoinSecret(vchSecret, fCompressed).ToString());
+            params.push_back(CDividendSecret(vchSecret, fCompressed).ToString());
             params.push_back("BlockShares");
             try
             {
-                string result = CallPeercoinRPC("importprivkey", params);
+                string result = CallDividendRPC("importprivkey", params);
                 printf("Exported private key of address %s: %s\n", address.ToString().c_str(), result.c_str());
                 nExportedCount++;
             }
-            catch (peercoin_rpc_error &error)
+            catch (dividend_rpc_error &error)
             {
                 printf("Failed to export private key of address %s: %s\n", address.ToString().c_str(), error.what());
                 nErrorCount++;

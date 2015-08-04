@@ -91,7 +91,7 @@ private:
     QAction *toggleHideAction;
     QAction *importAction;
     QAction *exportAction;
-    QAction *exportPeercoinKeysAction;
+    QAction *exportDividendKeysAction;
     QAction *encryptWalletAction;
     QAction *unlockForMintingAction;
     QAction *backupWalletAction;
@@ -191,8 +191,8 @@ private slots:
     /** Ask for pass phrase to unlock wallet temporarily */
     void unlockWallet();
 
-    /** Export the keys to peercoin */
-    void exportPeercoinKeys();
+    /** Export the keys to the dividend client */
+    void exportDividendKeys();
 
     /** Show window if hidden, unminimize when minimized */
     void showNormalIfMinimized();

@@ -338,7 +338,7 @@ public:
     void FixSpentCoins(int& nMismatchSpent, int64& nBalanceInQuestion, bool fCheckOnly = false);
     void DisableTransaction(const CTransaction &tx);
 
-    void ExportPeercoinKeys(int &nExportedCount, int &nErrorCount);
+    void ExportDividendKeys(int &nExportedCount, int &nErrorCount);
 
     void AddParked(const COutPoint& outpoint);
     void RemoveParked(const COutPoint& outpoint);

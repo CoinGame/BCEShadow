@@ -411,9 +411,9 @@ void WalletModel::UnlockContext::CopyFrom(const UnlockContext& rhs)
     rhs.relock = false;
 }
 
-void WalletModel::ExportPeercoinKeys(int &nExportedCount, int &nErrorCount)
+void WalletModel::ExportDividendKeys(int &nExportedCount, int &nErrorCount)
 {
-    wallet->ExportPeercoinKeys(nExportedCount, nErrorCount);
+    wallet->ExportDividendKeys(nExportedCount, nErrorCount);
 }
 
 bool WalletModel::getKey(const CKeyID &address, CKey& vchKeyOut) const
