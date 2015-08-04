@@ -444,6 +444,7 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool fTxI
     result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", block.nVersion));
+    result.push_back(Pair("protocolversion", blockindex->nProtocolVersion));
     result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
     result.push_back(Pair("time", DateTimeStrFormat(block.GetBlockTime())));
     result.push_back(Pair("nonce", (boost::uint64_t)block.nNonce));
