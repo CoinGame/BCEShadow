@@ -25,6 +25,8 @@ VotePage::VotePage(QWidget *parent) :
     QTimer *timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update()));
     timer->start(MODEL_UPDATE_DELAY);
+
+    ui->reputationTable->horizontalHeader()->setSortIndicator(1, Qt::DescendingOrder);
 }
 
 VotePage::~VotePage()
@@ -93,6 +95,7 @@ void VotePage::update()
         lastBestBlock = pindexBest;
 
         fillCustodianTable();
+        fillReputationTable();
     }
 }
 
@@ -122,6 +125,52 @@ void VotePage::fillCustodianTable()
 
             row++;
         }
+    }
+    table->setVisible(false);
+    table->resizeColumnsToContents();
+    table->setVisible(true);
+}
+
+class ScoreWidgetItem : public QTableWidgetItem
+{
+public:
+    bool operator <(const QTableWidgetItem &other) const
+    {
+        return text().toDouble() < other.text().toDouble();
+    }
+};
+
+void VotePage::fillReputationTable()
+{
+    QTableWidget* table = ui->reputationTable;
+    table->setRowCount(0);
+    int row = 0;
+
+    std::map<CBitcoinAddress, int64> mapReputation;
+    if (!lastBestBlock->GetEffectiveReputation(mapReputation))
+        return;
+
+    BOOST_FOREACH(PAIRTYPE(const CBitcoinAddress, int64)& pair, mapReputation)
+    {
+        const CBitcoinAddress& address = pair.first;
+        const int64& reputation = pair.second;
+        double score = (double)reputation / 4.0;
+
+        table->setRowCount(row + 1);
+
+        QTableWidgetItem *addressItem = new QTableWidgetItem();
+        addressItem->setData(Qt::DisplayRole, QString::fromStdString(address.ToString()));
+        addressItem->setFlags(addressItem->flags() & ~Qt::ItemIsEditable);
+        table->setItem(row, 0, addressItem);
+
+        QString scoreString = QString::number(score, 'f', 1);
+        ScoreWidgetItem *scoreItem = new ScoreWidgetItem();
+        scoreItem->setData(Qt::DisplayRole, scoreString);
+        scoreItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
+        scoreItem->setFlags(scoreItem->flags() & ~Qt::ItemIsEditable);
+        table->setItem(row, 1, scoreItem);
+
+        row++;
     }
     table->setVisible(false);
     table->resizeColumnsToContents();

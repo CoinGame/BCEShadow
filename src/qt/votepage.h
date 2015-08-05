@@ -28,6 +28,7 @@ private:
 
     CBlockIndex* lastBestBlock;
     void fillCustodianTable();
+    void fillReputationTable();
 
 private slots:
     void on_custodianVote_clicked();
