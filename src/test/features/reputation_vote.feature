@@ -36,3 +36,11 @@ Feature: Shareholders can vote for or against signer addresses
       | tBfFT8qt88FGRvCDKiaqFB7Zw8cAtKnyPW |      0 |
     And node "Alice" finds a block "A"
     Then block "A" on node "Alice" should contain 0 reputed signer votes
+
+  Scenario: Reputation RPC
+    Given a network at protocol 3.1 with nodes "Alice" and "Bob"
+    When node "Alice" upvotes "tBfFT8qt88FGRvCDKiaqFB7Zw8cAtKnyPW" for 3 blocks
+    And node "Bob" downvotes "tBfFT8qt88FGRvCDKiaqFB7Zw8cAtKnyPW" for 2 blocks
+    And node "Alice" upvotes "tBfFT8qt88FGRvCDKiaqFB7Zw8cAtKnyPW" for 3 blocks
+    And node "Alice" finds enough block for the voted reputation to become effective
+    Then the reputation of "tBfFT8qt88FGRvCDKiaqFB7Zw8cAtKnyPW" on node "Alice" should be "12"

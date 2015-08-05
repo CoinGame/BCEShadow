@@ -49,3 +49,29 @@ Then(/^block "(.*?)" on node "(.*?)" should contain (\d+) reputed signer votes$/
     raise
   end
 end
+
+When(/^node "(.*?)" (up|down)votes "(.*?)" for (\d+) blocks$/) do |arg1, direction, arg2, arg3|
+  node = @nodes[arg1]
+  vote = {
+    "reputations" => [
+      {
+        address: arg2,
+        weight: (direction == "up" ? 1 : -1),
+      },
+    ],
+  }
+  node.rpc("setvote", vote)
+
+  step %Q{node "#{arg1}" finds #{arg3} blocks}
+  step %Q{all nodes reach the same height}
+end
+
+When(/^node "(.*?)" finds enough block for the voted reputation to become effective$/) do |arg1|
+  step %Q{node "#{arg1}" finds 3 blocks}
+end
+
+Then(/^the reputation of "(.*?)" on node "(.*?)" should be "(.*?)"$/) do |arg1, arg2, arg3|
+  node = @nodes[arg2]
+  result = node.rpc("getreputations")
+  expect(result[arg1].to_d).to eq(arg3.to_d)
+end

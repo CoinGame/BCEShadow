@@ -3498,6 +3498,42 @@ Value getparkvotes(const Array& params, bool fHelp)
     return obj;
 }
 
+Value getreputations(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "getreputations [<block height>]\n"
+            "Returns an object containing the effective reputation at block <height> (default is the current height).");
+
+    Object obj;
+
+    CBlockIndex *pindex = pindexBest;
+
+    if (params.size() > 0)
+    {
+        int nHeight = params[0].get_int();
+
+        if (nHeight < 0 || nHeight > nBestHeight)
+            throw JSONRPCError(-3, "Invalid height");
+
+        for (int i = nBestHeight; i > nHeight; i--)
+            pindex = pindex->pprev;
+    }
+
+    map<CBitcoinAddress, int64> mapReputation;
+    if (!pindex->GetEffectiveReputation(mapReputation))
+        throw JSONRPCError(-4, "Unable to calculate reputation");
+
+    BOOST_FOREACH(PAIRTYPE(const CBitcoinAddress, int64)& pair, mapReputation)
+    {
+        const CBitcoinAddress& address = pair.first;
+        const int64& nReputation = pair.second;
+        const double dScore = (double)nReputation / 4.0;
+        obj.push_back(Pair(address.ToString(), dScore));
+    }
+
+    return obj;
+}
 
 static map<string, CLiquidityInfo> mapLiquidity;
 static CCriticalSection cs_mapLiquidity;
@@ -4735,6 +4771,7 @@ static const CRPCCommand vRPCCommands[] =
     { "getcustodianvotes",      &getcustodianvotes,      true },
     { "getelectedcustodians",   &getelectedcustodians,   true },
     { "getparkvotes",           &getparkvotes,           true },
+    { "getreputations",         &getreputations,         true },
     { "listunspent",            &listunspent,            false},
     { "getrawtransaction",      &getrawtransaction,      false},
     { "createrawtransaction",   &createrawtransaction,   false},
@@ -5581,6 +5618,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "getcustodianvotes"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "getparkvotes"            && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "getparkvotes"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "getreputations"          && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "burn"                    && n > 0) ConvertTo<double>(params[0]);
 #ifdef TESTING
     if (strMethod == "timetravel"              && n > 0) ConvertTo<boost::int64_t>(params[0]);

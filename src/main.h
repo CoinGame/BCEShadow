@@ -1560,6 +1560,11 @@ public:
 
     int64 GetSafeMinFee(unsigned char cUnit) const;
 
+    bool GetEffectiveReputation(std::map<CBitcoinAddress, int64>& mapReputation)
+    {
+        return CalculateReputationResult(GetEffectiveVoteIndex(), mapReputation);
+    }
+
     std::string ToString() const
     {
         return strprintf("CBlockIndex(nprev=%08x, pnext=%08x, nFile=%d, nBlockPos=%-6d nHeight=%d, nMint=%s, nMoneySupply(S)=%s, nMoneySupply(B)=%s, nFlags=(%s)(%d)(%s), nStakeModifier=%016"PRI64x", nStakeModifierChecksum=%08x, hashProofOfStake=%s, prevoutStake=(%s), nStakeTime=%d merkle=%s, hashBlock=%s)",
