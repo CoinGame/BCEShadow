@@ -134,6 +134,28 @@ Value exportdividendkeys(const Array& params, bool fHelp)
     return ret;
 }
 
+Value dumpdividendkeys(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "dumpdividendkeys\n"
+            "Returns an array of Bitcoin private keys associated with the BlockShare addresses of the wallet.");
+
+    if (pwalletMain->IsLocked())
+        throw JSONRPCError(-13, "Error: Please enter the wallet passphrase with walletpassphrase first.");
+    if (pwalletMain->fWalletUnlockMintOnly) // ppcoin: no dumpprivkey in mint-only mode
+        throw JSONRPCError(-102, "Wallet is unlocked for minting only.");
+
+    Array ret;
+    vector<CDividendSecret> vSecret;
+    pwalletMain->DumpDividendKeys(vSecret);
+
+    BOOST_FOREACH(const CDividendSecret& secret, vSecret)
+        ret.push_back(secret.ToString());
+
+    return ret;
+}
+
 Value importnusharewallet(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 3)

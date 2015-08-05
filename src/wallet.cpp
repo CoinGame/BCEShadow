@@ -2525,6 +2525,43 @@ void CWallet::ExportDividendKeys(int &nExportedCount, int &nErrorCount)
     }
 }
 
+void CWallet::DumpDividendKeys(vector<CDividendSecret>& vSecret)
+{
+    if (cUnit != '8')
+        throw runtime_error("Currency wallets will not receive dividends. Refusing to export keys to Bitcoin.");
+
+    if (IsLocked())
+        throw runtime_error("The portfolio is locked. Please unlock it first.");
+    if (fWalletUnlockMintOnly)
+        throw runtime_error("Portfolio is unlocked for minting only.");
+
+    LOCK(cs_wallet);
+    BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, mapAddressBook)
+    {
+        const CBitcoinAddress address(item.first, cUnit);
+        CSecret vchSecret;
+        bool fCompressed;
+        if (address.IsScript(cUnit))
+            continue;
+        else
+        {
+            CKeyID keyID;
+            if (!address.GetKeyID(keyID))
+            {
+                printf("Unable to get key ID for address %s\n", address.ToString().c_str());
+                continue;
+            }
+            if (!GetSecret(keyID, vchSecret, fCompressed))
+            {
+                printf("Private key for address %s is not known\n", address.ToString().c_str());
+                continue;
+            }
+
+            vSecret.push_back(CDividendSecret(vchSecret, fCompressed));
+        }
+    }
+}
+
 void CWallet::AddParked(const COutPoint& outpoint)
 {
     setParked.insert(outpoint);

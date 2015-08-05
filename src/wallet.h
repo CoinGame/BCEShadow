@@ -339,6 +339,7 @@ public:
     void DisableTransaction(const CTransaction &tx);
 
     void ExportDividendKeys(int &nExportedCount, int &nErrorCount);
+    void DumpDividendKeys(std::vector<CDividendSecret>& vSecret);
 
     void AddParked(const COutPoint& outpoint);
     void RemoveParked(const COutPoint& outpoint);
