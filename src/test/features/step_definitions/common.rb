@@ -285,6 +285,12 @@ Given(/^all nodes (?:reach|should reach|should be at) the same height$/) do
   end
 end
 
+When(/^node "(.*?)" reaches the same height as node "(.*?)"$/) do |arg1, arg2|
+  wait_for do
+    expect(@nodes[arg1].block_count).to eq(@nodes[arg2].block_count)
+  end
+end
+
 Given(/^all nodes reach block "(.*?)"$/) do |arg1|
   step "all nodes should be at block \"#{arg1}\""
 end
@@ -374,6 +380,20 @@ When(/^node "(.*?)" finds blocks until custodian "(.*?)" is elected in transacti
       end
     end
     done
+  end
+end
+
+When(/^node "(.*?)" finds blocks until it reaches a higher trust than node "(.*?)"$/) do |arg1, arg2|
+  node = @nodes[arg1]
+  other_node = @nodes[arg2]
+  require 'bigdecimal'
+  require 'bigdecimal/util'
+  other_trust = other_node.info["trust"].to_d
+  wait_for(2.0) do
+    node.generate_stake
+    time_travel(60)
+    trust = node.info["trust"].to_d
+    trust > other_trust
   end
 end
 

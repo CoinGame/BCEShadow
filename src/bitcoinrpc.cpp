@@ -780,6 +780,7 @@ Value getinfo(const Array& params, bool fHelp)
 #ifdef TESTING
     obj.push_back(Pair("time",          DateTimeStrFormat(GetTime())));
     obj.push_back(Pair("timestamp",     (boost::int64_t)GetTime()));
+    obj.push_back(Pair("trust",         pindexBest->bnChainTrust.ToString()));
 #endif
     return obj;
 }

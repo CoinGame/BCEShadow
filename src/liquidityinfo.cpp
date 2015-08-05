@@ -133,9 +133,13 @@ void RemoveExpiredLiquidityInfo(int nCurrentHeight)
         while (it != mapLiquidityInfo.end())
         {
             const CBitcoinAddress& address = it->first.custodianAddress;
-            CBlockIndex *pindex = mapElectedCustodian[address];
+            CBlockIndex *pindex = NULL;
 
-            if (nCurrentHeight - pindex->nHeight > LIQUIDITY_INFO_MAX_HEIGHT)
+            map<CBitcoinAddress, CBlockIndex*>::const_iterator electedIt = mapElectedCustodian.find(address);
+            if (electedIt != mapElectedCustodian.end())
+                pindex = electedIt->second;
+
+            if (!pindex || nCurrentHeight - pindex->nHeight > LIQUIDITY_INFO_MAX_HEIGHT)
             {
                 mapLiquidityInfo.erase(it++);
                 fAnyRemoved = true;
