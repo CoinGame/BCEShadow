@@ -293,7 +293,7 @@ void BitcoinGUI::createActions()
     openRPCConsoleAction = new QAction(tr("&Debug window"), this);
     openRPCConsoleAction->setToolTip(tr("Open debugging and diagnostic console"));
     exportDividendKeysAction = new QAction(QIcon(":/icons/export"), tr("&Export dividend keys..."), this);
-    exportDividendKeysAction->setToolTip(tr("Export the dividend keys associated with the BlockShares addresses to Peercoin via RPC"));
+    exportDividendKeysAction->setToolTip(tr("Export the dividend keys associated with the BlockShares addresses to Bitcoin via RPC"));
     distributeDividendsAction = new QAction(tr("&Distribute dividends..."), this);
     distributeDividendsAction->setToolTip(tr("Distribute dividends to share holders"));
 
@@ -1102,8 +1102,8 @@ void BitcoinGUI::exportDividendKeys()
 {
     QMessageBox::StandardButton reply;
 
-    QString sQuestion = tr("All your BlockShares private keys will be converted to Peercoin private keys and imported into your Peercoin wallet.\n\nThe Peercoin wallet must be running, unlocked (if it was encrypted) and accept RPC commands.\n\nThis process may take several minutes because Peercoin will scan the blockchain for transactions on all the imported keys.\n\nDo you want to proceed?");
-    reply = QMessageBox::warning(this, tr("Peercoin keys export confirmation"), sQuestion, QMessageBox::Yes | QMessageBox::No);
+    QString sQuestion = tr("All your BlockShares private keys will be converted to Bitcoin private keys and imported into your Bitcoin wallet.\n\nThe Bitcoin wallet must be running, unlocked (if it was encrypted) and accept RPC commands.\n\nThis process may take several minutes because Bitcoin will scan the blockchain for transactions on all the imported keys.\n\nDo you want to proceed?");
+    reply = QMessageBox::warning(this, tr("Bitcoin keys export confirmation"), sQuestion, QMessageBox::Yes | QMessageBox::No);
     if (reply != QMessageBox::Yes)
         return;
 
@@ -1127,7 +1127,7 @@ void BitcoinGUI::exportDividendKeys()
             walletModel->setWalletLocked(true);
         QMessageBox::information(this,
                 tr("Dividend keys export"),
-                tr("%1 key(s) were exported to Peercoin.\n%2 key(s) were either already known or invalid.")
+                tr("%1 key(s) were exported to Bitcoin.\n%2 key(s) failed.")
                   .arg(iExportedCount)
                   .arg(iErrorCount)
                 );

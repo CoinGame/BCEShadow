@@ -25,8 +25,8 @@
 #define TESTNET_PORT      12239
 #define TESTNET_RPC_PORT  12240
 
-#define DIVIDEND_RPC_PORT         9902
-#define DIVIDEND_TESTNET_RPC_PORT 9904
+#define DIVIDEND_RPC_PORT          8332
+#define DIVIDEND_TESTNET_RPC_PORT 18332
 
 extern bool fTestNet;
 

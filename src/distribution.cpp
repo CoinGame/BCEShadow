@@ -101,7 +101,7 @@ DividendDistributor GenerateDistribution(const BalanceMap &mapBalance, double dA
 {
     double dMinPayout = GetMinimumDividendPayout();
 
-    printf("Distributing %f peercoins to %d addresses with a minimum payout of %f\n", dAmount, mapBalance.size(), dMinPayout);
+    printf("Distributing %f bitcoins to %d addresses with a minimum payout of %f\n", dAmount, mapBalance.size(), dMinPayout);
 
     try {
         DividendDistributor distributor(mapBalance);
@@ -133,14 +133,14 @@ Array SendDistribution(const DividendDistributor &distributor)
         double dBalance = GetDistributionBalance();
 
         if (dTotalDistributed > dBalance)
-            throw runtime_error("Not enough peercoins available in distribution account");
+            throw runtime_error("Not enough bitcoins available in distribution account");
 
         int nMaxDistributionPerTransaction = GetMaximumDistributionPerTransaction();
         printf("Maximum output per transaction: %d\n", nMaxDistributionPerTransaction);
 
         int nTransactions = distributor.GetTransactionCount(nMaxDistributionPerTransaction);
 
-        printf("Will send %f peercoins to %d addresses in %d transactions\n", dTotalDistributed, nDistributionCount, nTransactions);
+        printf("Will send %f bitcoins to %d addresses in %d transactions\n", dTotalDistributed, nDistributionCount, nTransactions);
 
         vector<Object> vOutputs;
         distributor.GenerateOutputs(nTransactions, vOutputs);

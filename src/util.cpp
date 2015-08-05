@@ -931,10 +931,10 @@ boost::filesystem::path GetDefaultDividendDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     fs::create_directory(pathRet);
-    return pathRet / "PPCoin";
+    return pathRet / "Bitcoin";
 #else
     // Unix
-    return pathRet / ".ppcoin";
+    return pathRet / ".bitcoin";
 #endif
 #endif
 }
@@ -1082,7 +1082,7 @@ boost::filesystem::path GetDividendConfigFile()
 {
     namespace fs = boost::filesystem;
 
-    fs::path pathConfigFile(GetArg("-dividendconf", "ppcoin.conf"));
+    fs::path pathConfigFile(GetArg("-dividendconf", "bitcoin.conf"));
     if (!pathConfigFile.is_complete()) pathConfigFile = GetDividendDataDir(false) / pathConfigFile;
     return pathConfigFile;
 }

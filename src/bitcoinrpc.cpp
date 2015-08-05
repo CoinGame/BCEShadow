@@ -1589,8 +1589,8 @@ Value distribute(const Array& params, bool fHelp)
         throw runtime_error(
             "distribute <cutoff timestamp> <amount> [<proceed>]\n"
             "cutoff is date and time at which the share balances should be considered. Format is unix time.\n"
-            "amount is the the number of peercoins to distribute, in double-precision floating point number.\n"
-            "If proceed is not true the peercoins are not sent and the details of the distribution are returned.");
+            "amount is the the number of bitcoins to distribute, in double-precision floating point number.\n"
+            "If proceed is not true the bitcoins are not sent and the details of the distribution are returned.");
 
     unsigned int cutoffTime = params[0].get_int();
     bool fProceed = false;
@@ -5378,7 +5378,7 @@ std::string CallDividendRPC(const std::string &strMethod, const Array &params)
 {
     if (mapDividendArgs["-rpcuser"] == "" && mapDividendArgs["-rpcpassword"] == "")
         throw runtime_error(strprintf(
-            _("You must set rpcpassword=<password> in the Peercoin configuration file:\n%s\n"
+            _("You must set rpcpassword=<password> in the Bitcoin configuration file:\n%s\n"
               "If the file does not exist, create it with owner-readable-only file permissions."),
                 GetDividendConfigFile().string().c_str()));
 
