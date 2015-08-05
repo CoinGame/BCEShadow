@@ -4935,7 +4935,7 @@ int64 CBlockIndex::GetPremium(int64 nValue, int64 nDuration, unsigned char cUnit
 
 int64 CBlockIndex::GetSafeMinFee(unsigned char cUnit) const
 {
-    const CBlockIndex* pindex = GetEffectiveFeeIndex()->pnext;
+    const CBlockIndex* pindex = GetEffectiveVoteIndex()->pnext;
     int64 nMaxMinFee = 0;
     for (int i = 0; i < SAFE_FEE_BLOCKS && pindex; i++, pindex = pindex->pnext)
     {
