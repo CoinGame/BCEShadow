@@ -883,3 +883,22 @@ bool CalculateVotedFees(CBlockIndex* pindex)
 
     return true;
 }
+
+bool CalculateReputationResult(const CBlockIndex* pindex, std::map<CBitcoinAddress, int64>& mapReputation)
+{
+    mapReputation.clear();
+
+    for (int i = 0; i < 5000 && pindex; i++, pindex = pindex->pprev)
+        BOOST_FOREACH(const CReputationVote& vote, pindex->vote.vReputationVote)
+            mapReputation[vote.GetAddress()] += (vote.nWeight >= 0 ? 4 : -4);
+
+    for (int i = 0; i < 10000 && pindex; i++, pindex = pindex->pprev)
+        BOOST_FOREACH(const CReputationVote& vote, pindex->vote.vReputationVote)
+            mapReputation[vote.GetAddress()] += (vote.nWeight >= 0 ? 2 : -2);
+
+    for (int i = 0; i < 20000 && pindex; i++, pindex = pindex->pprev)
+        BOOST_FOREACH(const CReputationVote& vote, pindex->vote.vReputationVote)
+            mapReputation[vote.GetAddress()] += (vote.nWeight >= 0 ? 1 : -1);
+
+    return true;
+}

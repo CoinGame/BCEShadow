@@ -239,6 +239,12 @@ public:
     {
     }
 
+    CReputationVote(const CBitcoinAddress& address, char nWeight) :
+        nWeight(nWeight)
+    {
+        SetAddress(address);
+    }
+
     bool IsValid(int nProtocolVersion) const;
 
     IMPLEMENT_SERIALIZE
@@ -495,5 +501,7 @@ int GetProtocolForNextBlock(const CBlockIndex* pPrevIndex);
 bool IsProtocolActiveForNextBlock(const CBlockIndex* pPrevIndex, int nSwitchTime, int nProtocolVersion, int nRequired=PROTOCOL_SWITCH_REQUIRE_VOTES, int nToCheck=PROTOCOL_SWITCH_COUNT_VOTES);
 
 bool CalculateVotedFees(CBlockIndex* pindex);
+
+bool CalculateReputationResult(const CBlockIndex* pindex, std::map<CBitcoinAddress, int64>& mapReputation);
 
 #endif
