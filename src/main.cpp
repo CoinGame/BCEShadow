@@ -1779,11 +1779,10 @@ void CBlockIndex::GetElectedCustodians(std::map<CBitcoinAddress, CBlockIndex*>& 
     }
 }
 
-bool CBlock::CheckCustodianGrants(const CBlockIndex* pindex) const
+bool CBlock::CheckCustodianGrants(const CBlockIndex* pindexPrev) const
 {
-    const CBlockIndex* pindexPrev = pindex->pprev;
     std::map<CBitcoinAddress, CBlockIndex*> mapElectedCustodian;
-    pindex->pprev->GetElectedCustodians(mapElectedCustodian);
+    pindexPrev->GetElectedCustodians(mapElectedCustodian);
 
     vector<CTransaction> vExpectedCurrencyCoinBase;
     if (IsProofOfStake())
@@ -1949,9 +1948,6 @@ bool CBlock::SetBestChainInner(CTxDB& txdb, CBlockIndex *pindexNew)
 
 bool CBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
 {
-    if (!CheckCustodianGrants(pindexNew))
-        return error("SetBestChain() : custodian grant check failed");
-
     uint256 hash = GetHash();
 
     if (!txdb.TxnBegin())
@@ -2433,6 +2429,9 @@ bool CBlock::AcceptBlock()
             return error("AcceptBlock(): Protocol version vote (%d) lower than the protocol v2.0 (%d)",
                     vote.nVersionVote, PROTOCOL_V2_0);
     }
+
+    if (!CheckCustodianGrants(pindexPrev))
+        return error("AcceptBlock() : custodian grant check failed");
 
     // Write block to history file
     if (!CheckDiskSpace(::GetSerializeSize(*this, SER_DISK, CLIENT_VERSION)))
