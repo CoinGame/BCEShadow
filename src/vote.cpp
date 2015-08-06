@@ -8,7 +8,18 @@
 #include "vote.h"
 #include "main.h"
 
+// Maximum count of up/down votes allowed in a block
 #define REPUTATION_VOTES_PER_BLOCK 3
+
+// Number of parent blocks scanned when deciding which reputed signer will the the reward
+#define SIGNER_REWARD_PAST_BLOCKS 2000
+
+// Number of votes used to calculate the median of the reputed signer reward votes (the number of eligible reputed signers and the value of the reward)
+#ifdef TESTING
+#  define SIGNER_REWARD_VOTE_MEDIAN_BLOCKS 6
+#else
+#  define SIGNER_REWARD_VOTE_MEDIAN_BLOCKS 2000
+#endif
 
 using namespace std;
 
@@ -518,6 +529,9 @@ bool CVote::IsValid(int nProtocolVersion) const
             return false;
     }
 
+    if (!signerReward.IsValid(nProtocolVersion))
+        return false;
+
     return true;
 }
 
@@ -537,6 +551,12 @@ bool CVote::IsValidInBlock(int nProtocolVersion) const
         if (reputationVote.nWeight != -1 && reputationVote.nWeight != 1)
             return false;
     }
+
+    if (nProtocolVersion < PROTOCOL_V3_1 && vReputationVote.size())
+        return false;
+
+    if (!signerReward.IsValidInBlock(nProtocolVersion))
+        return false;
 
     return true;
 }
@@ -882,21 +902,287 @@ bool CalculateVotedFees(CBlockIndex* pindex)
     return true;
 }
 
-bool CalculateReputationResult(const CBlockIndex* pindex, std::map<CBitcoinAddress, int64>& mapReputation)
+bool CalculateReputationDestinationResult(const CBlockIndex* pindex, std::map<CTxDestination, int64>& mapReputation)
 {
     mapReputation.clear();
 
     for (int i = 0; i < 5000 && pindex; i++, pindex = pindex->pprev)
         BOOST_FOREACH(const CReputationVote& vote, pindex->vote.vReputationVote)
-            mapReputation[vote.GetAddress()] += (vote.nWeight >= 0 ? 4 : -4);
+            mapReputation[vote.GetDestination()] += (vote.nWeight >= 0 ? 4 : -4);
 
     for (int i = 0; i < 10000 && pindex; i++, pindex = pindex->pprev)
         BOOST_FOREACH(const CReputationVote& vote, pindex->vote.vReputationVote)
-            mapReputation[vote.GetAddress()] += (vote.nWeight >= 0 ? 2 : -2);
+            mapReputation[vote.GetDestination()] += (vote.nWeight >= 0 ? 2 : -2);
 
     for (int i = 0; i < 20000 && pindex; i++, pindex = pindex->pprev)
         BOOST_FOREACH(const CReputationVote& vote, pindex->vote.vReputationVote)
-            mapReputation[vote.GetAddress()] += (vote.nWeight >= 0 ? 1 : -1);
+            mapReputation[vote.GetDestination()] += (vote.nWeight >= 0 ? 1 : -1);
 
+    return true;
+}
+
+bool CalculateReputationResult(const CBlockIndex* pindex, std::map<CBitcoinAddress, int64>& mapReputation)
+{
+    std::map<CTxDestination, int64> mapReputationDestination;
+
+    mapReputation.clear();
+
+    if (!CalculateReputationDestinationResult(pindex, mapReputationDestination))
+        return false;
+
+    BOOST_FOREACH(const PAIRTYPE(CTxDestination, int64)& pair, mapReputationDestination)
+    {
+        const CTxDestination& destination = pair.first;
+        const CBitcoinAddress address(destination, '8');
+        mapReputation[address] = pair.second;
+    }
+
+    return true;
+}
+
+
+class CDestinationHashVisitor : public boost::static_visitor<uint160>
+{
+public:
+    uint160 operator()(const CNoDestination &dest) const {
+        return uint160(0);
+    }
+
+    uint160 operator()(const CKeyID &keyID) const {
+        return keyID;
+    }
+
+    uint160 operator()(const CScriptID &scriptID) const {
+        return scriptID;
+    }
+};
+
+uint160 GetDestinationHash(const CTxDestination& destination)
+{
+    return boost::apply_visitor(CDestinationHashVisitor(), destination);
+}
+
+
+class CReputationComparator
+{
+    const std::map<CTxDestination, int>& mapPastReward;
+
+public:
+    CReputationComparator(const std::map<CTxDestination, int>& mapPastReward) :
+        mapPastReward(mapPastReward)
+    {
+    }
+
+    bool operator() (const pair<CTxDestination, int64>& lhs, const pair<CTxDestination, int64>& rhs) const
+    {
+        if (lhs.second > rhs.second)
+            return true;
+        if (lhs.second < rhs.second)
+            return false;
+
+        std::map<CTxDestination, int>::const_iterator lhsit = mapPastReward.find(lhs.first);
+        std::map<CTxDestination, int>::const_iterator rhsit = mapPastReward.find(rhs.first);
+        int lhsPastReward = (lhsit == mapPastReward.end() ? 0 : lhsit->second);
+        int rhsPastReward = (rhsit == mapPastReward.end() ? 0 : rhsit->second);
+
+        if (lhsPastReward > rhsPastReward)
+            return true;
+        if (lhsPastReward < rhsPastReward)
+            return false;
+
+        const uint160 lhsHash = GetDestinationHash(lhs.first);
+        const uint160 rhsHash = GetDestinationHash(rhs.first);
+
+        if (lhsHash > rhsHash)
+            return true;
+        return false;
+    }
+};
+
+bool CalculateSignerRewardRecipient(const std::map<CTxDestination, int64>& mapReputation, int nCount, const std::map<CTxDestination, int>& mapPastReward, bool& fFoundRet, CTxDestination& addressRecipientRet)
+{
+    fFoundRet = false;
+    addressRecipientRet = CNoDestination();
+
+    if (mapReputation.size() == 0)
+        return true;
+
+    vector<pair<CTxDestination, int64> > vEligibleSigner;
+    vEligibleSigner.reserve(mapReputation.size());
+    BOOST_FOREACH(const PAIRTYPE(CTxDestination, int64)& pair, mapReputation)
+    {
+        const int64& nScore = pair.second;
+        if (nScore > 0)
+            vEligibleSigner.push_back(pair);
+    }
+
+    if (vEligibleSigner.size() > nCount)
+    {
+        sort(vEligibleSigner.begin(), vEligibleSigner.end(), CReputationComparator(mapPastReward));
+        vEligibleSigner.erase(vEligibleSigner.begin() + nCount, vEligibleSigner.end());
+    }
+
+    int64 nTotalReputation = 0;
+    BOOST_FOREACH(const PAIRTYPE(CTxDestination, int64)& pair, vEligibleSigner)
+    {
+        const int64& nScore = pair.second;
+        nTotalReputation += nScore;
+    }
+
+    int64 nMaxDistance = std::numeric_limits<int64>::min();
+
+    BOOST_FOREACH(const PAIRTYPE(CTxDestination, int64)& pair, vEligibleSigner)
+    {
+        const CTxDestination& address = pair.first;
+        const int64& nScore = pair.second;
+        int nExpectedRewardCount = nScore * SIGNER_REWARD_PAST_BLOCKS / nTotalReputation;
+
+        int nActualRewardCount;
+        std::map<CTxDestination, int>::const_iterator it = mapPastReward.find(address);
+        if (it == mapPastReward.end())
+            nActualRewardCount = 0;
+        else
+            nActualRewardCount = it->second;
+
+        int nDistance = nExpectedRewardCount - nActualRewardCount;
+
+        if (!fFoundRet || nDistance > nMaxDistance || (nDistance == nMaxDistance && GetDestinationHash(address) > GetDestinationHash(addressRecipientRet)))
+        {
+            nMaxDistance = nDistance;
+            fFoundRet = true;
+            addressRecipientRet = address;
+        }
+    }
+
+    return true;
+}
+
+int CalculateSignerRewardVoteCounts(const CBlockIndex* pindex, map<int16_t, int>& mapCount, map<int32_t, int>& mapAmount)
+{
+    const CBlockIndex* pi = pindex;
+    for (int i = 0; i < SIGNER_REWARD_VOTE_MEDIAN_BLOCKS; i++)
+    {
+        if (pi)
+        {
+            const int16_t& nCount = pi->vote.signerReward.nCount;
+            if (nCount >= 0)
+                mapCount[nCount]++;
+            else
+                mapCount[-1]++;
+
+            const int32_t& nAmount = pi->vote.signerReward.nAmount;
+            if (nAmount >= 0)
+                mapAmount[nAmount]++;
+            else
+                mapAmount[-1]++;
+
+            pi = pi->pprev;
+        }
+        else
+        {
+            mapCount[-1]++;
+            mapAmount[-1]++;
+        }
+    }
+
+    return SIGNER_REWARD_VOTE_MEDIAN_BLOCKS;
+}
+
+bool CalculateSignerRewardVoteResult(CBlockIndex* pindex)
+{
+    if (pindex->nProtocolVersion < PROTOCOL_V3_1)
+    {
+        pindex->signerRewardVoteResult.Set(0, 0);
+        return true;
+    }
+
+    CSignerRewardVote previous;
+    if  (pindex->pprev)
+        previous = pindex->pprev->signerRewardVoteResult;
+    else
+        previous.Set(0, 0);
+
+    map<int16_t, int> mapCount;
+    map<int32_t, int> mapAmount;
+
+    const int nVoteCount = CalculateSignerRewardVoteCounts(pindex, mapCount, mapAmount);
+
+    mapCount[previous.nCount] += mapCount[-1];
+    mapCount.erase(-1);
+
+    mapAmount[previous.nAmount] += mapAmount[-1];
+    mapAmount.erase(-1);
+
+    {
+        int total = 0;
+        BOOST_FOREACH(PAIRTYPE(int16_t, int) pair, mapCount)
+        {
+            total += pair.second;
+            if (total > nVoteCount / 2)
+            {
+                pindex->signerRewardVoteResult.nCount = pair.first;
+                break;
+            }
+        }
+    }
+
+    {
+        int total = 0;
+        BOOST_FOREACH(PAIRTYPE(int32_t, int) pair, mapAmount)
+        {
+            total += pair.second;
+            if (total > nVoteCount / 2)
+            {
+                pindex->signerRewardVoteResult.nAmount = pair.first;
+                break;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool CalculateSignerReward(const CBlockIndex* pindex, CTxDestination& addressRet, int64& nRewardRet)
+{
+    addressRet = CNoDestination();
+    nRewardRet = 0;
+
+    pindex = pindex->GetEffectiveVoteIndex();
+
+    int nCount = pindex->signerRewardVoteResult.nCount;
+    int64 nReward = pindex->signerRewardVoteResult.nAmount;
+
+    assert(nCount >= 0);
+    assert(nReward >= 0);
+
+    std::map<CTxDestination, int64> mapReputation;
+    if (!CalculateReputationDestinationResult(pindex, mapReputation))
+        return false;
+
+    std::map<CTxDestination, int> mapPastReward;
+    if (!GetPastSignerRewards(pindex, mapPastReward))
+        return false;
+
+    bool fRecipientFound = false;
+    if (!CalculateSignerRewardRecipient(mapReputation, nCount, mapPastReward, fRecipientFound, addressRet))
+        return false;
+
+    if (!fRecipientFound)
+        return true;
+
+    nRewardRet = nReward;
+
+    return true;
+}
+
+bool GetPastSignerRewards(const CBlockIndex* pindex, std::map<CTxDestination, int>& mapPastRewardRet)
+{
+    const CBlockIndex *pi = pindex->pprev;
+    for (int i = 0; pi && i < SIGNER_REWARD_PAST_BLOCKS; pi = pi->pprev, i++)
+    {
+        const CTxDestination destination = pi->GetRewardedSigner();
+        if (!boost::get<CNoDestination>(&destination))
+            mapPastRewardRet[destination]++;
+    }
     return true;
 }

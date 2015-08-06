@@ -28,7 +28,11 @@ Feature: The user can define a data feed URL to automatically update his vote fr
          "reputations":[
            {"address": "tV5zFXK46bFTWM3ra8UcCWzCRsc12mg3as", "weight": 10},
            {"address": "tHpbt9ZTgWfGxYDoukHj1P3AMsuvKm5XtG", "weight": -2}
-         ]
+         ],
+         "signerreward":{
+           "count": 10,
+           "amount": 20.0
+         }
       }
       """
     And sample vote "another full" is:
@@ -56,7 +60,11 @@ Feature: The user can define a data feed URL to automatically update his vote fr
          },
          "reputations":[
            {"address": "tUgyRr1JHgw1AqMc1Zq9VzFEbukpYBKAX2", "weight": 1}
-         ]
+         ],
+         "signerreward":{
+           "count": 5,
+           "amount": 12.0512
+         }
       }
       """
     And sample vote "blank" is:
@@ -66,7 +74,8 @@ Feature: The user can define a data feed URL to automatically update his vote fr
          "parkrates":[],
          "motions":[],
          "fees": {},
-         "reputations":[]
+         "reputations":[],
+         "signerreward":{"count": null, "amount": null}
       }
       """
 
@@ -134,7 +143,8 @@ Feature: The user can define a data feed URL to automatically update his vote fr
             "1111111111111111111111111111111111111111"
          ],
          "fees": {},
-         "reputations": []
+         "reputations":[],
+         "signerreward":{"count": null, "amount": null}
       }
       """
 
@@ -213,6 +223,7 @@ Feature: The user can define a data feed URL to automatically update his vote fr
       | motions                |
       | fees                   |
       | reputations            |
+      | signerreward           |
 
   Scenario: An user sets a data feed through a proxy
     Given a proxy

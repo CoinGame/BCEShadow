@@ -332,6 +332,38 @@ CVote ParseVote(const Object& objVote)
                 vote.vReputationVote.push_back(reputationVote);
             }
         }
+        else if (voteAttribute.name_ == "signerreward")
+        {
+            BOOST_FOREACH(const Pair& signerRewardAttribute, voteAttribute.value_.get_obj())
+            {
+                if (signerRewardAttribute.name_ == "count")
+                {
+                    if (signerRewardAttribute.value_.type() == null_type || signerRewardAttribute.value_.get_int() < 0)
+                        vote.signerReward.nCount = -1;
+                    else
+                    {
+                        int nCount = signerRewardAttribute.value_.get_int();
+                        if (nCount < numeric_limits<int16_t>::min() || nCount > numeric_limits<int16_t>::max())
+                            throw runtime_error("Invalid signer reward count");
+                        vote.signerReward.nCount = (int16_t) nCount;
+                    }
+                }
+                else if (signerRewardAttribute.name_ == "amount")
+                {
+                    if (signerRewardAttribute.value_.type() == null_type || signerRewardAttribute.value_.get_real() < 0)
+                        vote.signerReward.nAmount = -1;
+                    else
+                    {
+                        double amountAsSatoshi = signerRewardAttribute.value_.get_real() * COIN;
+                        if (amountAsSatoshi < numeric_limits<int32_t>::min() || amountAsSatoshi > numeric_limits<int32_t>::max())
+                            throw runtime_error("Invalid amount");
+                        vote.signerReward.nAmount = (int32_t)amountAsSatoshi;
+                    }
+                }
+                else
+                    throw runtime_error("Invalid signer reward vote object");
+            }
+        }
         else
             throw runtime_error("Invalid vote object");
     }
@@ -370,6 +402,8 @@ void UpdateFromDataFeed()
                 newVote.mapFeeVote = feedVote.mapFeeVote;
             else if (sPart == "reputations")
                 newVote.vReputationVote = feedVote.vReputationVote;
+            else if (sPart == "signerreward")
+                newVote.signerReward = feedVote.signerReward;
             else
                 throw runtime_error("Invalid part");
         }

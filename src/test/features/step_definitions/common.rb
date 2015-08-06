@@ -468,11 +468,17 @@ Then(/^node "(.*?)" (?:should reach|should have|reaches) a balance of "([^"]*?)"
   end
 end
 
-Then(/^node "(.*?)" should reach an unconfirmed balance of "([^"]*?)"( BlockCredits|)$/) do |arg1, arg2, unit_name|
+Then(/^node "(.*?)" should (?:reach|have) an unconfirmed balance of "([^"]*?)"( BlockCredits| BKS)$/) do |arg1, arg2, unit_name|
   node = @nodes[arg1]
   amount = parse_number(arg2)
-  wait_for do
-    expect(node.unit_rpc(unit(unit_name), "getbalance", "*", 0)).to eq(amount)
+  begin
+    wait_for do
+      expect(node.unit_rpc(unit(unit_name), "getbalance", "*", 0)).to eq(amount)
+    end
+  rescue Exception
+    require 'pp'
+    pp node.rpc("listtransactions")
+    raise
   end
 end
 

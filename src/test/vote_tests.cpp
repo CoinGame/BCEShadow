@@ -524,6 +524,64 @@ BOOST_AUTO_TEST_CASE(vote_validity_tests)
     vote.vCustodianVote[0].hashAddress++;
     BOOST_CHECK(vote.IsValid(PROTOCOL_VERSION));
     vote.vCustodianVote[0].hashAddress--;
+
+    {
+        // Reputation vote only valid from 3.1
+        CVote vote;
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V2_0));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+        vote.vReputationVote.push_back(CReputationVote(CBitcoinAddress("8VZRy4CAWKVC2HBWFE9YppLki5FJJhfrkY"), 1));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
+        BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V2_0));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+    }
+
+    {
+        // Signer reward vote only valid from 3.1
+        CVote vote;
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V2_0));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+
+        vote.signerReward.nCount = -1;
+        vote.signerReward.nAmount = -1;
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V2_0));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+
+        vote.signerReward.nCount = 0;
+        vote.signerReward.nAmount = 0;
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V2_0));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+
+        vote.signerReward.nCount = 1;
+        vote.signerReward.nAmount = 0;
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
+        BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V2_0));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+
+        vote.signerReward.nCount = 0;
+        vote.signerReward.nAmount = 1;
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
+        BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V2_0));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+
+        vote.signerReward.nCount = 10;
+        vote.signerReward.nAmount = 21;
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
+        BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V2_0));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+    }
 }
 
 void printVotes(vector<CVote> vVote)
@@ -1170,4 +1228,337 @@ BOOST_AUTO_TEST_CASE(reputation_vote_result)
     BOOST_CHECK_EQUAL(5000*2-20000*1, mapReputation[address4]);
 }
 
+BOOST_AUTO_TEST_CASE(reputation_reward_calculation)
+{
+    map<CTxDestination, int64> mapReputation;
+    map<CTxDestination, int> mapPastReward;
+
+    CKeyID address1(0x111);
+    CKeyID address2(0x222);
+    CKeyID address3(0x333);
+
+    int nCount = 10;
+
+    // No reputation, no recipient
+    mapReputation.clear();
+    mapPastReward.clear();
+    {
+        bool fFound;
+        CTxDestination address;
+        BOOST_CHECK(CalculateSignerRewardRecipient(mapReputation, nCount, mapPastReward, fFound, address));
+        BOOST_CHECK_EQUAL(false, fFound);
+        BOOST_CHECK(boost::get<CNoDestination>(&address));
+    }
+
+    // With a single reputed signer and no past reward
+    mapReputation.clear();
+    mapReputation[address1] = 1;
+    mapPastReward.clear();
+    {
+        bool fFound;
+        CTxDestination address;
+        BOOST_CHECK(CalculateSignerRewardRecipient(mapReputation, nCount, mapPastReward, fFound, address));
+        BOOST_CHECK_EQUAL(true, fFound);
+        BOOST_CHECK_EQUAL(boost::get<CKeyID>(address).GetHex(), address1.GetHex());
+    }
+
+    // With multiple reputed signer and no past reward
+    mapReputation.clear();
+    mapReputation[address1] = 1;
+    mapReputation[address2] = 2;
+    mapReputation[address3] = 1;
+    mapPastReward.clear();
+    {
+        bool fFound;
+        CTxDestination address;
+        BOOST_CHECK(CalculateSignerRewardRecipient(mapReputation, nCount, mapPastReward, fFound, address));
+        BOOST_CHECK_EQUAL(true, fFound);
+        BOOST_CHECK_EQUAL(boost::get<CKeyID>(address).GetHex(), address2.GetHex());
+    }
+
+    // With past reward already given to the most reputed signer
+    mapReputation.clear();
+    mapReputation[address1] = 1;
+    mapReputation[address2] = 3;
+    mapReputation[address3] = 2;
+    mapPastReward.clear();
+    mapPastReward[address2] = 1000;
+    {
+        bool fFound;
+        CTxDestination address;
+        BOOST_CHECK(CalculateSignerRewardRecipient(mapReputation, nCount, mapPastReward, fFound, address));
+        BOOST_CHECK_EQUAL(true, fFound);
+        BOOST_CHECK_EQUAL(boost::get<CKeyID>(address).GetHex(), address3.GetHex());
+    }
+
+    // With equal distance, the reward goes to the highest hash
+    mapReputation.clear();
+    mapReputation[address1] = 1;
+    mapReputation[address2] = 2;
+    mapReputation[address3] = 1;
+    mapPastReward.clear();
+    mapPastReward[address2] = 1000;
+    {
+        bool fFound;
+        CTxDestination address;
+        BOOST_CHECK(CalculateSignerRewardRecipient(mapReputation, nCount, mapPastReward, fFound, address));
+        BOOST_CHECK_EQUAL(true, fFound);
+        BOOST_CHECK_EQUAL(boost::get<CKeyID>(address).GetHex(), address3.GetHex());
+    }
+
+    // With more data
+    mapReputation.clear();
+    mapReputation[address1] = 20 * 1234;
+    mapReputation[address2] = 50 * 1234;
+    mapReputation[address3] = 30 * 1234;
+    mapPastReward.clear();
+    mapPastReward[address1] = 0.199 * 2000;
+    mapPastReward[address2] = 0.503 * 2000;
+    mapPastReward[address3] = 0.298 * 2000;
+    {
+        bool fFound;
+        CTxDestination address;
+        BOOST_CHECK(CalculateSignerRewardRecipient(mapReputation, nCount, mapPastReward, fFound, address));
+        BOOST_CHECK_EQUAL(true, fFound);
+        BOOST_CHECK_EQUAL(boost::get<CKeyID>(address).GetHex(), address3.GetHex());
+    }
+
+    // Negative reputations do not receive reward
+    mapReputation.clear();
+    mapReputation[address1] = -20 * 1234;
+    mapReputation[address2] =  10 * 1234;
+    mapReputation[address3] = -10 * 1234;
+    mapPastReward.clear();
+    mapPastReward[address1] = 0.199 * 2000;
+    mapPastReward[address2] = 0.503 * 2000;
+    mapPastReward[address3] = 0.298 * 2000;
+    {
+        bool fFound;
+        CTxDestination address;
+        BOOST_CHECK(CalculateSignerRewardRecipient(mapReputation, nCount, mapPastReward, fFound, address));
+        BOOST_CHECK_EQUAL(true, fFound);
+        BOOST_CHECK_EQUAL(boost::get<CKeyID>(address).GetHex(), address2.GetHex());
+    }
+
+    // Null reputation do not get reward
+    mapReputation.clear();
+    mapReputation[address1] = 0;
+    mapReputation[address2] = -1;
+    mapReputation[address3] = 1;
+    mapPastReward.clear();
+    mapPastReward[address1] = 0;
+    mapPastReward[address2] = 0;
+    mapPastReward[address3] = 2000;
+    {
+        bool fFound;
+        CTxDestination address;
+        BOOST_CHECK(CalculateSignerRewardRecipient(mapReputation, nCount, mapPastReward, fFound, address));
+        BOOST_CHECK_EQUAL(true, fFound);
+        BOOST_CHECK_EQUAL(boost::get<CKeyID>(address).GetHex(), address3.GetHex());
+    }
+
+    // Only nCount reputed signers are eligible for the reward
+    mapReputation.clear();
+    mapReputation[address1] = 20 * 1234;
+    mapReputation[address2] = 50 * 1234;
+    mapReputation[address3] = 30 * 1234;
+    mapPastReward.clear();
+    mapPastReward[address1] = 0.10 * 2000;
+    mapPastReward[address2] = 0.55 * 2000;
+    mapPastReward[address3] = 0.25 * 2000;
+    {
+        bool fFound;
+        CTxDestination address;
+        BOOST_CHECK(CalculateSignerRewardRecipient(mapReputation, 2, mapPastReward, fFound, address));
+        BOOST_CHECK_EQUAL(true, fFound);
+        BOOST_CHECK_EQUAL(boost::get<CKeyID>(address).GetHex(), address3.GetHex());
+    }
+    {
+        bool fFound;
+        CTxDestination address;
+        BOOST_CHECK(CalculateSignerRewardRecipient(mapReputation, 1, mapPastReward, fFound, address));
+        BOOST_CHECK_EQUAL(true, fFound);
+        BOOST_CHECK_EQUAL(boost::get<CKeyID>(address).GetHex(), address2.GetHex());
+    }
+
+    // In case of a tie, the one who received the least rewards wins. If it's sill a tie, the one with the highest hash wins
+    mapReputation.clear();
+    mapReputation[address1] = 20 * 1234;
+    mapReputation[address2] = 20 * 1234;
+    mapReputation[address3] = 20 * 1234;
+    mapPastReward.clear();
+    mapPastReward[address1] = 0.40 * 2000;
+    mapPastReward[address2] = 0.40 * 2000;
+    mapPastReward[address3] = 0.20 * 2000;
+    {
+        bool fFound;
+        CTxDestination address;
+        BOOST_CHECK(CalculateSignerRewardRecipient(mapReputation, 3, mapPastReward, fFound, address));
+        BOOST_CHECK_EQUAL(true, fFound);
+        BOOST_CHECK_EQUAL(boost::get<CKeyID>(address).GetHex(), address3.GetHex());
+    }
+    {
+        bool fFound;
+        CTxDestination address;
+        BOOST_CHECK(CalculateSignerRewardRecipient(mapReputation, 2, mapPastReward, fFound, address));
+        BOOST_CHECK_EQUAL(true, fFound);
+        BOOST_CHECK_EQUAL(boost::get<CKeyID>(address).GetHex(), address2.GetHex());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(get_past_rewarded_signers)
+{
+    CBlockIndex* pindexBest = new CBlockIndex;
+    CBlockIndex* pindex = pindexBest;
+
+    CBitcoinAddress address1("8VZRy4CAWKVC2HBWFE9YppLki5FJJhfrkY");
+    CBitcoinAddress address2("8FJryeHhudFYJQvPvJ3CgCMkc2oHNLtNhj");
+    CBitcoinAddress address3("9EQRQJaFeFNu5yiGrDEvmMjSLf2aiYuLTN");
+    CBitcoinAddress address4("8XHmT2idfoCPRs939XBrxiPbE3VLedg2cj");
+
+    for (int i = 0; i < 1000; i++)
+    {
+        pindex->pprev = new CBlockIndex;
+        pindex = pindex->pprev;
+        CacheRewardedSigner(pindex, address1.Get());
+    }
+
+    for (int i = 0; i < 100; i++)
+    {
+        pindex->pprev = new CBlockIndex;
+        pindex = pindex->pprev;
+        CacheRewardedSigner(pindex, CNoDestination());
+    }
+
+    for (int i = 0; i < 1000; i++)
+    {
+        pindex->pprev = new CBlockIndex;
+        pindex = pindex->pprev;
+        CacheRewardedSigner(pindex, address3.Get());
+    }
+
+    std::map<CTxDestination, int> mapPastReward;
+    BOOST_CHECK(GetPastSignerRewards(pindexBest, mapPastReward));
+    BOOST_CHECK_EQUAL(   2, mapPastReward.size());
+    BOOST_CHECK_EQUAL(1000, mapPastReward[address1.Get()]);
+    BOOST_CHECK_EQUAL( 900, mapPastReward[address3.Get()]);
+}
+
+class CSignerRewardChain
+{
+public:
+    CBlockIndex* pindexBest;
+    CBlockIndex* pindex;
+
+    CSignerRewardChain()
+    {
+        pindexBest = new CBlockIndex;
+        pindexBest->nProtocolVersion = PROTOCOL_V3_1;
+        pindex = pindexBest;
+    }
+
+    ~CSignerRewardChain()
+    {
+        CBlockIndex* pi = pindexBest;
+        pindexBest = NULL;
+        pindex = NULL;
+        while (pi)
+        {
+            CBlockIndex* pd = pi;
+            pi = pd->pprev;
+            pd->pprev = NULL;
+            if (pi)
+                pi->pnext = NULL;
+            delete pd;
+        }
+    }
+
+   CBlockIndex* AddParent()
+   {
+       pindex->pprev = new CBlockIndex;
+       pindex->pprev->pnext = pindex;
+       pindex = pindex->pprev;
+       return pindex;
+   }
+};
+
+BOOST_AUTO_TEST_CASE(signer_reward_vote_result)
+{
+    {
+        // Without any vote nor previous value, the result is 0
+        CSignerRewardChain chain;
+        BOOST_CHECK(CalculateSignerRewardVoteResult(chain.pindexBest));
+        BOOST_CHECK_EQUAL(0, chain.pindexBest->signerRewardVoteResult.nCount);
+        BOOST_CHECK_EQUAL(0, chain.pindexBest->signerRewardVoteResult.nAmount);
+    }
+
+    {
+        // With a previous value, it doesn't change (each non-vote is a vote to keep the same parameters)
+        CSignerRewardChain chain;
+        chain.AddParent()->signerRewardVoteResult.Set(42, 521465);
+        BOOST_CHECK(CalculateSignerRewardVoteResult(chain.pindexBest));
+        BOOST_CHECK_EQUAL(    42, chain.pindexBest->signerRewardVoteResult.nCount);
+        BOOST_CHECK_EQUAL(521465, chain.pindexBest->signerRewardVoteResult.nAmount);
+    }
+
+    {
+        // In case of a tie (here 1000 votes to change and 1000 votes to keep the current value), the highest value wins
+        CSignerRewardChain chain;
+        chain.AddParent()->signerRewardVoteResult.Set(42, 1000);
+        for (int i = 0; i < 1000; i++)
+            chain.AddParent()->vote.signerReward.Set(12, 2000);
+        BOOST_CHECK(CalculateSignerRewardVoteResult(chain.pindexBest));
+        BOOST_CHECK_EQUAL(  42, chain.pindexBest->signerRewardVoteResult.nCount);
+        BOOST_CHECK_EQUAL(2000, chain.pindexBest->signerRewardVoteResult.nAmount);
+    }
+
+    {
+        // With 1001 votes to change, the result changes
+        CSignerRewardChain chain;
+        chain.AddParent()->signerRewardVoteResult.Set(42, 521465);
+        for (int i = 0; i < 1001; i++)
+            chain.AddParent()->vote.signerReward.Set(12, 12345);
+        BOOST_CHECK(CalculateSignerRewardVoteResult(chain.pindexBest));
+        BOOST_CHECK_EQUAL(    12, chain.pindexBest->signerRewardVoteResult.nCount);
+        BOOST_CHECK_EQUAL( 12345, chain.pindexBest->signerRewardVoteResult.nAmount);
+    }
+
+    {
+        // With a more complex median calculation
+        CSignerRewardChain chain;
+        chain.pindex->vote.signerReward.Set(10, 100);
+        chain.AddParent()->signerRewardVoteResult.Set(5, 30);
+        chain.pindex->vote.signerReward.Set(10, 100);
+        for (int i = 0; i < 600; i++)
+            chain.AddParent()->vote.signerReward.Set(6, -1);
+        for (int i = 0; i < 400; i++)
+            chain.AddParent()->vote.signerReward.Set(20, 10);
+        for (int i = 0; i < 300; i++)
+            chain.AddParent()->vote.signerReward.Set(-5, 15);
+        for (int i = 0; i < 900; i++)
+            chain.AddParent()->vote.signerReward.Set( 3,  3);
+        BOOST_CHECK(CalculateSignerRewardVoteResult(chain.pindexBest));
+        // So we have:
+        // nCount: 2x10, 600x6, 400x20, 300x-1, 900x3 (only 698 count)
+        // That means 698x3, 300x5, 600x6, 2x10, 400x20
+        // The median is 6
+        BOOST_CHECK_EQUAL(     6, chain.pindexBest->signerRewardVoteResult.nCount);
+        // nReward: 2x100, 600x-1, 400x10, 700x15, 900x3 (only 698 count)
+        // That means 698x3, 400x10, 300x15, 600x30, 2x100
+        // The median is 10
+        BOOST_CHECK_EQUAL(    10, chain.pindexBest->signerRewardVoteResult.nAmount);
+    }
+
+    {
+        // Pre-3.1 blocks do not get any reward
+        CSignerRewardChain chain;
+        chain.pindex->nProtocolVersion = PROTOCOL_V2_0;
+        chain.AddParent()->signerRewardVoteResult.Set(0, 0);
+        for (int i = 0; i < 1001; i++)
+            chain.AddParent()->vote.signerReward.Set(12, 12345);
+        BOOST_CHECK(CalculateSignerRewardVoteResult(chain.pindexBest));
+        BOOST_CHECK_EQUAL(     0, chain.pindexBest->signerRewardVoteResult.nCount);
+        BOOST_CHECK_EQUAL(     0, chain.pindexBest->signerRewardVoteResult.nAmount);
+    }
+}
 BOOST_AUTO_TEST_SUITE_END()

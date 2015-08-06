@@ -27,7 +27,11 @@ Feature: A command is called each time the vote changes. This can be used to upd
          "reputations":[
            {"address": "tV5zFXK46bFTWM3ra8UcCWzCRsc12mg3as", "weight": 10},
            {"address": "tHpbt9ZTgWfGxYDoukHj1P3AMsuvKm5XtG", "weight": -2}
-         ]
+         ],
+         "signerreward":{
+           "count": 5,
+           "amount": 12.0512
+         }
       }
       """
 

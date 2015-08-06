@@ -193,6 +193,7 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake);
 bool GetTransaction(const uint256 &hash, CTransaction &tx, uint256 &hashBlock);
 bool IsNuProtocolV05(int64 nTimeBlock);
 int64 CalculateFee(int nSize, int64 nPerKiloByteFee);
+void CacheRewardedSigner(const CBlockIndex* pindex, const CTxDestination& addressSigner);
 
 
 inline int GetMaturity(bool fProofOfStake)
@@ -1296,6 +1297,9 @@ public:
     // nubit: previous block with an elected custodian
     CBlockIndex* pprevElected;
 
+    // bcexchange: reputed signer reward vote results
+    CSignerRewardVote signerRewardVoteResult;
+
     // block header
     int nVersion;
     uint256 hashMerkleRoot;
@@ -1329,6 +1333,7 @@ public:
         nProtocolVersion = 0;
         mapVotedFee.clear();
         pprevElected = NULL;
+        signerRewardVoteResult.SetNull();
 
         nVersion       = 0;
         hashMerkleRoot = 0;
@@ -1371,6 +1376,7 @@ public:
         nProtocolVersion = 0;
         mapVotedFee.clear();
         pprevElected = NULL;
+        signerRewardVoteResult.SetNull();
 
         nVersion       = block.nVersion;
         hashMerkleRoot = block.hashMerkleRoot;
@@ -1548,6 +1554,11 @@ public:
         return pindex;
     }
 
+    CBlockIndex* GetEffectiveVoteIndex()
+    {
+        return const_cast<CBlockIndex*>(static_cast<const CBlockIndex*>(this)->GetEffectiveVoteIndex());
+    }
+
     int64 GetVotedMinFee(unsigned char cUnit) const
     {
         std::map<unsigned char, uint32_t>::const_iterator it = mapVotedFee.find(cUnit);
@@ -1575,6 +1586,13 @@ public:
     bool GetEffectiveReputation(std::map<CBitcoinAddress, int64>& mapReputation)
     {
         return CalculateReputationResult(GetEffectiveVoteIndex(), mapReputation);
+    }
+
+    CTxDestination GetRewardedSigner() const;
+
+    CSignerRewardVote GetEffectiveSignerRewardVoteResult() const
+    {
+        return GetEffectiveVoteIndex()->signerRewardVoteResult;
     }
 
     std::string ToString() const
@@ -1665,6 +1683,12 @@ public:
                 READWRITE(mapVotedFee);
             else if (fRead)
                 const_cast<CDiskBlockIndex*>(this)->mapVotedFee.clear();
+
+            if (nProtocolVersion >= PROTOCOL_V3_1)
+                READWRITE(signerRewardVoteResult);
+            else if (fRead)
+                const_cast<CDiskBlockIndex*>(this)->signerRewardVoteResult.Set(0, 0);
+
         }
         else if (fRead)
         {
@@ -1676,6 +1700,7 @@ public:
             const_cast<CDiskBlockIndex*>(this)->nCoinAgeDestroyed = 0;
             const_cast<CDiskBlockIndex*>(this)->vElectedCustodian.clear();
             const_cast<CDiskBlockIndex*>(this)->mapVotedFee.clear();
+            const_cast<CDiskBlockIndex*>(this)->signerRewardVoteResult.Set(0, 0);
         }
 
         // block header
