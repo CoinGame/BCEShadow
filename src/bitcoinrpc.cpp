@@ -1459,7 +1459,7 @@ Value park(const Array& params, bool fHelp)
     else
         strAccount = "";
 
-    CBitcoinAddress unparkAddress(params.size() > 3 ? params[3].get_str() : GetAccountAddress(strAccount));
+    CBitcoinAddress unparkAddress(params.size() > 3 ? CBitcoinAddress(params[3].get_str()) : GetAccountAddress(strAccount));
     if (!unparkAddress.IsValid(pwalletMain->GetUnit()))
         throw JSONRPCError(-5, "Invalid address");
 
