@@ -316,11 +316,6 @@ public:
 
     bool IsValid(int nProtocolVersion) const;
 
-    void Upgrade()
-    {
-        nVersionVote = PROTOCOL_VERSION;
-    }
-
     inline bool operator==(const CVote& other) const
     {
         return (nVersionVote == other.nVersionVote &&
@@ -330,6 +325,45 @@ public:
                 mapFeeVote == other.mapFeeVote);
     }
     inline bool operator!=(const CVote& other) const
+    {
+        return !(*this == other);
+    }
+};
+
+class CUserVote : public CVote
+{
+public:
+    int nVersion;
+
+    CUserVote() :
+        nVersion(PROTOCOL_VERSION)
+    {
+    }
+
+    CUserVote(const CVote& vote, int nVersion = PROTOCOL_VERSION) :
+        CVote(vote),
+        nVersion(nVersion)
+    {
+    }
+
+    IMPLEMENT_SERIALIZE
+    (
+        READWRITE(this->nVersion);
+        nVersion = this->nVersion;
+        nSerSize += SerReadWrite(s, *(CVote*)this, nType, nVersion, ser_action);
+    )
+
+    void Upgrade()
+    {
+        nVersion = PROTOCOL_VERSION;
+    }
+
+    inline bool operator==(const CUserVote& other) const
+    {
+        return (nVersion == other.nVersion &&
+                CVote::operator==(other));
+    }
+    inline bool operator!=(const CUserVote& other) const
     {
         return !(*this == other);
     }
