@@ -146,9 +146,9 @@ class CoinContainer
 
     start_options = {
       'PortBindings' => {
-        "12240/tcp" => ['127.0.0.1'],
-        "12241/tcp" => ['127.0.0.1'],
-        "12239/tcp" => ['127.0.0.1'],
+        "12240/tcp" => [{}],
+        "12241/tcp" => [{}],
+        "12239/tcp" => [{}],
       },
       'Links' => links.map { |link_name, alias_name| "#{link_name}:#{alias_name}" },
     }

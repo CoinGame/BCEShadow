@@ -1,4 +1,10 @@
-PROTOCOL_V2_0 = 2000000
+%w(
+  PROTOCOL_V2_0
+  PROTOCOL_V3_1
+).each do |const_name|
+  value = File.read(File.expand_path("../../../../version.h", __FILE__)).scan(/#{const_name} = (\d+);/).first.first.to_i
+  Kernel.const_set(const_name, value)
+end
 
 Before do
   @blocks = {}
@@ -546,11 +552,10 @@ Then(/^(?:node |)"(.*?)" should have "(.*?)" BlockCredits parked$/) do |arg1, ar
   end
 end
 
-When(/^the nodes travel to the Nu protocol v(\d+) switch time$/) do |arg1|
-  if arg1.to_i == 5
-    switch_time = Time.at(1414195200)
-  elsif arg1.to_i == 20
-    switch_time = File.read(File.expand_path("../../../../version.h", __FILE__)).scan(/PROTOCOL_V2_0_TEST_VOTE_TIME = (\d+);/).first.first
+When(/^the nodes travel to the protocol (.+) switch time$/) do |arg1|
+  case arg1
+  when "3.1"
+    switch_time = File.read(File.expand_path("../../../../version.h", __FILE__)).scan(/PROTOCOL_V3_1_TEST_VOTE_TIME = (\d+);/).first.first
     switch_time = Time.at(switch_time.to_i)
   else
     raise "Unknown protocol version: #{arg1.inspect}"
@@ -707,12 +712,23 @@ When(/^node "(.*?)" imports the private key "(.*?)" into the (\S+) wallet$/) do 
   node.unit_rpc(unit(unit_name), "importprivkey", private_key)
 end
 
+Given(/^a network at protocol (.*?) with nodes (.+)$/) do |arg1, arg2|
+  step "a network with nodes #{arg2}"
+  step "the network is at protocol #{arg1}"
+end
+
 Given(/^the network is at protocol (.*?)$/) do |arg1|
   node_name = @nodes.keys.first
   node = @nodes[node_name]
   case arg1
   when "2.0"
     # bcexchange starts at protocol 2.0
+  when "3.1"
+    if node.info["protocolversion"] < PROTOCOL_V3_1
+      step %Q(the nodes travel to the protocol 3.1 switch time)
+      step %Q(node "#{node_name}" finds 10 blocks received by all nodes)
+      step %Q(node "#{node_name}" should use protocol #{PROTOCOL_V3_1})
+    end
   else
     raise "unknown protocol: #{arg1.inspect}"
   end
