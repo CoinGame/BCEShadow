@@ -225,6 +225,106 @@ public:
     std::string ToString() const;
 };
 
+class CReputationVote
+{
+public:
+    bool fScript;
+    uint160 hashAddress;
+    char nWeight;
+
+    CReputationVote() :
+        fScript(false),
+        hashAddress(0),
+        nWeight(0)
+    {
+    }
+
+    CReputationVote(const CBitcoinAddress& address, char nWeight) :
+        nWeight(nWeight)
+    {
+        SetAddress(address);
+    }
+
+    bool IsValid(int nProtocolVersion) const;
+
+    IMPLEMENT_SERIALIZE
+    (
+        READWRITE(fScript);
+        READWRITE(hashAddress);
+        READWRITE(nWeight);
+    )
+
+    inline bool operator==(const CReputationVote& other) const
+    {
+        return (fScript == other.fScript &&
+                hashAddress == other.hashAddress &&
+                nWeight == other.nWeight);
+    }
+    inline bool operator!=(const CReputationVote& other) const
+    {
+        return !(*this == other);
+    }
+
+    class CDestinationVisitor : public boost::static_visitor<bool>
+    {
+        private:
+            CReputationVote *reputationVote;
+        public:
+            CDestinationVisitor(CReputationVote *reputationVote) : reputationVote(reputationVote) { }
+
+            bool operator()(const CNoDestination &dest) const {
+                reputationVote->fScript = false;
+                reputationVote->hashAddress = 0;
+                return false;
+            }
+
+            bool operator()(const CKeyID &keyID) const {
+                reputationVote->fScript = false;
+                reputationVote->hashAddress = keyID;
+                return true;
+            }
+
+            bool operator()(const CScriptID &scriptID) const {
+                reputationVote->fScript = true;
+                reputationVote->hashAddress = scriptID;
+                return true;
+            }
+    };
+
+    void SetAddress(const CBitcoinAddress& address)
+    {
+        if (address.GetUnit() != '8')
+            throw std::runtime_error("Invalid unit on reputation vote");
+        CTxDestination destination = address.Get();
+        boost::apply_visitor(CDestinationVisitor(this), destination);
+    }
+
+    CBitcoinAddress GetAddress() const
+    {
+        CBitcoinAddress address;
+        if (fScript)
+            address.Set(CScriptID(hashAddress), '8');
+        else
+            address.Set(CKeyID(hashAddress), '8');
+        return address;
+    }
+
+    bool operator< (const CReputationVote& other) const
+    {
+        if (nWeight < other.nWeight)
+            return true;
+        if (nWeight > other.nWeight)
+            return false;
+        if (fScript < other.fScript)
+            return true;
+        if (fScript > other.fScript)
+            return false;
+        if (hashAddress < other.hashAddress)
+            return true;
+        return false;
+    }
+};
+
 class CVote
 {
 public:
@@ -233,6 +333,7 @@ public:
     std::vector<CParkRateVote> vParkRateVote;
     std::vector<uint160> vMotion;
     std::map<unsigned char, uint32_t> mapFeeVote;
+    std::vector<CReputationVote> vReputationVote;
 
     int64 nCoinAgeDestroyed;
 
@@ -249,6 +350,7 @@ public:
         vParkRateVote.clear();
         vMotion.clear();
         mapFeeVote.clear();
+        vReputationVote.clear();
         nCoinAgeDestroyed = 0;
     }
 
@@ -310,11 +412,17 @@ public:
             READWRITE(mapFeeVote);
         else if (fRead)
             const_cast<CVote*>(this)->mapFeeVote.clear();
+
+        if (nVersion >= PROTOCOL_V3_1)
+            READWRITE(vReputationVote);
+        else if (fRead)
+            const_cast<CVote*>(this)->vReputationVote.clear();
     )
 
     CScript ToScript(int nProtocolVersion) const;
 
     bool IsValid(int nProtocolVersion) const;
+    bool IsValidInBlock(int nProtocolVersion) const;
 
     inline bool operator==(const CVote& other) const
     {
@@ -322,7 +430,8 @@ public:
                 vCustodianVote == other.vCustodianVote &&
                 vParkRateVote == other.vParkRateVote &&
                 vMotion == other.vMotion &&
-                mapFeeVote == other.mapFeeVote);
+                mapFeeVote == other.mapFeeVote &&
+                vReputationVote == other.vReputationVote);
     }
     inline bool operator!=(const CVote& other) const
     {
@@ -358,6 +467,8 @@ public:
         nVersion = PROTOCOL_VERSION;
     }
 
+    CVote GenerateBlockVote(int nProtocolVersion) const;
+
     inline bool operator==(const CUserVote& other) const
     {
         return (nVersion == other.nVersion &&
@@ -390,5 +501,7 @@ int GetProtocolForNextBlock(const CBlockIndex* pPrevIndex);
 bool IsProtocolActiveForNextBlock(const CBlockIndex* pPrevIndex, int nSwitchTime, int nProtocolVersion, int nRequired=PROTOCOL_SWITCH_REQUIRE_VOTES, int nToCheck=PROTOCOL_SWITCH_COUNT_VOTES);
 
 bool CalculateVotedFees(CBlockIndex* pindex);
+
+bool CalculateReputationResult(const CBlockIndex* pindex, std::map<CBitcoinAddress, int64>& mapReputation);
 
 #endif
