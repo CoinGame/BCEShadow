@@ -202,6 +202,5 @@ extern CCriticalSection cs_mapLiquidityInfo;
 extern int64 nLastLiquidityUpdate;
 
 void RemoveExpiredLiquidityInfo(int nCurrentHeight);
-void RemoveLiquidityInfoFromCustodian(const CBitcoinAddress address);
 
 #endif

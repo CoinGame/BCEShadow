@@ -153,30 +153,3 @@ void RemoveExpiredLiquidityInfo(int nCurrentHeight)
     if (fAnyRemoved)
         MainFrameRepaint();
 }
-
-void RemoveLiquidityInfoFromCustodian(const CBitcoinAddress custodianAddress)
-{
-    bool fAnyRemoved = false;
-    {
-        LOCK(cs_mapLiquidityInfo);
-
-        map<const CLiquiditySource, CLiquidityInfo>::iterator it;
-        it = mapLiquidityInfo.begin();
-        while (it != mapLiquidityInfo.end())
-        {
-            const CBitcoinAddress& address = it->first.custodianAddress;
-
-            if (address == custodianAddress)
-            {
-                mapLiquidityInfo.erase(it++);
-                fAnyRemoved = true;
-                nLastLiquidityUpdate = GetAdjustedTime();
-            }
-            else
-                it++;
-        }
-    }
-
-    if (fAnyRemoved)
-        MainFrameRepaint();
-}
