@@ -49,9 +49,9 @@ public:
                 const CBitcoinAddress address(item.first, wallet->GetUnit());
                 const std::string& strName = item.second;
                 bool fMine = IsMine(*wallet, address.Get());
-                CPeercoinAddress dividendAddress;
+                CDividendAddress dividendAddress;
                 if (wallet->GetUnit() == '8')
-                    dividendAddress = CPeercoinAddress(address);
+                    dividendAddress = CDividendAddress(address);
                 cachedAddressTable.append(AddressTableEntry(fMine ? AddressTableEntry::Receiving : AddressTableEntry::Sending,
                                   QString::fromStdString(strName),
                                   QString::fromStdString(address.ToString()),

@@ -11,10 +11,10 @@ Feature: Distribution to shareholders
     And node "Alice" sends "20" BlockShares to "bob1"
     And node "Alice" sends "15.456" BlockShares to "bob1"
     And node "Alice" finds 2 blocks
-    And node "Alice" distributes "720,000" Peercoins
+    And node "Alice" distributes "720,000" Bitcoins
 
-    Then the distribution should send "28.57" Peercoins to "charly", adjusted by the real BlockShares supply
-    And the distribution should send "101.30" Peercoins to "bob1", adjusted by the real BlockShares supply
+    Then the distribution should send "28.57" Bitcoins to "charly", adjusted by the real BlockShares supply
+    And the distribution should send "101.30" Bitcoins to "bob1", adjusted by the real BlockShares supply
     And the distribution should not send anything to "bob2"
 
   Scenario: Distribution just above and below the minimum payout
@@ -26,8 +26,8 @@ Feature: Distribution to shareholders
     And node "Alice" sends "0.030" BlockShares to "above"
     And node "Alice" sends "0.029" BlockShares to "below"
     And node "Alice" finds 2 blocks
-    And node "Alice" distributes "72,000" Peercoins
+    And node "Alice" distributes "72,000" Bitcoins
 
-    Then the distribution should send "0.01" Peercoins to "above", adjusted by the real BlockShares supply
+    Then the distribution should send "0.01" Bitcoins to "above", adjusted by the real BlockShares supply
     And the distribution should not send anything to "below"
 

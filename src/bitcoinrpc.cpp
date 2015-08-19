@@ -70,7 +70,8 @@ CWallet *GetThreadWallet()
 
 extern Value dumpprivkey(const Array& params, bool fHelp);
 extern Value importprivkey(const Array& params, bool fHelp);
-extern Value exportpeercoinkeys(const Array& params, bool fHelp);
+extern Value exportdividendkeys(const Array& params, bool fHelp);
+extern Value dumpdividendkeys(const Array& params, bool fHelp);
 extern Value importnusharewallet(const Array& params, bool fHelp);
 
 Object JSONRPCError(int code, const string& message)
@@ -1028,12 +1029,12 @@ Value getaddressesbyaccount(const Array& params, bool fHelp)
     return ret;
 }
 
-Value getpeercoinaddresses(const Array& params, bool fHelp)
+Value getdividendaddresses(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "getpeercoinaddresses <account>\n"
-            "Returns the list of addresses and the associated Peercoin address for the given account.");
+            "getdividendaddresses <account>\n"
+            "Returns the list of addresses and the associated dividend address for the given account.");
 
     string strAccount = AccountFromValue(params[0]);
 
@@ -1042,10 +1043,10 @@ Value getpeercoinaddresses(const Array& params, bool fHelp)
     BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, pwalletMain->mapAddressBook)
     {
         const CBitcoinAddress address(item.first, pwalletMain->GetUnit());
-        const CPeercoinAddress peercoinAddress(address);
+        const CDividendAddress dividendAddress(address);
         const string& strName = item.second;
         if (strName == strAccount)
-            ret.push_back(Pair(address.ToString(), peercoinAddress.ToString()));
+            ret.push_back(Pair(address.ToString(), dividendAddress.ToString()));
     }
     return ret;
 }
@@ -1600,8 +1601,8 @@ Value distribute(const Array& params, bool fHelp)
         throw runtime_error(
             "distribute <cutoff timestamp> <amount> [<proceed>]\n"
             "cutoff is date and time at which the share balances should be considered. Format is unix time.\n"
-            "amount is the the number of peercoins to distribute, in double-precision floating point number.\n"
-            "If proceed is not true the peercoins are not sent and the details of the distribution are returned.");
+            "amount is the the number of bitcoins to distribute, in double-precision floating point number.\n"
+            "If proceed is not true the bitcoins are not sent and the details of the distribution are returned.");
 
     unsigned int cutoffTime = params[0].get_int();
     bool fProceed = false;
@@ -1630,7 +1631,7 @@ Value distribute(const Array& params, bool fHelp)
             Object obj;
             obj.push_back(Pair("nu_address", distribution.GetPeershareAddress().ToString()));
             obj.push_back(Pair("balance", (double)distribution.GetBalance() / COIN));
-            obj.push_back(Pair("peercoin_address", distribution.GetPeercoinAddress().ToString()));
+            obj.push_back(Pair("dividend_address", distribution.GetDividendAddress().ToString()));
             obj.push_back(Pair("dividends", distribution.GetDividendAmount()));
             distributions.push_back(obj);
         }
@@ -4718,7 +4719,7 @@ static const CRPCCommand vRPCCommands[] =
     { "setaccount",             &setaccount,             true },
     { "getaccount",             &getaccount,             false },
     { "getaddressesbyaccount",  &getaddressesbyaccount,  true },
-    { "getpeercoinaddresses",   &getpeercoinaddresses,   true },
+    { "getdividendaddresses",   &getdividendaddresses,   true },
     { "sendtoaddress",          &sendtoaddress,          false },
     { "getreceivedbyaddress",   &getreceivedbyaddress,   false },
     { "getreceivedbyaccount",   &getreceivedbyaccount,   false },
@@ -4755,7 +4756,8 @@ static const CRPCCommand vRPCCommands[] =
     { "listsinceblock",         &listsinceblock,         false },
     { "dumpprivkey",            &dumpprivkey,            false },
     { "importprivkey",          &importprivkey,          false },
-    { "exportpeercoinkeys",     &exportpeercoinkeys,     false },
+    { "exportdividendkeys",     &exportdividendkeys,     false },
+    { "dumpdividendkeys",       &dumpdividendkeys,       false },
     { "importnusharewallet",    &importnusharewallet,    false },
     { "getcheckpoint",          &getcheckpoint,          true },
     { "reservebalance",         &reservebalance,         false},
@@ -5422,13 +5424,13 @@ Object CallRPC(const string& strMethod, const Array& params)
     return reply;
 }
 
-std::string CallPeercoinRPC(const std::string &strMethod, const Array &params)
+std::string CallDividendRPC(const std::string &strMethod, const Array &params)
 {
-    if (mapPeercoinArgs["-rpcuser"] == "" && mapPeercoinArgs["-rpcpassword"] == "")
+    if (mapDividendArgs["-rpcuser"] == "" && mapDividendArgs["-rpcpassword"] == "")
         throw runtime_error(strprintf(
-            _("You must set rpcpassword=<password> in the Peercoin configuration file:\n%s\n"
+            _("You must set rpcpassword=<password> in the Bitcoin configuration file:\n%s\n"
               "If the file does not exist, create it with owner-readable-only file permissions."),
-                GetPeercoinConfigFile().string().c_str()));
+                GetDividendConfigFile().string().c_str()));
 
     // Connect to localhost
     bool fUseSSL = GetBoolArg("-rpcssl");
@@ -5438,11 +5440,11 @@ std::string CallPeercoinRPC(const std::string &strMethod, const Array &params)
     SSLStream sslStream(io_service, context);
     SSLIOStreamDevice d(sslStream, fUseSSL);
     iostreams::stream<SSLIOStreamDevice> stream(d);
-    if (!d.connect(GetPeercoinArg("-rpcconnect", "127.0.0.1"), GetPeercoinArg("-rpcport", CBigNum(fTestNet? PEERCOIN_TESTNET_RPC_PORT : PEERCOIN_RPC_PORT).ToString().c_str())))
-        throw runtime_error("couldn't connect to Peercoin RPC server");
+    if (!d.connect(GetDividendArg("-rpcconnect", "127.0.0.1"), GetDividendArg("-rpcport", CBigNum(fTestNet? DIVIDEND_TESTNET_RPC_PORT : DIVIDEND_RPC_PORT).ToString().c_str())))
+        throw runtime_error("couldn't connect to dividend RPC server");
 
     // HTTP basic authentication
-    string strUserPass64 = EncodeBase64(mapPeercoinArgs["-rpcuser"] + ":" + mapPeercoinArgs["-rpcpassword"]);
+    string strUserPass64 = EncodeBase64(mapDividendArgs["-rpcuser"] + ":" + mapDividendArgs["-rpcpassword"]);
     map<string, string> mapRequestHeaders;
     mapRequestHeaders["Authorization"] = string("Basic ") + strUserPass64;
 
@@ -5475,11 +5477,11 @@ std::string CallPeercoinRPC(const std::string &strMethod, const Array &params)
 
     if (error.type() != null_type)
     {
-        printf("Peercoin RPC error: %s\n", write_string(error, false).c_str());
+        printf("Dividend RPC error: %s\n", write_string(error, false).c_str());
         const Object errorObject = error.get_obj();
         int nCode = find_value(errorObject, "code").get_int();
         const std::string sMessage = find_value(errorObject, "message").get_str();
-        throw peercoin_rpc_error(nCode, sMessage);
+        throw dividend_rpc_error(nCode, sMessage);
     }
     else
     {

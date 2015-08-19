@@ -92,7 +92,7 @@ void BalanceScannerThread::Scan(unsigned int cutoffTime)
 
 
 const char* DistributeDivDialog::columnHeadings[] = {
-    "BlockShares Address", "Shares", "Peercoin Address", "Dividend"
+    "BlockShares Address", "Shares", "Dividend Address", "Dividend"
 };
 
 DistributeDivDialog::DistributeDivDialog(QWidget *parent) :
@@ -227,7 +227,7 @@ void DistributeDivDialog::on_calcDividendsButton_clicked()
     {
         model->setItem(i, 0, new QAddressItem(it->GetPeershareAddress()));
         model->setItem(i, 1, new QBalanceItem(it->GetBalance()));
-        model->setItem(i, 2, new QAddressItem(it->GetPeercoinAddress()));
+        model->setItem(i, 2, new QAddressItem(it->GetDividendAddress()));
         model->setItem(i, 3, new QDividendItem(it->GetDividendAmount()));
     }
 
@@ -265,7 +265,7 @@ void DistributeDivDialog::on_exportButton_clicked()
         fprintf(fp, "%s,%f,%s,%f\n",
                 vDistribution[i].GetPeershareAddress().ToString().c_str(),
                 (double)vDistribution[i].GetBalance() / COIN,
-                vDistribution[i].GetPeercoinAddress().ToString().c_str(),
+                vDistribution[i].GetDividendAddress().ToString().c_str(),
                 vDistribution[i].GetDividendAmount());
     }
     setlocale(LC_NUMERIC, locale.c_str());
@@ -284,10 +284,10 @@ bool DistributeDivDialog::ConfirmDistribution()
     }
     catch (const exception &error)
     {
-        QMessageBox::critical(this, "Error", QString("Unable to get Peercoin balance: %1").arg(error.what()));
+        QMessageBox::critical(this, "Error", QString("Unable to get Bitcoin balance: %1").arg(error.what()));
         return false;
     }
-    QString sQuestion = QString("%1 peercoins will be sent to %2 addresses in %3 transaction(s).\nYour current peercoin balance is %4.\n\nAre you sure?").arg(
+    QString sQuestion = QString("%1 bitcoins will be sent to %2 addresses in %3 transaction(s).\nYour current bitcoin balance is %4.\n\nAre you sure?").arg(
             QString::number(distributor.TotalDistributed()),
             QString::number(distributor.GetDistributions().size()),
             QString::number(GetTransactionCount()),

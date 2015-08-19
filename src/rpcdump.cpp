@@ -114,12 +114,12 @@ Value dumpprivkey(const Array& params, bool fHelp)
     return CBitcoinSecret(vchSecret, fCompressed, pwalletMain->Unit()).ToString();
 }
 
-Value exportpeercoinkeys(const Array& params, bool fHelp)
+Value exportdividendkeys(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
-            "exportpeercoinkeys\n"
-            "Add the Peercoin keys associated with the BlockShares addresses to the Peercoin wallet. Peercoin must be running and accept RPC commands.");
+            "exportdividendkeys\n"
+            "Add the Bitcoin keys associated with the BlockShares addresses to the Bitcoin wallet. Bitcoin must be running and accept RPC commands.");
 
     if (pwalletMain->IsLocked())
         throw JSONRPCError(-13, "Error: Please enter the wallet passphrase with walletpassphrase first.");
@@ -128,9 +128,31 @@ Value exportpeercoinkeys(const Array& params, bool fHelp)
 
     Object ret;
     int nExportedCount, nErrorCount;
-    pwalletMain->ExportPeercoinKeys(nExportedCount, nErrorCount);
+    pwalletMain->ExportDividendKeys(nExportedCount, nErrorCount);
     ret.push_back(Pair("exported", nExportedCount));
     ret.push_back(Pair("failed", nErrorCount));
+    return ret;
+}
+
+Value dumpdividendkeys(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "dumpdividendkeys\n"
+            "Returns an array of Bitcoin private keys associated with the BlockShare addresses of the wallet.");
+
+    if (pwalletMain->IsLocked())
+        throw JSONRPCError(-13, "Error: Please enter the wallet passphrase with walletpassphrase first.");
+    if (pwalletMain->fWalletUnlockMintOnly) // ppcoin: no dumpprivkey in mint-only mode
+        throw JSONRPCError(-102, "Wallet is unlocked for minting only.");
+
+    Array ret;
+    vector<CDividendSecret> vSecret;
+    pwalletMain->DumpDividendKeys(vSecret);
+
+    BOOST_FOREACH(const CDividendSecret& secret, vSecret)
+        ret.push_back(secret.ToString());
+
     return ret;
 }
 

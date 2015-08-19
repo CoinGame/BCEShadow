@@ -1,10 +1,10 @@
-Feature: BlockShare change is part of the keys exported to Peercoin
+Feature: BlockShare change is part of the keys exported to Bitcoin
   Scenario: After shares are sent, the total outputs of the exported keys include the change
     Given a network with nodes "Alice" and "Bob" able to mint
     When node "Bob" generates a BlockShare address "bob"
     And node "Alice" sends "1" BlockShares to "bob"
     And node "Alice" reaches a balance of "2,499.00" BlockShares minus the transaction fees
-    Then the total unspent amount of all the Peercoin keys on node "Alice" should be the same as her balance
+    Then the total unspent amount of all the Bitcoin keys on node "Alice" should be the same as her balance
 
   Scenario: Sending BlockShares generates a single transaction
     Given a network with nodes "Alice" and "Bob" able to mint
