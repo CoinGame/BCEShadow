@@ -620,7 +620,7 @@ typedef map<CCustodianVote, CCustodianVoteCounter> CustodianVoteCounterMap;
 typedef map<CBitcoinAddress, int64> GrantedAmountMap;
 typedef map<unsigned char, GrantedAmountMap> GrantedAmountPerUnitMap;
 
-bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CBitcoinAddress, CBlockIndex*>& mapAlreadyElected, int nHeight, std::vector<CTransaction>& vCurrencyCoinBaseRet)
+bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CBitcoinAddress, CBlockIndex*>& mapAlreadyElected, std::vector<CTransaction>& vCurrencyCoinBaseRet)
 {
     vCurrencyCoinBaseRet.clear();
 
@@ -686,9 +686,7 @@ bool GenerateCurrencyCoinBases(const std::vector<CVote> vVote, const std::map<CB
             if (it != mapAlreadyElected.end())
             {
                 // Custodian already elected
-                // Ignore it only if it was elected before the current height
-                if (it->second->nHeight < nHeight)
-                    continue;
+                continue;
             }
 
             CScript scriptPubKey;

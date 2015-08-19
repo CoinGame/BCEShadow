@@ -226,6 +226,14 @@ When(/^node "(.*?)" finds a block "([^"]*?)" not received by node "([^"]*?)"$/) 
   @blocks[block] = @nodes[node].generate_stake
 end
 
+When(/^node "(.*?)" ignores all new blocks$/) do |arg1|
+  @nodes[arg1].rpc("ignorenextblock", "all")
+end
+
+When(/^node "(.*?)" stops ignoring new blocks$/) do |arg1|
+  @nodes[arg1].rpc("ignorenextblock", "0")
+end
+
 When(/^node "(.*?)" finds a block$/) do |node|
   time_travel(5)
   @nodes[node].generate_stake
@@ -280,6 +288,12 @@ end
 Given(/^all nodes (?:reach|should reach|should be at) the same height$/) do
   wait_for do
     expect(@nodes.values.map(&:block_count).uniq.size).to eq(1)
+  end
+end
+
+When(/^node "(.*?)" reaches the same height as node "(.*?)"$/) do |arg1, arg2|
+  wait_for do
+    expect(@nodes[arg1].block_count).to eq(@nodes[arg2].block_count)
   end
 end
 
@@ -372,6 +386,20 @@ When(/^node "(.*?)" finds blocks until custodian "(.*?)" is elected in transacti
       end
     end
     done
+  end
+end
+
+When(/^node "(.*?)" finds blocks until it reaches a higher trust than node "(.*?)"$/) do |arg1, arg2|
+  node = @nodes[arg1]
+  other_node = @nodes[arg2]
+  require 'bigdecimal'
+  require 'bigdecimal/util'
+  other_trust = other_node.info["trust"].to_d
+  wait_for(2.0) do
+    node.generate_stake
+    time_travel(60)
+    trust = node.info["trust"].to_d
+    trust > other_trust
   end
 end
 

@@ -792,6 +792,7 @@ Value getinfo(const Array& params, bool fHelp)
 #ifdef TESTING
     obj.push_back(Pair("time",          DateTimeStrFormat(GetTime())));
     obj.push_back(Pair("timestamp",     (boost::int64_t)GetTime()));
+    obj.push_back(Pair("trust",         pindexBest->bnChainTrust.ToString()));
 #endif
     return obj;
 }
@@ -3355,8 +3356,7 @@ Value getelectedcustodians(const Array& params, bool fHelp)
 
     Array result;
 
-    LOCK(cs_mapElectedCustodian);
-    BOOST_FOREACH(const PAIRTYPE(CBitcoinAddress, CBlockIndex*)& pair, mapElectedCustodian)
+    BOOST_FOREACH(const PAIRTYPE(CBitcoinAddress, CBlockIndex*)& pair, pindexBest->GetElectedCustodians())
     {
         const CBitcoinAddress address = pair.first;
         const CBlockIndex* pindex = pair.second;
@@ -4590,12 +4590,8 @@ Value duplicateblock(const Array& params, bool fHelp)
             throw JSONRPCError(-3, "unable to extract votes");
 
         vector<CTransaction> vCurrencyCoinBase;
-        {
-            LOCK(cs_mapElectedCustodian);
-
-            if (!GenerateCurrencyCoinBases(vVote, mapElectedCustodian, pindexPrev->nHeight + 1, vCurrencyCoinBase))
-                throw JSONRPCError(-3, "unable to generate currency coin bases");
-        }
+        if (!GenerateCurrencyCoinBases(vVote, pindexBest->GetElectedCustodians(), vCurrencyCoinBase))
+            throw JSONRPCError(-3, "unable to generate currency coin bases");
 
         BOOST_FOREACH(const CTransaction& tx, vCurrencyCoinBase)
             pblock->vtx.push_back(tx);
@@ -4653,12 +4649,24 @@ Value duplicateblock(const Array& params, bool fHelp)
 
 Value ignorenextblock(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp || params.size() > 1)
         throw runtime_error(
-            "ignorenextblock"
+            "ignorenextblock [all|0]"
             );
 
-    nBlocksToIgnore++;
+    if (params.size() > 0)
+    {
+        if (params[0].get_str() == "all")
+            nBlocksToIgnore = -1;
+        else if (params[0].get_str() == "0")
+            nBlocksToIgnore = 0;
+        else
+            throw JSONRPCError(-3, "invalid parameter");
+    }
+    else
+    {
+        nBlocksToIgnore++;
+    }
 
     return "";
 }

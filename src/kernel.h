@@ -50,4 +50,7 @@ bool CheckStakeModifierCheckpoints(int nHeight, unsigned int nStakeModifierCheck
 // Expire old stake modifier cache
 void CleanStakeModifierCache();
 
+// Empty stake modifier cache
+void ClearStakeModifierCache();
+
 #endif // PPCOIN_KERNEL_H
