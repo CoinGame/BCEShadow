@@ -449,25 +449,25 @@ bool inline CBitcoinAddressVisitor::operator()(const CKeyID &id) const         {
 bool inline CBitcoinAddressVisitor::operator()(const CScriptID &id) const      { return addr->Set(id, cUnit); }
 bool inline CBitcoinAddressVisitor::operator()(const CNoDestination &id) const { return false; }
 
-class CPeercoinAddress;
-class CPeercoinAddressVisitor : public boost::static_visitor<bool>
+class CDividendAddress;
+class CDividendAddressVisitor : public boost::static_visitor<bool>
 {
 private:
-    CPeercoinAddress *addr;
+    CDividendAddress *addr;
 public:
-    CPeercoinAddressVisitor(CPeercoinAddress *addrIn) : addr(addrIn) { }
+    CDividendAddressVisitor(CDividendAddress *addrIn) : addr(addrIn) { }
     bool operator()(const CKeyID &id) const;
     bool operator()(const CScriptID &id) const;
     bool operator()(const CNoDestination &no) const;
 };
 
-class CPeercoinAddress : public CBitcoinAddress
+class CDividendAddress : public CBitcoinAddress
 {
 public:
     enum
     {
-        PUBKEY_ADDRESS = 55,  // ppcoin: addresses begin with 'P'
-        SCRIPT_ADDRESS = 117, // ppcoin: addresses begin with 'p'
+        PUBKEY_ADDRESS = 0,
+        SCRIPT_ADDRESS = 5,
         PUBKEY_ADDRESS_TEST = 111,
         SCRIPT_ADDRESS_TEST = 196,
     };
@@ -484,7 +484,7 @@ public:
 
     bool Set(const CTxDestination &dest)
     {
-        return boost::apply_visitor(CPeercoinAddressVisitor(this), dest);
+        return boost::apply_visitor(CDividendAddressVisitor(this), dest);
     }
 
     bool IsValid() const
@@ -517,26 +517,26 @@ public:
         return fExpectTestNet == fTestNet && vchData.size() == nExpectedSize;
     }
 
-    CPeercoinAddress()
+    CDividendAddress()
     {
     }
 
-    CPeercoinAddress(const CBitcoinAddress &addr)
+    CDividendAddress(const CBitcoinAddress &addr)
     {
         Set(addr.Get());
     }
 
-    CPeercoinAddress(const CTxDestination &dest)
+    CDividendAddress(const CTxDestination &dest)
     {
         Set(dest);
     }
 
-    CPeercoinAddress(const std::string& strAddress)
+    CDividendAddress(const std::string& strAddress)
     {
         SetString(strAddress);
     }
 
-    CPeercoinAddress(const char* pszAddress)
+    CDividendAddress(const char* pszAddress)
     {
         SetString(pszAddress);
     }
@@ -589,9 +589,9 @@ public:
     }
 };
 
-bool inline CPeercoinAddressVisitor::operator()(const CKeyID &id) const         { return addr->Set(id); }
-bool inline CPeercoinAddressVisitor::operator()(const CScriptID &id) const      { return addr->Set(id); }
-bool inline CPeercoinAddressVisitor::operator()(const CNoDestination &id) const { return false; }
+bool inline CDividendAddressVisitor::operator()(const CKeyID &id) const         { return addr->Set(id); }
+bool inline CDividendAddressVisitor::operator()(const CScriptID &id) const      { return addr->Set(id); }
+bool inline CDividendAddressVisitor::operator()(const CNoDestination &id) const { return false; }
 
 /** A base58-encoded secret key */
 class CBitcoinSecret : public CBase58Data
@@ -694,13 +694,13 @@ public:
     }
 };
 
-class CPeercoinSecret : public CBase58Data
+class CDividendSecret : public CBase58Data
 {
 public:
     void SetSecret(const CSecret& vchSecret, bool fCompressed)
     {
         assert(vchSecret.size() == 32);
-        SetData(128 + (fTestNet ? CPeercoinAddress::PUBKEY_ADDRESS_TEST : CPeercoinAddress::PUBKEY_ADDRESS), &vchSecret[0], vchSecret.size());
+        SetData(128 + (fTestNet ? CDividendAddress::PUBKEY_ADDRESS_TEST : CDividendAddress::PUBKEY_ADDRESS), &vchSecret[0], vchSecret.size());
         if (fCompressed)
             vchData.push_back(1);
     }
@@ -719,10 +719,10 @@ public:
         bool fExpectTestNet = false;
         switch(nVersion)
         {
-             case (128 + CPeercoinAddress::PUBKEY_ADDRESS):
+             case (128 + CDividendAddress::PUBKEY_ADDRESS):
                 break;
 
-            case (128 + CPeercoinAddress::PUBKEY_ADDRESS_TEST):
+            case (128 + CDividendAddress::PUBKEY_ADDRESS_TEST):
                 fExpectTestNet = true;
                 break;
 
@@ -742,12 +742,12 @@ public:
         return SetString(strSecret.c_str());
     }
 
-    CPeercoinSecret(const CSecret& vchSecret, bool fCompressed)
+    CDividendSecret(const CSecret& vchSecret, bool fCompressed)
     {
         SetSecret(vchSecret, fCompressed);
     }
 
-    CPeercoinSecret()
+    CDividendSecret()
     {
     }
 };

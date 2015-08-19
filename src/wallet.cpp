@@ -154,7 +154,7 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
     walletdb.WriteBestBlock(loc);
 }
 
-void CWallet::SetVote(const CVote& vote)
+void CWallet::SetVote(const CUserVote& vote)
 {
     if (!vote.IsValid(pindexBest->nProtocolVersion))
         throw runtime_error("Cannot set invalid vote");
@@ -1685,23 +1685,25 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     pindexdummy.pprev = pindexprev;
     pindexdummy.nTime = txNew.nTime;
 
-    // nubit: Add current vote
-    if (!vote.IsValid(nProtocolVersion))
-        return error("CreateCoinStake : current vote is invalid");
+    CVote blockVote = vote.GenerateBlockVote(nProtocolVersion);
 
-    txNew.vout.push_back(CTxOut(0, vote.ToScript(nProtocolVersion)));
+    // nubit: Add current vote
+    if (!blockVote.IsValidInBlock(nProtocolVersion))
+        return error("CreateCoinStake : generated vote is invalid");
+
+    txNew.vout.push_back(CTxOut(0, blockVote.ToScript(nProtocolVersion)));
 
     // nubit: The result of the vote is stored in the CoinStake transaction
     CParkRateVote parkRateResult;
 
     {
         CTxDB txdb("r");
-        if (!txNew.GetCoinAge(txdb, vote.nCoinAgeDestroyed))
+        if (!txNew.GetCoinAge(txdb, blockVote.nCoinAgeDestroyed))
             return error("CreateCoinStake : failed to calculate coin age");
     }
 
     vector<CParkRateVote> vParkRateResult;
-    if (!CalculateParkRateResults(vote, pindexprev, nProtocolVersion, vParkRateResult))
+    if (!CalculateParkRateResults(blockVote, pindexprev, nProtocolVersion, vParkRateResult))
         return error("CalculateParkRateResults failed");
 
     BOOST_FOREACH(const CParkRateVote& parkRateResult, vParkRateResult)
@@ -2423,10 +2425,10 @@ void CWallet::GetAllReserveKeys(set<CKeyID>& setAddress)
     }
 }
 
-void CWallet::ExportPeercoinKeys(int &nExportedCount, int &nErrorCount)
+void CWallet::ExportDividendKeys(int &nExportedCount, int &nErrorCount)
 {
     if (cUnit != '8')
-        throw runtime_error("Currency wallets will not receive dividends. Refusing to export keys to Peercoin.");
+        throw runtime_error("Currency wallets will not receive dividends. Refusing to export keys to Bitcoin.");
 
     nExportedCount = 0;
     nErrorCount = 0;
@@ -2470,22 +2472,22 @@ void CWallet::ExportPeercoinKeys(int &nExportedCount, int &nErrorCount)
                 continue;
             }
 
-            json_spirit::Array vPeercoinAddressStrings;
+            json_spirit::Array vDividendAddressStrings;
             BOOST_FOREACH(const CTxDestination &destination, vDestination)
-                vPeercoinAddressStrings.push_back(CPeercoinAddress(destination).ToString());
+                vDividendAddressStrings.push_back(CDividendAddress(destination).ToString());
 
             json_spirit::Array params;
             params.push_back(json_spirit::Value(nRequired));
-            params.push_back(vPeercoinAddressStrings);
+            params.push_back(vDividendAddressStrings);
             params.push_back("BlockShares");
 
             try
             {
-                string result = CallPeercoinRPC("addmultisigaddress", params);
+                string result = CallDividendRPC("addmultisigaddress", params);
                 printf("Exported multisig address %s: %s\n", address.ToString().c_str(), result.c_str());
                 nExportedCount++;
             }
-            catch (peercoin_rpc_error &error)
+            catch (dividend_rpc_error &error)
             {
                 printf("Failed to add multisig address of address %s: %s\n", address.ToString().c_str(), error.what());
                 nErrorCount++;
@@ -2508,19 +2510,56 @@ void CWallet::ExportPeercoinKeys(int &nExportedCount, int &nErrorCount)
             }
 
             json_spirit::Array params;
-            params.push_back(CPeercoinSecret(vchSecret, fCompressed).ToString());
+            params.push_back(CDividendSecret(vchSecret, fCompressed).ToString());
             params.push_back("BlockShares");
             try
             {
-                string result = CallPeercoinRPC("importprivkey", params);
+                string result = CallDividendRPC("importprivkey", params);
                 printf("Exported private key of address %s: %s\n", address.ToString().c_str(), result.c_str());
                 nExportedCount++;
             }
-            catch (peercoin_rpc_error &error)
+            catch (dividend_rpc_error &error)
             {
                 printf("Failed to export private key of address %s: %s\n", address.ToString().c_str(), error.what());
                 nErrorCount++;
             }
+        }
+    }
+}
+
+void CWallet::DumpDividendKeys(vector<CDividendSecret>& vSecret)
+{
+    if (cUnit != '8')
+        throw runtime_error("Currency wallets will not receive dividends. Refusing to export keys to Bitcoin.");
+
+    if (IsLocked())
+        throw runtime_error("The portfolio is locked. Please unlock it first.");
+    if (fWalletUnlockMintOnly)
+        throw runtime_error("Portfolio is unlocked for minting only.");
+
+    LOCK(cs_wallet);
+    BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, mapAddressBook)
+    {
+        const CBitcoinAddress address(item.first, cUnit);
+        CSecret vchSecret;
+        bool fCompressed;
+        if (address.IsScript(cUnit))
+            continue;
+        else
+        {
+            CKeyID keyID;
+            if (!address.GetKeyID(keyID))
+            {
+                printf("Unable to get key ID for address %s\n", address.ToString().c_str());
+                continue;
+            }
+            if (!GetSecret(keyID, vchSecret, fCompressed))
+            {
+                printf("Private key for address %s is not known\n", address.ToString().c_str());
+                continue;
+            }
+
+            vSecret.push_back(CDividendSecret(vchSecret, fCompressed));
         }
     }
 }

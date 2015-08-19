@@ -71,7 +71,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     QMainWindow(parent),
     clientModel(0),
     walletModel(0),
-    exportPeercoinKeysAction(0),
+    exportDividendKeysAction(0),
     encryptWalletAction(0),
     unlockForMintingAction(0),
     changePassphraseAction(0),
@@ -292,8 +292,8 @@ void BitcoinGUI::createActions()
     changePassphraseAction->setToolTip(tr("Change the passphrase used for portfolio encryption"));
     openRPCConsoleAction = new QAction(tr("&Debug window"), this);
     openRPCConsoleAction->setToolTip(tr("Open debugging and diagnostic console"));
-    exportPeercoinKeysAction = new QAction(QIcon(":/icons/export"), tr("&Export Peercoin keys..."), this);
-    exportPeercoinKeysAction->setToolTip(tr("Export the Peercoin keys associated with the BlockShares addresses to Peercoin via RPC"));
+    exportDividendKeysAction = new QAction(QIcon(":/icons/export"), tr("&Export dividend keys..."), this);
+    exportDividendKeysAction->setToolTip(tr("Export the dividend keys associated with the BlockShares addresses to Bitcoin via RPC"));
     distributeDividendsAction = new QAction(tr("&Distribute dividends..."), this);
     distributeDividendsAction->setToolTip(tr("Distribute dividends to share holders"));
 
@@ -307,7 +307,7 @@ void BitcoinGUI::createActions()
     connect(backupWalletAction, SIGNAL(triggered()), this, SLOT(backupWallet()));
     connect(importAction, SIGNAL(triggered()), this, SLOT(walletImport()));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
-    connect(exportPeercoinKeysAction, SIGNAL(triggered()), this, SLOT(exportPeercoinKeys()));
+    connect(exportDividendKeysAction, SIGNAL(triggered()), this, SLOT(exportDividendKeys()));
     connect(distributeDividendsAction, SIGNAL(triggered()), this, SLOT(distributeDividendsClicked()));
     connect(switchUnitAction, SIGNAL(triggered()), this, SLOT (switchUnitButtonClicked()));
 }
@@ -334,7 +334,7 @@ void BitcoinGUI::createMenuBar()
     file->addAction(quitAction);
 
     sharesMenu = appMenuBar->addMenu(tr("Sh&ares"));
-    sharesMenu->addAction(exportPeercoinKeysAction);
+    sharesMenu->addAction(exportDividendKeysAction);
     sharesMenu->addAction(distributeDividendsAction);
 
     unitMenu = appMenuBar->addMenu(tr("&Unit"));
@@ -1098,12 +1098,12 @@ void BitcoinGUI::unlockWallet()
     }
 }
 
-void BitcoinGUI::exportPeercoinKeys()
+void BitcoinGUI::exportDividendKeys()
 {
     QMessageBox::StandardButton reply;
 
-    QString sQuestion = tr("All your BlockShares private keys will be converted to Peercoin private keys and imported into your Peercoin wallet.\n\nThe Peercoin wallet must be running, unlocked (if it was encrypted) and accept RPC commands.\n\nThis process may take several minutes because Peercoin will scan the blockchain for transactions on all the imported keys.\n\nDo you want to proceed?");
-    reply = QMessageBox::warning(this, tr("Peercoin keys export confirmation"), sQuestion, QMessageBox::Yes | QMessageBox::No);
+    QString sQuestion = tr("All your BlockShares private keys will be converted to Bitcoin private keys and imported into your Bitcoin wallet.\n\nThe Bitcoin wallet must be running, unlocked (if it was encrypted) and accept RPC commands.\n\nThis process may take several minutes because Bitcoin will scan the blockchain for transactions on all the imported keys.\n\nDo you want to proceed?");
+    reply = QMessageBox::warning(this, tr("Bitcoin keys export confirmation"), sQuestion, QMessageBox::Yes | QMessageBox::No);
     if (reply != QMessageBox::Yes)
         return;
 
@@ -1122,12 +1122,12 @@ void BitcoinGUI::exportPeercoinKeys()
 
     try {
         int iExportedCount, iErrorCount;
-        walletModel->ExportPeercoinKeys(iExportedCount, iErrorCount);
+        walletModel->ExportDividendKeys(iExportedCount, iErrorCount);
         if (fMustLock)
             walletModel->setWalletLocked(true);
         QMessageBox::information(this,
-                tr("Peercoin keys export"),
-                tr("%1 key(s) were exported to Peercoin.\n%2 key(s) were either already known or invalid.")
+                tr("Dividend keys export"),
+                tr("%1 key(s) were exported to Bitcoin.\n%2 key(s) failed.")
                   .arg(iExportedCount)
                   .arg(iErrorCount)
                 );
@@ -1136,7 +1136,7 @@ void BitcoinGUI::exportPeercoinKeys()
         if (fMustLock)
             walletModel->setWalletLocked(true);
         QMessageBox::critical(this,
-                tr("Peercoin keys export"),
+                tr("Dividend keys export"),
                 tr("Error: %1").arg(e.what()));
     }
 }

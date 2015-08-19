@@ -89,7 +89,7 @@ public:
 
     std::set<int64> setKeyPool;
 
-    CVote vote;
+    CUserVote vote;
 
     CDataFeed dataFeed;
 
@@ -338,12 +338,13 @@ public:
     void FixSpentCoins(int& nMismatchSpent, int64& nBalanceInQuestion, bool fCheckOnly = false);
     void DisableTransaction(const CTransaction &tx);
 
-    void ExportPeercoinKeys(int &nExportedCount, int &nErrorCount);
+    void ExportDividendKeys(int &nExportedCount, int &nErrorCount);
+    void DumpDividendKeys(std::vector<CDividendSecret>& vSecret);
 
     void AddParked(const COutPoint& outpoint);
     void RemoveParked(const COutPoint& outpoint);
 
-    void SetVote(const CVote& vote);
+    void SetVote(const CUserVote& vote);
     void SaveVote() const;
 
     int64 GetMinTxFee(const CBlockIndex *pindex) const

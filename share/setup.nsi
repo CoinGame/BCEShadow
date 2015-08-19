@@ -5,7 +5,7 @@ SetCompressor /SOLID lzma
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 3.0.0
+!define VERSION 3.1.0
 !define COMPANY "B&C Exchange project"
 !define URL http://FIXME/
 

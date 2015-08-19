@@ -1030,4 +1030,144 @@ BOOST_AUTO_TEST_CASE(fee_vote_calculation)
     ResetFeeVoteBlocks();
 }
 
+BOOST_AUTO_TEST_CASE(reputation_vote_distribution)
+{
+    CUserVote vote;
+    CReputationVote reputationVote;
+
+    CBitcoinAddress address1("8VZRy4CAWKVC2HBWFE9YppLki5FJJhfrkY");
+    reputationVote.SetAddress(address1);
+    reputationVote.nWeight = 5;
+    vote.vReputationVote.push_back(reputationVote);
+
+    CBitcoinAddress address2("8FJryeHhudFYJQvPvJ3CgCMkc2oHNLtNhj");
+    reputationVote.SetAddress(address2);
+    reputationVote.nWeight = 10;
+    vote.vReputationVote.push_back(reputationVote);
+
+    CBitcoinAddress address3("9EQRQJaFeFNu5yiGrDEvmMjSLf2aiYuLTN");
+    reputationVote.SetAddress(address3);
+    reputationVote.nWeight = 1;
+    vote.vReputationVote.push_back(reputationVote);
+
+    CBitcoinAddress address4("8XHmT2idfoCPRs939XBrxiPbE3VLedg2cj");
+    reputationVote.SetAddress(address4);
+    reputationVote.nWeight = -5;
+    vote.vReputationVote.push_back(reputationVote);
+
+    int nTotalWeight = 5 + 10 + 1 + 5;
+
+    map<CBitcoinAddress, int> mapAddressCount;
+    for (int i = 0; i < 10000; i++)
+    {
+        CVote blockVote = vote.GenerateBlockVote(PROTOCOL_V3_1);
+        BOOST_CHECK_EQUAL(3, blockVote.vReputationVote.size());
+        BOOST_FOREACH(const CReputationVote& reputationVote, blockVote.vReputationVote)
+        {
+            CBitcoinAddress address = reputationVote.GetAddress();
+            if (address == address4)
+                BOOST_CHECK_EQUAL(-1, reputationVote.nWeight);
+            else
+                BOOST_CHECK_EQUAL( 1, reputationVote.nWeight);
+            mapAddressCount[address]++;
+        }
+    }
+
+    BOOST_CHECK_CLOSE((double)3 * 10000 *  5 / nTotalWeight, (double)mapAddressCount[address1], 10);
+    BOOST_CHECK_CLOSE((double)3 * 10000 * 10 / nTotalWeight, (double)mapAddressCount[address2], 10);
+    BOOST_CHECK_CLOSE((double)3 * 10000 *  1 / nTotalWeight, (double)mapAddressCount[address3], 10);
+    BOOST_CHECK_CLOSE((double)3 * 10000 *  5 / nTotalWeight, (double)mapAddressCount[address4], 10);
+}
+
+BOOST_AUTO_TEST_CASE(reputation_vote_result)
+{
+    CBlockIndex* pindexBest = new CBlockIndex;
+    CBlockIndex* pindex = pindexBest;
+
+    map<CBitcoinAddress, int64> mapReputation;
+
+    CBitcoinAddress address1("8VZRy4CAWKVC2HBWFE9YppLki5FJJhfrkY");
+    CBitcoinAddress address2("8FJryeHhudFYJQvPvJ3CgCMkc2oHNLtNhj");
+    CBitcoinAddress address3("9EQRQJaFeFNu5yiGrDEvmMjSLf2aiYuLTN");
+    CBitcoinAddress address4("8XHmT2idfoCPRs939XBrxiPbE3VLedg2cj");
+
+    // No vote, no reputation
+    BOOST_CHECK(CalculateReputationResult(pindexBest, mapReputation));
+    BOOST_CHECK_EQUAL(0, mapReputation.size());
+
+    // A single vote should add the corresponding reputations
+    // We are in the last 5000 blocks so the score is multiplied by 4
+    pindex->vote.vReputationVote.push_back(CReputationVote(address1, 1));
+    BOOST_CHECK(pindex->vote.IsValidInBlock(PROTOCOL_V3_1));
+    BOOST_CHECK(CalculateReputationResult(pindexBest, mapReputation));
+    BOOST_CHECK_EQUAL(1, mapReputation.size());
+    BOOST_CHECK_EQUAL(4, mapReputation[address1]);
+
+    // Multiple reputation votes in the same block should be counted
+    pindex->pprev = new CBlockIndex;
+    pindex = pindex->pprev;
+    pindex->vote.vReputationVote.push_back(CReputationVote(address1, 1));
+    pindex->vote.vReputationVote.push_back(CReputationVote(address2, -1));
+    pindex->vote.vReputationVote.push_back(CReputationVote(address1, 1));
+    BOOST_CHECK(pindex->vote.IsValidInBlock(PROTOCOL_V3_1));
+    BOOST_CHECK(CalculateReputationResult(pindexBest, mapReputation));
+    BOOST_CHECK_EQUAL(2, mapReputation.size());
+    BOOST_CHECK_EQUAL(3*4, mapReputation[address1]);
+    BOOST_CHECK_EQUAL(-1*4, mapReputation[address2]);
+
+    // The first 5,000 votes have a weight of 4
+    // The next 10,000 have a weight of 2
+    // The next 20,000 have a weight of 1
+    // We already have 2 blocks. Let's add some more.
+    for (int i = 0; i < 4998; i++)
+    {
+        pindex->pprev = new CBlockIndex;
+        pindex = pindex->pprev;
+        pindex->vote.vReputationVote.push_back(CReputationVote(address1, -1));
+        pindex->vote.vReputationVote.push_back(CReputationVote(address3, 1));
+    }
+    // Next 10,000, weight 2
+    for (int i = 0; i < 5000; i++)
+    {
+        pindex->pprev = new CBlockIndex;
+        pindex = pindex->pprev;
+        pindex->vote.vReputationVote.push_back(CReputationVote(address2, 1));
+        pindex->vote.vReputationVote.push_back(CReputationVote(address2, 1));
+        pindex->vote.vReputationVote.push_back(CReputationVote(address2, 1));
+    }
+    for (int i = 0; i < 5000; i++)
+    {
+        pindex->pprev = new CBlockIndex;
+        pindex = pindex->pprev;
+        pindex->vote.vReputationVote.push_back(CReputationVote(address4, 1));
+        pindex->vote.vReputationVote.push_back(CReputationVote(address3, -1));
+    }
+    // Next 20,000, weight 1
+    for (int i = 0; i < 20000; i++)
+    {
+        pindex->pprev = new CBlockIndex;
+        pindex = pindex->pprev;
+        pindex->vote.vReputationVote.push_back(CReputationVote(address4, -1));
+    }
+    // Next 1,000, weight 0
+    for (int i = 0; i < 1000; i++)
+    {
+        pindex->pprev = new CBlockIndex;
+        pindex = pindex->pprev;
+        pindex->vote.vReputationVote.push_back(CReputationVote(address4, 1));
+    }
+    // Now we have:
+    // address1: 3 upvotes and 4,998 downvotes at weight 4
+    // address2: 1 downvote at weight 4 and 15,000 upvotes at weight 2
+    // address3: 4,998 upvotes at weight 4 and 5,000 downvotes at weight 2
+    // address4: 5,000 upvotes at weight 2 and 20,000 downvotes at weight 1
+    BOOST_CHECK(pindex->vote.IsValidInBlock(PROTOCOL_V3_1));
+    BOOST_CHECK(CalculateReputationResult(pindexBest, mapReputation));
+    BOOST_CHECK_EQUAL(4, mapReputation.size());
+    BOOST_CHECK_EQUAL((3-4998)*4, mapReputation[address1]);
+    BOOST_CHECK_EQUAL(-1*4+15000*2, mapReputation[address2]);
+    BOOST_CHECK_EQUAL(4998*4-5000*2, mapReputation[address3]);
+    BOOST_CHECK_EQUAL(5000*2-20000*1, mapReputation[address4]);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

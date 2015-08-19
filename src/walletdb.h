@@ -147,15 +147,16 @@ public:
         return Erase(std::make_pair(std::string("pool"), nPool));
     }
 
-    bool WriteVote(const CVote& vote)
+    bool WriteVote(const CUserVote& vote)
     {
         nWalletDBUpdated++;
-        return Write(std::string("vote"), vote);
+        Erase(std::string("vote"));
+        return Write(std::string("uservote"), vote);
     }
 
-    bool ReadVote(CVote& vote)
+    bool ReadVote(CUserVote& vote)
     {
-        return Read(std::string("vote"), vote);
+        return Read(std::string("uservote"), vote);
     }
 
     bool WriteDataFeed(const CDataFeed& dataFeed)

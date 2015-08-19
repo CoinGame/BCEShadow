@@ -2196,7 +2196,7 @@ bool CBlock::AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos)
     {
         if (!ExtractVote(*this, pindexNew->vote, pindexNew->nProtocolVersion))
             return error("AddToBlockIndex() : Unable to extract vote");
-        if (!pindexNew->vote.IsValid(pindexNew->nProtocolVersion))
+        if (!pindexNew->vote.IsValidInBlock(pindexNew->nProtocolVersion))
             return error("AddToBlockIndex() : Invalid vote");
 
         if (!GetCoinStakeAge(pindexNew->nCoinAgeDestroyed))
@@ -4926,7 +4926,7 @@ int64 CBlockIndex::GetPremium(int64 nValue, int64 nDuration, unsigned char cUnit
 
 int64 CBlockIndex::GetSafeMinFee(unsigned char cUnit) const
 {
-    const CBlockIndex* pindex = GetEffectiveFeeIndex()->pnext;
+    const CBlockIndex* pindex = GetEffectiveVoteIndex()->pnext;
     int64 nMaxMinFee = 0;
     for (int i = 0; i < SAFE_FEE_BLOCKS && pindex; i++, pindex = pindex->pnext)
     {

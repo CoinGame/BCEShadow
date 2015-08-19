@@ -27,6 +27,8 @@ public:
 
     QDateTime getLastBlockDate() const;
 
+    QString getProtocolVersion() const;
+
     //! Return true if client connected to testnet
     bool isTestNet() const;
     //! Return true if core is doing initial block download

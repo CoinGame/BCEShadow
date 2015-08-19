@@ -70,11 +70,11 @@ static const int64 MIN_COINSTAKE_VALUE = COIN; // Minimum value allowed as input
 static const int64 MAX_COIN_AGE = 100000000000000; // To make sure coin days can be added about 10,000 times without overflow
 
 #ifdef TESTING
-static const int FEE_VOTE_DELAY_BLOCKS = 3;
+static const int VOTE_DELAY_BLOCKS = 3;
 static const int FEE_VOTES = 5;
 static const int SAFE_FEE_BLOCKS = 2;
 #else
-static const int FEE_VOTE_DELAY_BLOCKS = 60; // Voted fees are effective this number of blocks after the actual vote result
+static const int VOTE_DELAY_BLOCKS = 60; // Some votes are effective this number of blocks after the actual vote result
 static const int FEE_VOTES = 2000;
 static const int SAFE_FEE_BLOCKS = 10; // When a new transaction is created, the highest min fee of the next SAFE_FEE_BLOCKS blocks will be used, to make sure this transaction can be included in any of these blocks
 #endif
@@ -1540,10 +1540,10 @@ public:
             return -1;
     }
 
-    const CBlockIndex* GetEffectiveFeeIndex() const
+    const CBlockIndex* GetEffectiveVoteIndex() const
     {
         const CBlockIndex* pindex = this;
-        for (int i = 0; i < FEE_VOTE_DELAY_BLOCKS && pindex->pprev; i++)
+        for (int i = 0; i < VOTE_DELAY_BLOCKS && pindex->pprev; i++)
             pindex = pindex->pprev;
         return pindex;
     }
@@ -1559,7 +1559,7 @@ public:
 
     int64 GetMinFee(unsigned char cUnit) const
     {
-        return GetEffectiveFeeIndex()->GetVotedMinFee(cUnit);
+        return GetEffectiveVoteIndex()->GetVotedMinFee(cUnit);
     }
 
     int64 GetSafeMinFee(unsigned char cUnit) const;
@@ -1570,6 +1570,11 @@ public:
         std::map<CBitcoinAddress, CBlockIndex*> mapElectedCustodian;
         GetElectedCustodians(mapElectedCustodian);
         return mapElectedCustodian;
+    }
+
+    bool GetEffectiveReputation(std::map<CBitcoinAddress, int64>& mapReputation)
+    {
+        return CalculateReputationResult(GetEffectiveVoteIndex(), mapReputation);
     }
 
     std::string ToString() const

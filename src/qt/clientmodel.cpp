@@ -37,6 +37,15 @@ QDateTime ClientModel::getLastBlockDate() const
     return QDateTime::fromTime_t(pindexBest->GetBlockTime());
 }
 
+QString ClientModel::getProtocolVersion() const
+{
+    int version = pindexBest->nProtocolVersion;
+    int major = version / 1000000;
+    int minor = version % 100000 / 10000;
+    int patch = version % 100;
+    return QString("%1.%2.%3").arg(major).arg(minor).arg(patch);
+}
+
 void ClientModel::update()
 {
     int newNumConnections = getNumConnections();

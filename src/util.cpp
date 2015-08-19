@@ -66,7 +66,7 @@ using namespace boost;
 
 map<string, string> mapArgs;
 map<string, vector<string> > mapMultiArgs;
-map<string, string> mapPeercoinArgs;
+map<string, string> mapDividendArgs;
 bool fDebug = false;
 bool fPrintToConsole = false;
 bool fPrintToDebugger = false;
@@ -566,10 +566,10 @@ std::string GetArg(const std::string& strArg, const std::string& strDefault)
     return strDefault;
 }
 
-std::string GetPeercoinArg(const std::string& strArg, const std::string& strDefault)
+std::string GetDividendArg(const std::string& strArg, const std::string& strDefault)
 {
-    if (mapPeercoinArgs.count(strArg))
-        return mapPeercoinArgs[strArg];
+    if (mapDividendArgs.count(strArg))
+        return mapDividendArgs[strArg];
     return strDefault;
 }
 
@@ -580,10 +580,10 @@ int64 GetArg(const std::string& strArg, int64 nDefault)
     return nDefault;
 }
 
-int64 GetPeercoinArg(const std::string& strArg, int64 nDefault)
+int64 GetDividendArg(const std::string& strArg, int64 nDefault)
 {
-    if (mapPeercoinArgs.count(strArg))
-        return atoi64(mapPeercoinArgs[strArg]);
+    if (mapDividendArgs.count(strArg))
+        return atoi64(mapDividendArgs[strArg]);
     return nDefault;
 }
 
@@ -598,13 +598,13 @@ bool GetBoolArg(const std::string& strArg, bool fDefault)
     return fDefault;
 }
 
-bool GetPeercoinBoolArg(const std::string& strArg, bool fDefault)
+bool GetDividendBoolArg(const std::string& strArg, bool fDefault)
 {
-    if (mapPeercoinArgs.count(strArg))
+    if (mapDividendArgs.count(strArg))
     {
-        if (mapPeercoinArgs[strArg].empty())
+        if (mapDividendArgs[strArg].empty())
             return true;
-        return (atoi(mapPeercoinArgs[strArg]) != 0);
+        return (atoi(mapDividendArgs[strArg]) != 0);
     }
     return fDefault;
 }
@@ -910,7 +910,7 @@ boost::filesystem::path GetDefaultDataDir()
 #endif
 }
 
-boost::filesystem::path GetDefaultPeercoinDataDir()
+boost::filesystem::path GetDefaultDividendDataDir()
 {
     namespace fs = boost::filesystem;
 
@@ -931,10 +931,10 @@ boost::filesystem::path GetDefaultPeercoinDataDir()
     // Mac
     pathRet /= "Library/Application Support";
     fs::create_directory(pathRet);
-    return pathRet / "PPCoin";
+    return pathRet / "Bitcoin";
 #else
     // Unix
-    return pathRet / ".ppcoin";
+    return pathRet / ".bitcoin";
 #endif
 #endif
 }
@@ -1003,7 +1003,7 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
     return path;
 }
 
-const boost::filesystem::path &GetPeercoinDataDir(bool fNetSpecific)
+const boost::filesystem::path &GetDividendDataDir(bool fNetSpecific)
 {
     namespace fs = boost::filesystem;
 
@@ -1020,14 +1020,14 @@ const boost::filesystem::path &GetPeercoinDataDir(bool fNetSpecific)
 
     LOCK(csPathCached);
 
-    if (mapArgs.count("-peercoindatadir")) {
-        path = fs::system_complete(mapArgs["-peercoindatadir"]);
+    if (mapArgs.count("-dividenddatadir")) {
+        path = fs::system_complete(mapArgs["-dividenddatadir"]);
         if (!fs::is_directory(path)) {
             path = "";
             return path;
         }
     } else {
-        path = GetDefaultPeercoinDataDir();
+        path = GetDefaultDividendDataDir();
     }
     if (fNetSpecific && GetBoolArg("-testnet", false))
         path /= "testnet";
@@ -1078,12 +1078,12 @@ boost::filesystem::path GetConfigFile()
     return pathConfigFile;
 }
 
-boost::filesystem::path GetPeercoinConfigFile()
+boost::filesystem::path GetDividendConfigFile()
 {
     namespace fs = boost::filesystem;
 
-    fs::path pathConfigFile(GetArg("-peercoinconf", "ppcoin.conf"));
-    if (!pathConfigFile.is_complete()) pathConfigFile = GetPeercoinDataDir(false) / pathConfigFile;
+    fs::path pathConfigFile(GetArg("-dividendconf", "bitcoin.conf"));
+    if (!pathConfigFile.is_complete()) pathConfigFile = GetDividendDataDir(false) / pathConfigFile;
     return pathConfigFile;
 }
 
@@ -1114,14 +1114,14 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
     }
 }
 
-void ReadPeercoinConfigFile(map<string, string>& mapSettingsRet)
+void ReadDividendConfigFile(map<string, string>& mapSettingsRet)
 {
     namespace fs = boost::filesystem;
     namespace pod = boost::program_options::detail;
 
-    fs::ifstream streamConfig(GetPeercoinConfigFile());
+    fs::ifstream streamConfig(GetDividendConfigFile());
     if (!streamConfig.good())
-        return; // No Peercoin config file is OK
+        return; // No dividend config file is OK
 
     set<string> setOptions;
     setOptions.insert("*");

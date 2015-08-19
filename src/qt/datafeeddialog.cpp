@@ -41,6 +41,7 @@ void DataFeedDialog::setDataFeed(const CDataFeed& dataFeed)
     ui->custodiansCheckBox->setChecked(std::find(vParts.begin(), vParts.end(), "custodians") != vParts.end());
     ui->motionsCheckBox->setChecked(std::find(vParts.begin(), vParts.end(), "motions") != vParts.end());
     ui->feesCheckBox->setChecked(std::find(vParts.begin(), vParts.end(), "fees") != vParts.end());
+    ui->reputationsCheckBox->setChecked(std::find(vParts.begin(), vParts.end(), "reputations") != vParts.end());
 }
 
 CDataFeed DataFeedDialog::getDataFeed() const
@@ -56,6 +57,8 @@ CDataFeed DataFeedDialog::getDataFeed() const
         vParts.push_back("motions");
     if (ui->feesCheckBox->isChecked())
         vParts.push_back("fees");
+    if (ui->reputationsCheckBox->isChecked())
+        vParts.push_back("reputations");
     dataFeed.vParts = vParts;
     return dataFeed;
 }

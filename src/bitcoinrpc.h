@@ -19,16 +19,16 @@ class CReserveKey;
 void ThreadRPCServer(void* parg);
 int CommandLineRPC(int argc, char *argv[]);
 
-std::string CallPeercoinRPC(const std::string &strMethod, const json_spirit::Array &params);
+std::string CallDividendRPC(const std::string &strMethod, const json_spirit::Array &params);
 int64 AmountFromValue(const json_spirit::Value& value);
 
-class peercoin_rpc_error : public std::runtime_error
+class dividend_rpc_error : public std::runtime_error
 {
 protected:
     int nCode;
 
 public:
-    peercoin_rpc_error(int nCode, const std::string &sError) : std::runtime_error(sError), nCode(nCode)
+    dividend_rpc_error(int nCode, const std::string &sError) : std::runtime_error(sError), nCode(nCode)
     {
     }
 };

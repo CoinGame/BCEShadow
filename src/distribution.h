@@ -14,12 +14,12 @@ protected:
     CBitcoinAddress addrPeershares;
     int64 nBalance;
 
-    CPeercoinAddress addrPeercoin;
+    CDividendAddress addrDividend;
     double dDividendAmount;
 
 public:
     Distribution(CBitcoinAddress addrPeershares, int64 nBalance, double dDividendAmount)
-        : addrPeershares(addrPeershares), nBalance(nBalance), addrPeercoin(addrPeershares), dDividendAmount(dDividendAmount)
+        : addrPeershares(addrPeershares), nBalance(nBalance), addrDividend(addrPeershares), dDividendAmount(dDividendAmount)
     {
     }
 
@@ -33,9 +33,9 @@ public:
         return nBalance;
     }
 
-    const CPeercoinAddress GetPeercoinAddress() const
+    const CDividendAddress GetDividendAddress() const
     {
-        return addrPeercoin;
+        return addrDividend;
     }
 
     double GetDividendAmount() const
