@@ -92,6 +92,7 @@ private:
     QAction *importAction;
     QAction *exportAction;
     QAction *exportDividendKeysAction;
+    QAction *displayDividendKeysAction;
     QAction *encryptWalletAction;
     QAction *unlockForMintingAction;
     QAction *backupWalletAction;
@@ -193,6 +194,9 @@ private slots:
 
     /** Export the keys to the dividend client */
     void exportDividendKeys();
+
+    /** Display the dividend keys */
+    void displayDividendKeys();
 
     /** Show window if hidden, unminimize when minimized */
     void showNormalIfMinimized();

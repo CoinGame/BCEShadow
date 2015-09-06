@@ -413,7 +413,14 @@ void WalletModel::UnlockContext::CopyFrom(const UnlockContext& rhs)
 
 void WalletModel::ExportDividendKeys(int &nExportedCount, int &nErrorCount)
 {
+    LOCK(wallet->cs_wallet);
     wallet->ExportDividendKeys(nExportedCount, nErrorCount);
+}
+
+void WalletModel::getDividendKeys(std::vector<CDividendSecret>& vSecret)
+{
+    LOCK(wallet->cs_wallet);
+    wallet->DumpDividendKeys(vSecret);
 }
 
 bool WalletModel::getKey(const CKeyID &address, CKey& vchKeyOut) const

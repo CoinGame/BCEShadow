@@ -160,6 +160,7 @@ public:
     UnlockContext requestUnlock();
 
     void ExportDividendKeys(int &nExportedCount, int &nErrorCount);
+    void getDividendKeys(std::vector<CDividendSecret>& vSecret);
 
     CWallet* getWallet() const
     {

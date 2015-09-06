@@ -30,6 +30,7 @@
 #include "wallet.h"
 #include "distributedivdialog.h"
 #include "votepage.h"
+#include "dividendkeysdialog.h"
 
 #ifdef Q_WS_MAC
 #include "macdockiconhandler.h"
@@ -72,6 +73,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     clientModel(0),
     walletModel(0),
     exportDividendKeysAction(0),
+    displayDividendKeysAction(0),
     encryptWalletAction(0),
     unlockForMintingAction(0),
     changePassphraseAction(0),
@@ -294,6 +296,8 @@ void BitcoinGUI::createActions()
     openRPCConsoleAction->setToolTip(tr("Open debugging and diagnostic console"));
     exportDividendKeysAction = new QAction(QIcon(":/icons/export"), tr("&Export dividend keys..."), this);
     exportDividendKeysAction->setToolTip(tr("Export the dividend keys associated with the BlockShares addresses to Bitcoin via RPC"));
+    displayDividendKeysAction = new QAction(QIcon(":/icons/display"), tr("D&isplay dividend keys..."), this);
+    displayDividendKeysAction->setToolTip(tr("Display the dividend keys associated with the BlockShares addresses"));
     distributeDividendsAction = new QAction(tr("&Distribute dividends..."), this);
     distributeDividendsAction->setToolTip(tr("Distribute dividends to share holders"));
 
@@ -308,6 +312,7 @@ void BitcoinGUI::createActions()
     connect(importAction, SIGNAL(triggered()), this, SLOT(walletImport()));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
     connect(exportDividendKeysAction, SIGNAL(triggered()), this, SLOT(exportDividendKeys()));
+    connect(displayDividendKeysAction, SIGNAL(triggered()), this, SLOT(displayDividendKeys()));
     connect(distributeDividendsAction, SIGNAL(triggered()), this, SLOT(distributeDividendsClicked()));
     connect(switchUnitAction, SIGNAL(triggered()), this, SLOT (switchUnitButtonClicked()));
 }
@@ -335,6 +340,7 @@ void BitcoinGUI::createMenuBar()
 
     sharesMenu = appMenuBar->addMenu(tr("Sh&ares"));
     sharesMenu->addAction(exportDividendKeysAction);
+    sharesMenu->addAction(displayDividendKeysAction);
     sharesMenu->addAction(distributeDividendsAction);
 
     unitMenu = appMenuBar->addMenu(tr("&Unit"));
@@ -1137,6 +1143,41 @@ void BitcoinGUI::exportDividendKeys()
             walletModel->setWalletLocked(true);
         QMessageBox::critical(this,
                 tr("Dividend keys export"),
+                tr("Error: %1").arg(e.what()));
+    }
+}
+
+void BitcoinGUI::displayDividendKeys()
+{
+    bool fMustLock = false;
+    if (walletModel->getEncryptionStatus() == WalletModel::Locked)
+    {
+        AskPassphraseDialog dlg(AskPassphraseDialog::Unlock, this);
+        dlg.setModel(walletModel);
+        dlg.exec();
+
+        if(walletModel->getEncryptionStatus() != WalletModel::Unlocked)
+            return;
+
+        fMustLock = true;
+    }
+
+    try {
+        std::vector<CDividendSecret> vSecret;
+        walletModel->getDividendKeys(vSecret);
+        if (fMustLock)
+            walletModel->setWalletLocked(true);
+
+        DividendKeysDialog dialog(this);
+        dialog.setWindowTitle(this->windowTitle());
+        dialog.setKeys(vSecret);
+        dialog.exec();
+    }
+    catch (std::runtime_error &e) {
+        if (fMustLock)
+            walletModel->setWalletLocked(true);
+        QMessageBox::critical(this,
+                tr("Dividend keys display"),
                 tr("Error: %1").arg(e.what()));
     }
 }
