@@ -526,7 +526,7 @@ bool CVote::IsValidInBlock(int nProtocolVersion) const
     if (!IsValid(nProtocolVersion))
         return false;
 
-    if (vReputationVote.size() && nProtocolVersion < PROTOCOL_V3_1)
+    if (vReputationVote.size() && nProtocolVersion < PROTOCOL_V4_0)
         return false;
 
     if (vReputationVote.size() > REPUTATION_VOTES_PER_BLOCK)
@@ -545,7 +545,7 @@ CVote CUserVote::GenerateBlockVote(int nProtocolVersion) const
 {
     CVote blockVote(*this);
     blockVote.vReputationVote.clear();
-    if (nProtocolVersion >= PROTOCOL_V3_1 && vReputationVote.size())
+    if (nProtocolVersion >= PROTOCOL_V4_0 && vReputationVote.size())
     {
         int nTotalWeight = 0;
         BOOST_FOREACH(const CReputationVote& reputationVote, vReputationVote)
@@ -764,13 +764,45 @@ bool IsNuProtocolV20NextBlock(const CBlockIndex* pPrevIndex)
             fTestNet ? PROTOCOL_V2_0_TEST_VOTE_TIME : PROTOCOL_V2_0_VOTE_TIME, PROTOCOL_V2_0);
 }
 
-/*
- * Check if the V3.1 protocol is active on the next block
- */
-bool IsProtocolV3_1NextBlock(const CBlockIndex* pPrevIndex)
+bool MustUpgradeProtocol(const CBlockIndex* pPrevIndex, int nProtocolVersion)
 {
-    return IsProtocolActiveForNextBlock(pPrevIndex,
-            fTestNet ? PROTOCOL_V3_1_TEST_VOTE_TIME : PROTOCOL_V3_1_VOTE_TIME, PROTOCOL_V3_1);
+    if (!pPrevIndex || !pPrevIndex->pprev)
+        return false;
+
+    // We only switch on the first block after 14:00 UTC
+    unsigned int prevHour = (pPrevIndex->nTime / 3600) % 24;
+    int nSwitchTime;
+    if (prevHour >= 14)
+        nSwitchTime = pPrevIndex->nTime - (prevHour - 14) * 3600 - pPrevIndex->nTime % 3600;
+    else
+        nSwitchTime = pPrevIndex->nTime - (prevHour + 24 - 14) * 3600 - pPrevIndex->nTime % 3600;
+
+    // Only consider the switch when we just passed the switch time
+    if (!(pPrevIndex->pprev->nTime < nSwitchTime && pPrevIndex->nTime >= nSwitchTime))
+        return false;
+
+    // Any block between 14 and 15 days ago may trigger this switch so we check them all
+    unsigned int nMinTime = nSwitchTime - 15 * 24 * 3600 + 1;
+    unsigned int nMaxTime = nSwitchTime - 14 * 24 * 3600;
+
+    for (const CBlockIndex* pindex = pPrevIndex; pindex && pindex->nTime > nMinTime; pindex = pindex->pprev)
+    {
+        if (pindex->nTime > nMaxTime)
+            continue;
+
+        int nCount = 0;
+        const CBlockIndex *pi = pindex;
+        for (int i = 0; pi && i < PROTOCOL_SWITCH_COUNT_VOTES; i++, pi = pi->pprev)
+        {
+            if (pi->vote.nVersionVote >= nProtocolVersion)
+            {
+                nCount++;
+                if (nCount >= PROTOCOL_SWITCH_REQUIRE_VOTES)
+                    return true;
+            }
+        }
+    }
+    return false;
 }
 
 /*
@@ -788,8 +820,8 @@ int GetProtocolForNextBlock(const CBlockIndex* pPrevIndex)
     if (nProtocol < PROTOCOL_V2_0)
         nProtocol = PROTOCOL_V2_0;
 
-    if (nProtocol < PROTOCOL_V3_1 && IsProtocolV3_1NextBlock(pPrevIndex))
-        nProtocol = PROTOCOL_V3_1;
+    if (nProtocol < PROTOCOL_V4_0 && MustUpgradeProtocol(pPrevIndex, PROTOCOL_V4_0))
+        nProtocol = PROTOCOL_V4_0;
 
     return nProtocol;
 }

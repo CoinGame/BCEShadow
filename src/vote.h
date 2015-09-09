@@ -413,7 +413,7 @@ public:
         else if (fRead)
             const_cast<CVote*>(this)->mapFeeVote.clear();
 
-        if (nVersion >= PROTOCOL_V3_1)
+        if (nVersion >= PROTOCOL_V4_0)
             READWRITE(vReputationVote);
         else if (fRead)
             const_cast<CVote*>(this)->vReputationVote.clear();
