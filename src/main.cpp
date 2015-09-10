@@ -82,6 +82,9 @@ int nBlocksToIgnore = 0;
 // Settings
 int64 nSplitShareOutputs = MIN_COINSTAKE_VALUE;
 
+static string strProtocolWarningMessage = _("Unknown protocol vote received. You may need to upgrade your client.");
+string strProtocolWarning = "";
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2041,6 +2044,30 @@ bool CBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
     // The new chain may have changed some stake modifiers
     ClearStakeModifierCache();
 
+    strProtocolWarning.clear();
+    if (pindexBest->vote.nVersionVote > PROTOCOL_VERSION)
+    {
+#ifdef TESTING
+        const int nCheckedBlocks = 10;
+#else
+        const int nCheckedBlocks = 2000;
+#endif
+        const CBlockIndex* pi = pindexBest;
+        int nCount = 0;
+        for (int i = 0; pi && i < nCheckedBlocks; i++, pi = pi->pprev)
+        {
+            if (pi->vote.nVersionVote > PROTOCOL_VERSION)
+            {
+                nCount++;
+                if (nCount >= nCheckedBlocks * 20 / 100)
+                {
+                    strProtocolWarning = strProtocolWarningMessage;
+                    break;
+                }
+            }
+        }
+    }
+
     return true;
 }
 
@@ -3077,6 +3104,12 @@ string GetWarnings(string strFor)
     string strRPC;
     if (GetBoolArg("-testsafemode"))
         strRPC = "test";
+
+    if (strProtocolWarning.size())
+    {
+        nPriority = 0;
+        strStatusBar = strProtocolWarning;
+    }
 
     if (strDataFeedError != "")
     {
