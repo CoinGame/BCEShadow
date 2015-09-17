@@ -726,7 +726,7 @@ bool CTxDB::LoadBlockIndex()
     // Load bnBestInvalidTrust, OK if it doesn't exist
     ReadBestInvalidTrust(bnBestInvalidTrust);
 
-    // nubit: rebuild list of elected custodians
+    // nubit: rebuild list of elected custodians and assets
     {
         for (CBlockIndex* pindex = pindexGenesisBlock->pnext; pindex; pindex = pindex->pnext)
         {
@@ -734,6 +734,13 @@ bool CTxDB::LoadBlockIndex()
                 pindex->pprevElected = pindex->pprev;
             else
                 pindex->pprevElected = pindex->pprev->pprevElected;
+
+            // Copy the asset map for the previous definitions
+            if (pindex->pprev->mapAssetsPrev.size() != 0)
+                pindex->mapAssetsPrev = pindex->pprev->mapAssetsPrev;
+            // Update any link for an asset that was updated in the previous block
+            BOOST_FOREACH(PAIRTYPE(const uint64, CAsset)& pair, pindex->pprev->mapAssets)
+                pindex->mapAssetsPrev[pair.first] = pindex->pprev;
         }
     }
 

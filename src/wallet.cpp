@@ -1479,6 +1479,27 @@ static map<const CWalletTx*, int64> mapTxLastUse;
 extern int nForcedVersionVote;
 #endif
 
+void RemoveVotedAssets(CBlockIndex& pindexdummy, vector<CAssetVote>& vAssetVotes)
+{
+    printf("RemoveVotedAssets\n");
+    CAsset asset;
+    set<CAssetVote> assetVotesToRemove;
+    BOOST_FOREACH(const CAssetVote& assetVote, vAssetVotes)
+    {
+        asset.SetNull();
+        if (CBlockIndex::GetAsset(&pindexdummy, assetVote.GetGlobalId(), asset) && assetVote.ProducesAsset(asset))
+            assetVotesToRemove.insert(assetVote);
+    }
+
+    BOOST_FOREACH(const CAssetVote& assetVote, assetVotesToRemove)
+    {
+        printf("Removing already voted asset %ld\n", assetVote.GetGlobalId());
+        vAssetVotes.erase(std::remove(vAssetVotes.begin(), vAssetVotes.end(), assetVote), vAssetVotes.end());
+    }
+
+
+}
+
 // ppcoin: create coin stake transaction
 bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int64 nSearchInterval, CTransaction& txNew, CBlockIndex* pindexprev)
 {
@@ -1740,6 +1761,9 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     if (nForcedVersionVote != -1)
         blockVote.nVersionVote = nForcedVersionVote;
 #endif
+
+    CalculateVotedAssets(&pindexdummy);
+    RemoveVotedAssets(pindexdummy, blockVote.vAssetVote);
 
     txNew.vout.push_back(CTxOut(0, blockVote.ToScript(nProtocolVersion)));
 

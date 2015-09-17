@@ -1,3 +1,4 @@
+
 #include <vector>
 #include <boost/test/unit_test.hpp>
 #include <boost/foreach.hpp>
@@ -190,10 +191,6 @@ BOOST_AUTO_TEST_CASE(util_FormatMoney)
     BOOST_CHECK_EQUAL(FormatMoney(COIN/100, false), "0.01");
     BOOST_CHECK_EQUAL(FormatMoney(COIN/1000, false), "0.001");
     BOOST_CHECK_EQUAL(FormatMoney(COIN/10000, false), "0.0001");
-    BOOST_CHECK_EQUAL(FormatMoney(COIN/100000, false), "0.00001");
-    BOOST_CHECK_EQUAL(FormatMoney(COIN/1000000, false), "0.000001");
-    BOOST_CHECK_EQUAL(FormatMoney(COIN/10000000, false), "0.0000001");
-    BOOST_CHECK_EQUAL(FormatMoney(COIN/100000000, false), "0.00000001");
 }
 
 BOOST_AUTO_TEST_CASE(util_ParseMoney)
@@ -231,17 +228,9 @@ BOOST_AUTO_TEST_CASE(util_ParseMoney)
     BOOST_CHECK_EQUAL(ret, COIN/1000);
     BOOST_CHECK(ParseMoney("0.0001", ret));
     BOOST_CHECK_EQUAL(ret, COIN/10000);
-    BOOST_CHECK(ParseMoney("0.00001", ret));
-    BOOST_CHECK_EQUAL(ret, COIN/100000);
-    BOOST_CHECK(ParseMoney("0.000001", ret));
-    BOOST_CHECK_EQUAL(ret, COIN/1000000);
-    BOOST_CHECK(ParseMoney("0.0000001", ret));
-    BOOST_CHECK_EQUAL(ret, COIN/10000000);
-    BOOST_CHECK(ParseMoney("0.00000001", ret));
-    BOOST_CHECK_EQUAL(ret, COIN/100000000);
 
     // Attempted 63 bit overflow should fail
-    BOOST_CHECK(!ParseMoney("92233720368.54775808", ret));
+    BOOST_CHECK(!ParseMoney("92233720368.5478", ret));
 }
 
 BOOST_AUTO_TEST_CASE(util_IsHex)
@@ -257,6 +246,24 @@ BOOST_AUTO_TEST_CASE(util_IsHex)
     BOOST_CHECK(!IsHex("eleven"));
     BOOST_CHECK(!IsHex("00xx00"));
     BOOST_CHECK(!IsHex("0x0000"));
+}
+
+
+BOOST_AUTO_TEST_CASE(util_ExpSeries)
+{
+    for (int i = 0; i <= EXP_SERIES_MAX_PARAM; i++)
+        BOOST_CHECK_EQUAL(i, GetExponentialSeriesParameter(pnExponentialSeries[i]));
+
+    BOOST_CHECK_EQUAL(0, GetExponentialSeriesParameter(0L));
+    BOOST_CHECK_EQUAL(1, GetExponentialSeriesParameter(1L));
+    BOOST_CHECK_EQUAL(9, GetExponentialSeriesParameter(9L));
+    BOOST_CHECK_EQUAL(18, GetExponentialSeriesParameter(99L));
+    BOOST_CHECK_EQUAL(55, GetExponentialSeriesParameter(1555555L));
+    BOOST_CHECK_EQUAL(112, GetExponentialSeriesParameter(4500000000000L));
+    BOOST_CHECK_EQUAL(122, GetExponentialSeriesParameter(50000000000001L));
+    BOOST_CHECK_EQUAL(122, GetExponentialSeriesParameter(59999999999999L));
+    BOOST_CHECK_EQUAL(162, GetExponentialSeriesParameter(999900000000000000L));
+    BOOST_CHECK_EQUAL(171, GetExponentialSeriesParameter(9223372036854775807L));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

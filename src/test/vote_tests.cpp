@@ -1322,4 +1322,189 @@ BOOST_AUTO_TEST_CASE(reputation_vote_result)
     BOOST_CHECK_EQUAL(5000*2-20000*1, mapReputation[address4]);
 }
 
+void NewBlockTip(CBlockIndex*& pindexBest)
+{
+    CBlockIndex *pindex = pindexBest;
+    pindexBest = new CBlockIndex;
+    pindexBest->pprev = pindex;
+}
+
+void CheckAsset(const CAsset& asset, uint64 globalAssetId, int blockchainId, int assetId, unsigned short confirmations, unsigned char m, unsigned char n, int64 maxTrade)
+{
+    BOOST_CHECK_EQUAL(globalAssetId, asset.GetGlobalId());
+    BOOST_CHECK_EQUAL(blockchainId, asset.nBlockchainId);
+    BOOST_CHECK_EQUAL(assetId, asset.nAssetId);
+    BOOST_CHECK_EQUAL(confirmations, asset.nNumberOfConfirmations);
+    BOOST_CHECK_EQUAL(m, asset.nRequiredDepositSigners);
+    BOOST_CHECK_EQUAL(n, asset.nTotalDepositSigners);
+    BOOST_CHECK_EQUAL(maxTrade, asset.nMaxTrade);
+}
+
+CAssetVote NewAssetVote(int blockchainId, int assetId, unsigned short confirmations, unsigned char m, unsigned char n, uint8_t maxTradeExpParam)
+{
+    CAssetVote vote;
+
+    vote.nBlockchainId = blockchainId;
+    vote.nAssetId = assetId;
+    vote.nNumberOfConfirmations = confirmations;
+    vote.nRequiredDepositSigners = m;
+    vote.nTotalDepositSigners = n;
+    vote.nMaxTradeExpParam = maxTradeExpParam;
+
+    return vote;
+}
+
+BOOST_AUTO_TEST_CASE(asset_vote_result)
+{
+    CBlockIndex* pindexBest = new CBlockIndex;
+    CBlockIndex* pindex = pindexBest;
+
+    // asset 1
+    const int BLOCKCHAIN_ID = 42;
+    const int ASSET_ID = 314;
+    const uint64 GLOBAL_ASSET_ID = 180388626746L; // 42 << 32 ^ 314
+    const unsigned short CONFIRMATIONS = 60;
+    const unsigned char M = 2;
+    const unsigned char N = 3;
+    const uint8_t MAX_TRADE_EXP_PARAM = 91;
+    const int64 MAX_TRADE = pnExponentialSeries[MAX_TRADE_EXP_PARAM];
+
+    // asset 2
+    const int BLOCKCHAIN_ID_2 = 128;
+    const int ASSET_ID_2 = 16;
+    const uint64 GLOBAL_ASSET_ID_2 = 549755813904L; // 128 << 32 ^ 16
+    const unsigned short CONFIRMATIONS_2 = 6;
+    const unsigned char M_2 = 6;
+    const unsigned char N_2 = 10;
+    const uint8_t MAX_TRADE_EXP_PARAM_2 = 120;
+    const int64 MAX_TRADE_2 = pnExponentialSeries[MAX_TRADE_EXP_PARAM_2];
+
+    vector<CAsset> vAssets;
+    map<uint64, CAsset> mapAssets;
+    CAsset asset;
+
+    // Check vote objects
+    CVote vote;
+    vote.vAssetVote.push_back(NewAssetVote(BLOCKCHAIN_ID, ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE_EXP_PARAM));
+    vote.vAssetVote.push_back(NewAssetVote(BLOCKCHAIN_ID_2, ASSET_ID_2, CONFIRMATIONS_2, M_2, N_2, MAX_TRADE_EXP_PARAM_2));
+    BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V2_0));
+    BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+    // Add a duplicate vote for the same asset
+    vote.vAssetVote.push_back(NewAssetVote(BLOCKCHAIN_ID, ASSET_ID, CONFIRMATIONS+1, M, N, MAX_TRADE_EXP_PARAM+1));
+    BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V3_1)); // not valid
+
+    // No vote, no assets
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(0, vAssets.size());
+
+    // Add a single vote
+    pindex->vote.vAssetVote.push_back(NewAssetVote(BLOCKCHAIN_ID, ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE_EXP_PARAM));
+    BOOST_CHECK(pindex->vote.IsValidInBlock(PROTOCOL_V3_1));
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(0, vAssets.size());
+    BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    BOOST_CHECK_EQUAL(0, pindexBest->mapAssets.size());
+    BOOST_CHECK_EQUAL(0, pindexBest->mapAssetsPrev.size());
+
+    // Add some asset votes but not enough to win the vote
+    for (int i = 0; i < ASSET_VOTES_REQ - 100; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.vAssetVote.push_back(NewAssetVote(BLOCKCHAIN_ID, ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE_EXP_PARAM+1));
+        BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    }
+
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(0, vAssets.size());
+    BOOST_CHECK_EQUAL(0, pindexBest->mapAssets.size());
+    BOOST_CHECK_EQUAL(0, pindexBest->mapAssetsPrev.size());
+
+    // Add some asset votes for the same asset but different values so a majority is not achieved
+    for (int i = 0; i < 100; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.vAssetVote.push_back(NewAssetVote(BLOCKCHAIN_ID, ASSET_ID, CONFIRMATIONS+1, M, N, MAX_TRADE_EXP_PARAM+1));
+        BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    }
+
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(0, vAssets.size());
+    BOOST_CHECK_EQUAL(0, pindexBest->mapAssets.size());
+    BOOST_CHECK_EQUAL(0, pindexBest->mapAssetsPrev.size());
+
+    // Add some normal asset votes to achive a majority
+    for (int i = 0; i < ASSET_VOTES_REQ; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.vAssetVote.push_back(NewAssetVote(BLOCKCHAIN_ID, ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE_EXP_PARAM));
+        BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    }
+
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(1, vAssets.size());
+    CheckAsset(vAssets[0], GLOBAL_ASSET_ID, BLOCKCHAIN_ID, ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE);
+
+    // asset is not effective yet
+    BOOST_CHECK(pindexBest->GetEffectiveAssets(mapAssets));
+    BOOST_CHECK_EQUAL(0, mapAssets.size());
+
+    for (int i = 0; i < VOTE_DELAY_BLOCKS; i++)
+    {
+        NewBlockTip(pindexBest);
+        BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    }
+
+    BOOST_CHECK(pindexBest->GetEffectiveAssets(mapAssets));
+    BOOST_CHECK_EQUAL(1, mapAssets.size());
+    asset = CAsset(); // reset
+    BOOST_CHECK(pindexBest->GetEffectiveAsset(GLOBAL_ASSET_ID, asset));
+    CheckAsset(asset, GLOBAL_ASSET_ID, BLOCKCHAIN_ID, ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE);
+
+    // Add some more normal asset votes, the previous asset has a new maxTrade value and we add a new asset
+    for (int i = 0; i < ASSET_VOTES_REQ; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.vAssetVote.push_back(NewAssetVote(BLOCKCHAIN_ID, ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE_EXP_PARAM+1));
+        pindexBest->vote.vAssetVote.push_back(NewAssetVote(BLOCKCHAIN_ID_2, ASSET_ID_2, CONFIRMATIONS_2, M_2, N_2, MAX_TRADE_EXP_PARAM_2));
+        BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    }
+
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(2, vAssets.size());
+    BOOST_FOREACH(const CAsset& asset, vAssets)
+    {
+        if (asset.nBlockchainId == BLOCKCHAIN_ID)
+            CheckAsset(asset, GLOBAL_ASSET_ID, BLOCKCHAIN_ID, ASSET_ID, CONFIRMATIONS, M, N, pnExponentialSeries[MAX_TRADE_EXP_PARAM+1]);
+        else
+            CheckAsset(asset, GLOBAL_ASSET_ID_2, BLOCKCHAIN_ID_2, ASSET_ID_2, CONFIRMATIONS_2, M_2, N_2, MAX_TRADE_2);
+    }
+
+    // new assets are not effective yet
+    BOOST_CHECK(pindexBest->GetEffectiveAssets(mapAssets));
+    BOOST_CHECK_EQUAL(1, mapAssets.size());
+
+    for (int i = 0; i < VOTE_DELAY_BLOCKS; i++)
+    {
+        NewBlockTip(pindexBest);
+        BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    }
+
+    BOOST_CHECK(pindexBest->GetEffectiveAssets(mapAssets));
+    BOOST_CHECK_EQUAL(2, mapAssets.size());
+    asset = CAsset(); // reset
+    BOOST_CHECK(pindexBest->GetEffectiveAsset(GLOBAL_ASSET_ID, asset));
+    CheckAsset(asset, GLOBAL_ASSET_ID, BLOCKCHAIN_ID, ASSET_ID, CONFIRMATIONS, M, N, pnExponentialSeries[MAX_TRADE_EXP_PARAM+1]);
+    asset = CAsset(); // reset
+    BOOST_CHECK(pindexBest->GetEffectiveAsset(GLOBAL_ASSET_ID_2, asset));
+    CheckAsset(asset, GLOBAL_ASSET_ID_2, BLOCKCHAIN_ID_2, ASSET_ID_2, CONFIRMATIONS_2, M_2, N_2, MAX_TRADE_2);
+
+    // free memory
+    while(pindexBest != NULL)
+    {
+        pindex = pindexBest;
+        pindexBest = pindexBest->pprev;
+        delete pindex;
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()

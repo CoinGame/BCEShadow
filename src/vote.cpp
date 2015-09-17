@@ -518,6 +518,17 @@ bool CVote::IsValid(int nProtocolVersion) const
             return false;
     }
 
+    set<uint64> seenAssetVotes;
+    BOOST_FOREACH(const CAssetVote& assetVote, vAssetVote)
+    {
+        if (!assetVote.IsValid(nProtocolVersion))
+            return false;
+
+        if (seenAssetVotes.count(assetVote.GetGlobalId()))
+            return false;
+        seenAssetVotes.insert(assetVote.GetGlobalId());
+    }
+
     return true;
 }
 
@@ -530,6 +541,9 @@ bool CVote::IsValidInBlock(int nProtocolVersion) const
         return false;
 
     if (vReputationVote.size() > REPUTATION_VOTES_PER_BLOCK)
+        return false;
+
+    if (vAssetVote.size() && nProtocolVersion < PROTOCOL_V3_1)
         return false;
 
     BOOST_FOREACH(const CReputationVote& reputationVote, vReputationVote)
@@ -580,6 +594,10 @@ CVote CUserVote::GenerateBlockVote(int nProtocolVersion) const
             }
         }
     }
+
+    if (nProtocolVersion < PROTOCOL_V3_1)
+        blockVote.vAssetVote.clear();
+
     return blockVote;
 }
 
@@ -929,6 +947,69 @@ bool CalculateReputationResult(const CBlockIndex* pindex, std::map<CBitcoinAddre
     for (int i = 0; i < 20000 && pindex; i++, pindex = pindex->pprev)
         BOOST_FOREACH(const CReputationVote& vote, pindex->vote.vReputationVote)
             mapReputation[vote.GetAddress()] += (vote.nWeight >= 0 ? 1 : -1);
+
+    return true;
+}
+
+bool ExtractAssetVoteResult(const CBlockIndex* pindex, vector<CAsset>& vAssets)
+{
+    vAssets.clear();
+    map<CAssetVote, int> mapAssetVotes;
+    for (int i = 0; i < ASSET_VOTES && pindex; i++, pindex = pindex->pprev)
+        BOOST_FOREACH(const CAssetVote& vote, pindex->vote.vAssetVote)
+            mapAssetVotes[vote]++;
+
+    BOOST_FOREACH(PAIRTYPE(const CAssetVote, int)& item, mapAssetVotes)
+    {
+        const CAssetVote& assetVote = item.first;
+        const int votes = item.second;
+        if (votes >= ASSET_VOTES_REQ)
+        {
+            CAsset newAsset;
+            newAsset.nBlockchainId = assetVote.nBlockchainId;
+            newAsset.nAssetId = assetVote.nAssetId;
+            newAsset.nNumberOfConfirmations = assetVote.nNumberOfConfirmations;
+            newAsset.nRequiredDepositSigners = assetVote.nRequiredDepositSigners;
+            newAsset.nTotalDepositSigners = assetVote.nTotalDepositSigners;
+            newAsset.nMaxTrade = assetVote.GetMaxTrade();
+            vAssets.push_back(newAsset);
+        }
+    }
+
+    return true;
+}
+
+bool CalculateVotedAssets(CBlockIndex* pindex)
+{
+    pindex->mapAssetsPrev.clear();
+    pindex->mapAssets.clear();
+
+    // Set the previous assets pointers
+    if (pindex->pprev)
+    {
+        CBlockIndex* pprev = pindex->pprev;
+        if (pprev->mapAssetsPrev.size() != 0)
+            pindex->mapAssetsPrev = pprev->mapAssetsPrev;
+        BOOST_FOREACH(PAIRTYPE(const uint64, CAsset)& pair, pprev->mapAssets)
+            pindex->mapAssetsPrev[pair.first] = pprev;
+    }
+
+    vector<CAsset> vAssets;
+    if (!ExtractAssetVoteResult(pindex, vAssets))
+        return false;
+
+    if (vAssets.size() == 0)
+        return true;
+
+    BOOST_FOREACH(CAsset& newAsset, vAssets)
+    {
+        uint64 gid = newAsset.GetGlobalId();
+        CAsset currentAsset;
+        // Set the new asset to this block if it is different than the current one
+        CBlockIndex::GetAsset(pindex, gid, currentAsset);
+        if (currentAsset != newAsset)
+            pindex->mapAssets[gid] = newAsset;
+    }
 
     return true;
 }

@@ -20,6 +20,7 @@
 #include "scanbalance.h"
 #include "liquidityinfo.h"
 #include "datafeed.h"
+#include "coinmetadata.h"
 
 #undef printf
 #include <boost/asio.hpp>
@@ -420,6 +421,24 @@ Object voteToJSON(const CVote& vote)
         reputationVotes.push_back(object);
     }
     result.push_back(Pair("reputations", reputationVotes));
+
+    Array assetVotes;
+    BOOST_FOREACH(const CAssetVote& assetVote, vote.vAssetVote)
+    {
+        Object object;
+        uint64 gid = assetVote.GetGlobalId();
+        object.push_back(Pair("globalid", (boost::uint64_t)gid));
+        object.push_back(Pair("name", GetAssetName(gid)));
+        object.push_back(Pair("symbol", GetAssetSymbol(gid)));
+        object.push_back(Pair("blockchainid", assetVote.nBlockchainId));
+        object.push_back(Pair("assetid", assetVote.nAssetId));
+        object.push_back(Pair("confirmations", assetVote.nNumberOfConfirmations));
+        object.push_back(Pair("reqsigners", assetVote.nRequiredDepositSigners));
+        object.push_back(Pair("totalsigners", assetVote.nTotalDepositSigners));
+        object.push_back(Pair("maxtrade", (boost::int64_t)assetVote.GetMaxTrade()));
+        assetVotes.push_back(object);
+    }
+    result.push_back(Pair("assets", assetVotes));
 
     return result;
 }
@@ -3537,6 +3556,90 @@ Value getreputations(const Array& params, bool fHelp)
     return obj;
 }
 
+Value getassetinfo(const Array& params, bool fHelp)
+{
+    Object result;
+
+    if (fHelp || params.size() > 2 || params.size() < 1)
+        throw runtime_error(
+                "getassetinfo <asset global id> [<block height>]\n"
+                        "Returns an object information about an asset on a specific height (default is the current)");
+
+    CBlockIndex *pindex = pindexBest;
+
+    uint64 nGlobalId = params[0].get_int();
+
+    if (params.size() > 1)
+    {
+        int nHeight = params[1].get_int();
+
+        if (nHeight < 0 || nHeight > nBestHeight)
+            throw JSONRPCError(-3, "Invalid height");
+
+        for (int i = nBestHeight; i > nHeight; i--)
+            pindex = pindex->pprev;
+    }
+
+    CAsset asset;
+    if (!pindex->GetEffectiveAsset(nGlobalId, asset))
+        throw JSONRPCError(-4, "Could not get asset");
+
+    Object object;
+    uint64 gid = asset.GetGlobalId();
+    object.push_back(Pair("globalid", (boost::uint64_t)gid));
+    object.push_back(Pair("name", GetAssetName(gid)));
+    object.push_back(Pair("symbol", GetAssetSymbol(gid)));
+    object.push_back(Pair("blockchainid", asset.nBlockchainId));
+    object.push_back(Pair("assetid", asset.nAssetId));
+    object.push_back(Pair("confirmations", asset.nNumberOfConfirmations));
+    object.push_back(Pair("reqsigners", asset.nRequiredDepositSigners));
+    object.push_back(Pair("totalsigners", asset.nTotalDepositSigners));
+    object.push_back(Pair("maxtrade", (boost::int64_t)asset.nMaxTrade));
+
+    return object;
+}
+
+Value getassets(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+                "getassets [<block height>]\n"
+                        "Returns an object containing the effective registered assets at block <height> (default is the current height).");
+
+    CBlockIndex *pindex = pindexBest;
+
+    if (params.size() > 0)
+    {
+        int nHeight = params[0].get_int();
+
+        if (nHeight < 0 || nHeight > nBestHeight)
+            throw JSONRPCError(-3, "Invalid height");
+
+        for (int i = nBestHeight; i > nHeight; i--)
+            pindex = pindex->pprev;
+    }
+
+    std::map<uint64, CAsset> assets;
+    if (!pindex->GetEffectiveAssets(assets))
+        throw JSONRPCError(-4, "Could not get assets");
+
+    Array assetsArray;
+    BOOST_FOREACH(const PAIRTYPE(const uint64, CAsset)& pair, assets)
+    {
+        CAsset asset = pair.second;
+        Object object;
+        object.push_back(Pair("blockchainid", asset.nBlockchainId));
+        object.push_back(Pair("assetid", asset.nAssetId));
+        object.push_back(Pair("confirmations", asset.nNumberOfConfirmations));
+        object.push_back(Pair("reqsigners", asset.nRequiredDepositSigners));
+        object.push_back(Pair("totalsigners", asset.nTotalDepositSigners));
+        object.push_back(Pair("maxtrade", (boost::int64_t)asset.nMaxTrade));
+        assetsArray.push_back(object);
+    }
+
+    return assetsArray;
+}
+
 static map<string, CLiquidityInfo> mapLiquidity;
 static CCriticalSection cs_mapLiquidity;
 
@@ -4794,6 +4897,8 @@ static const CRPCCommand vRPCCommands[] =
     { "getelectedcustodians",   &getelectedcustodians,   true },
     { "getparkvotes",           &getparkvotes,           true },
     { "getreputations",         &getreputations,         true },
+    { "getassets",              &getassets,              true },
+    { "getassetinfo",           &getassetinfo,           true },
     { "listunspent",            &listunspent,            false},
     { "getrawtransaction",      &getrawtransaction,      false},
     { "createrawtransaction",   &createrawtransaction,   false},
@@ -5624,7 +5729,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "sendrawtransaction"     && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "gettxout"               && n > 1) ConvertTo<int64_t>(params[1]);
     if (strMethod == "gettxout"               && n > 2) ConvertTo<bool>(params[2]);
-    if (strMethod == "setvote"                 && n > 0)
+    if (strMethod == "setvote"                && n > 0)
     {
         string s = params[0].get_str();
         Value v;
@@ -5642,6 +5747,9 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "getparkvotes"            && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "getparkvotes"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "getreputations"          && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "getassetinfo"            && n > 0) ConvertTo<boost::uint64_t>(params[0]);
+    if (strMethod == "getassetinfo"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "getassets"               && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "burn"                    && n > 0) ConvertTo<double>(params[0]);
 #ifdef TESTING
     if (strMethod == "timetravel"              && n > 0) ConvertTo<boost::int64_t>(params[0]);

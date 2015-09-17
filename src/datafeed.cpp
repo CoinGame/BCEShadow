@@ -332,6 +332,65 @@ CVote ParseVote(const Object& objVote)
                 vote.vReputationVote.push_back(reputationVote);
             }
         }
+        else if (voteAttribute.name_ == "assets")
+        {
+            BOOST_FOREACH(const Value& assetVoteObject, voteAttribute.value_.get_array())
+            {
+                CAssetVote assetVote;
+                BOOST_FOREACH(const Pair& assetVoteAttribute, assetVoteObject.get_obj())
+                {
+                    if (assetVoteAttribute.name_ == "blockchainid")
+                    {
+                        int nBlockchainId = assetVoteAttribute.value_.get_int();
+                        if (nBlockchainId < 0 || nBlockchainId > MAX_BLOCKCHAIN_ID)
+                            throw runtime_error("Invalid blockchain id");
+                        assetVote.nBlockchainId = nBlockchainId;
+                    }
+                    else if (assetVoteAttribute.name_ == "assetid")
+                    {
+                        int nAssetId = assetVoteAttribute.value_.get_int();
+                        if (nAssetId < 0 || nAssetId > MAX_ASSET_ID)
+                            throw runtime_error("Invalid asset id");
+                        assetVote.nAssetId = nAssetId;
+                    }
+                    else if (assetVoteAttribute.name_ == "confirmations")
+                    {
+                        int nConfirmations = assetVoteAttribute.value_.get_int();
+                        if (nConfirmations <= 0 || nConfirmations > MAX_CONFIRMATIONS)
+                            throw runtime_error("Invalid confirmations");
+                        assetVote.nNumberOfConfirmations = (uint16_t)nConfirmations;
+                    }
+                    else if (assetVoteAttribute.name_ == "reqsigners")
+                    {
+                        int nRequiredSigners = assetVoteAttribute.value_.get_int();
+                        if (nRequiredSigners <= 0 || nRequiredSigners > MAX_SIGNERS)
+                            throw runtime_error("Invalid required signers quantity");
+                        if (assetVote.nTotalDepositSigners > 0 && nRequiredSigners > assetVote.nTotalDepositSigners )
+                            throw runtime_error("Required signers cannot be more than the total signers");
+                        assetVote.nRequiredDepositSigners = (uint8_t)nRequiredSigners;
+                    }
+                    else if (assetVoteAttribute.name_ == "totalsigners")
+                    {
+                        int nTotalSigners = assetVoteAttribute.value_.get_int();
+                        if (nTotalSigners <= 0 || nTotalSigners > MAX_SIGNERS)
+                            throw runtime_error("Invalid total signers quantity");
+                        if (assetVote.nRequiredDepositSigners > 0 && nTotalSigners < assetVote.nRequiredDepositSigners )
+                            throw runtime_error("Total signers cannot be less than the required signers");
+                        assetVote.nTotalDepositSigners = (uint8_t)nTotalSigners;
+                    }
+                    else if (assetVoteAttribute.name_ == "maxtrade")
+                    {
+                        int64 nMaxTrade = assetVoteAttribute.value_.get_int64();
+                        if (nMaxTrade <= 0)
+                            throw runtime_error("Invalid max trade value");
+                        assetVote.nMaxTradeExpParam = GetExponentialSeriesParameter(nMaxTrade);
+                    }
+                    else
+                        throw runtime_error("Invalid reputation vote object");
+                }
+                vote.vAssetVote.push_back(assetVote);
+            }
+        }
         else
             throw runtime_error("Invalid vote object");
     }
@@ -370,6 +429,8 @@ void UpdateFromDataFeed()
                 newVote.mapFeeVote = feedVote.mapFeeVote;
             else if (sPart == "reputations")
                 newVote.vReputationVote = feedVote.vReputationVote;
+            else if (sPart == "assets")
+                newVote.vAssetVote = feedVote.vAssetVote;
             else
                 throw runtime_error("Invalid part");
         }

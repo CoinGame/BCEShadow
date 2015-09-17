@@ -72,10 +72,14 @@ static const int64 MAX_COIN_AGE = 100000000000000; // To make sure coin days can
 #ifdef TESTING
 static const int VOTE_DELAY_BLOCKS = 3;
 static const int FEE_VOTES = 5;
+static const int ASSET_VOTES = 5;
+static const int ASSET_VOTES_REQ = 3;
 static const int SAFE_FEE_BLOCKS = 2;
 #else
 static const int VOTE_DELAY_BLOCKS = 60; // Some votes are effective this number of blocks after the actual vote result
 static const int FEE_VOTES = 2000;
+static const int ASSET_VOTES = 2000;
+static const int ASSET_VOTES_REQ = 1300; // 65% of the asset votes are required to change the asset values. We want something more than just 51% to avoid passing a vote by a minority because of the stochastic nature of the block creation
 static const int SAFE_FEE_BLOCKS = 10; // When a new transaction is created, the highest min fee of the next SAFE_FEE_BLOCKS blocks will be used, to make sure this transaction can be included in any of these blocks
 #endif
 
@@ -1296,6 +1300,12 @@ public:
     // nubit: previous block with an elected custodian
     CBlockIndex* pprevElected;
 
+    // TODO move to a separate index as the current implementetion uses more memory
+    // bcexchange: previous blocks that contain the actual asset vote results
+    std::map<uint64, CBlockIndex*> mapAssetsPrev;
+    // bcexchange: asset votes results for this block
+    std::map<uint64, CAsset> mapAssets;
+
     // block header
     int nVersion;
     uint256 hashMerkleRoot;
@@ -1577,6 +1587,61 @@ public:
         return CalculateReputationResult(GetEffectiveVoteIndex(), mapReputation);
     }
 
+    bool GetEffectiveAssets(std::map<uint64, CAsset>& mapEffectiveAssets) const
+    {
+        mapEffectiveAssets.clear();
+        const CBlockIndex* pEffectiveIndex = GetEffectiveVoteIndex();
+
+        // First copy the assets from the previous blocks
+        BOOST_FOREACH(const PAIRTYPE(const uint64, CBlockIndex*)& item, pEffectiveIndex->mapAssetsPrev)
+            GetAssetFromBlock(item.second, item.first, mapEffectiveAssets[item.first]);
+
+        // Copy any assets that are voted in this block
+        BOOST_FOREACH(const PAIRTYPE(const uint64, CAsset)& item, pEffectiveIndex->mapAssets)
+            mapEffectiveAssets[item.first] = item.second;
+
+        return true;
+    }
+
+    bool GetEffectiveAsset(uint64 nGlobalId, CAsset& asset)
+    {
+        return GetAsset(GetEffectiveVoteIndex(), nGlobalId, asset);
+    }
+
+    /**
+     * Get an asset that was voted on the pindex or the previous blocks
+     */
+    static bool GetAsset(const CBlockIndex* pindex, uint64 nGlobalId, CAsset& asset)
+    {
+        // Get this asset from the current block
+        if (GetAssetFromBlock(pindex, nGlobalId, asset))
+            return true;
+
+        // Try to get the asset from a previous block
+        std::map<uint64, CBlockIndex*>::const_iterator it = pindex->mapAssetsPrev.find(nGlobalId);
+        if(it != pindex->mapAssetsPrev.end())
+        {
+            CBlockIndex* pPrevBlock = it->second;
+            if (GetAssetFromBlock(pPrevBlock, nGlobalId, asset))
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Get a specific asset that was voted on a specific pindex
+     */
+    static bool GetAssetFromBlock(const CBlockIndex* pindex, uint64 nGlobalId, CAsset& asset)
+    {
+        std::map<uint64, CAsset>::const_iterator it = pindex->mapAssets.find(nGlobalId);
+        if(it != pindex->mapAssets.end())
+        {
+            asset = it->second;
+            return true;
+        }
+        return false;
+    }
+
     std::string ToString() const
     {
         return strprintf("CBlockIndex(nprev=%08x, pnext=%08x, nFile=%d, nBlockPos=%-6d nHeight=%d, nMint=%s, nMoneySupply(S)=%s, nMoneySupply(B)=%s, nFlags=(%s)(%d)(%s), nStakeModifier=%016"PRI64x", nStakeModifierChecksum=%08x, hashProofOfStake=%s, prevoutStake=(%s), nStakeTime=%d merkle=%s, hashBlock=%s)",
@@ -1665,6 +1730,11 @@ public:
                 READWRITE(mapVotedFee);
             else if (fRead)
                 const_cast<CDiskBlockIndex*>(this)->mapVotedFee.clear();
+
+            if (nProtocolVersion >= PROTOCOL_V3_1)
+                READWRITE(mapAssets);
+            else if (fRead)
+                const_cast<CDiskBlockIndex*>(this)->mapAssets.clear();
         }
         else if (fRead)
         {

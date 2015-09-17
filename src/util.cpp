@@ -1623,3 +1623,43 @@ int64 AnnualInterestRatePercentageToRate(double percentage, int64 blocks)
 {
     return round(percentage * DurationInYears(blocks) / 100 * COIN_PARK_RATE);
 }
+
+unsigned char GetExponentialSeriesParameter(int64 value)
+{
+    /*
+     * This function searches the pnExponentialSeries table to find a parameter that produces a value lower than the
+     * value we have. So when we provide the value 99 it will return the parameter 18 because:
+     *
+     *     pnExponentialSeries[18] == 90 and pnExponentialSeries[19] == 100
+     *
+     * It is possible to use the logarithms to solve the same problem
+     *
+     * if n == 0 else int(math.log(n, 10)+.00000000000001)*9 + (n%9 if n%9 != 0 else 9)
+     */
+
+    if (value <= 0)
+        return 0;
+    if (value >= 9000000000000000000L)
+        return EXP_SERIES_MAX_PARAM;
+
+    int min = 1;
+    int max = EXP_SERIES_MAX_PARAM - 1;
+    // binary search a range
+    while (min <= max)
+    {
+        int mid = (max - min) / 2 + min;
+        int64 n1 = pnExponentialSeries[mid];
+        int64 n2 = pnExponentialSeries[mid + 1];
+        if(n1 <= value && value < n2)
+        {
+            min = mid;
+            break;
+        }
+        else if (n1 < value)
+            min = mid + 1; // search upper subarray
+        else
+            max = mid - 1; // search lower subarray
+    }
+
+    return (unsigned char) min;
+}

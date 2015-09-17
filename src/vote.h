@@ -7,6 +7,8 @@
 
 #include "serialize.h"
 #include "base58.h"
+#include "exchange.h"
+#include "util.h"
 
 class CBlock;
 class CBlockIndex;
@@ -15,6 +17,21 @@ static const int64 COIN_PARK_RATE = 100000 * COIN; // Park rate internal encodin
 static const int64 MAX_PARK_RATE = 1000000 * COIN_PARK_RATE;
 static const unsigned char MAX_COMPACT_DURATION = 30; // about 2000 years
 static const int64 MAX_PARK_DURATION = 1000000000; // about 1900 years
+
+// Limit the blockchain and asset ids. If more ids are needed a protocol update is needed
+static const int MAX_BLOCKCHAIN_ID = 100000;
+static const int MAX_ASSET_ID = 100000;
+
+// Confirmations is a unsigned short
+static const int MAX_CONFIRMATIONS = 65535;
+
+// Signers is a 8bit uint
+static const int MAX_SIGNERS = 255;
+
+// The minimum M-of-N signers is 2-of-3 as it is the smallest that provide redunduncy and trust minimization
+static const int MIN_REQ_SIGNERS = 2;
+static const int MIN_TOTAL_SIGNERS = 3;
+
 
 class CCustodianVote
 {
@@ -325,6 +342,100 @@ public:
     }
 };
 
+class CAssetVote
+{
+public:
+    int nBlockchainId;
+    int nAssetId;
+    uint16_t nNumberOfConfirmations;
+    uint8_t nRequiredDepositSigners;
+    uint8_t nTotalDepositSigners;
+    uint8_t nMaxTradeExpParam;
+
+    CAssetVote() :
+            nBlockchainId(-1),
+            nAssetId(-1),
+            nNumberOfConfirmations(0),
+            nRequiredDepositSigners(0),
+            nTotalDepositSigners(0),
+            nMaxTradeExpParam(0)
+    {
+    }
+
+    bool IsValid(int nProtocolVersion) const
+    {
+        return (nProtocolVersion >= PROTOCOL_V3_1 &&
+                nBlockchainId >= 0 && nBlockchainId <= MAX_BLOCKCHAIN_ID &&
+                nAssetId >= 0 && nAssetId <= MAX_ASSET_ID &&
+                nNumberOfConfirmations > 0 &&
+                nRequiredDepositSigners >= MIN_REQ_SIGNERS &&
+                nTotalDepositSigners >= MIN_TOTAL_SIGNERS &&
+                nRequiredDepositSigners < nTotalDepositSigners &&
+                nMaxTradeExpParam > 0 && nMaxTradeExpParam <= EXP_SERIES_MAX_PARAM);
+    }
+
+    inline uint64 GetGlobalId() const
+    {
+        return AssetGlobalId(nBlockchainId, nAssetId);
+    }
+
+    inline int64 GetMaxTrade() const
+    {
+        return nMaxTradeExpParam > 0 && nMaxTradeExpParam <= EXP_SERIES_MAX_PARAM ?
+               pnExponentialSeries[nMaxTradeExpParam] : 0;
+    }
+
+    IMPLEMENT_SERIALIZE
+    (
+        READWRITE(nBlockchainId);
+        READWRITE(nAssetId);
+        READWRITE(nNumberOfConfirmations);
+        READWRITE(nRequiredDepositSigners);
+        READWRITE(nTotalDepositSigners);
+        READWRITE(nMaxTradeExpParam);
+    )
+
+    inline bool operator==(const CAssetVote& other) const
+    {
+        return (nBlockchainId == other.nBlockchainId &&
+                nAssetId == other.nAssetId &&
+                nNumberOfConfirmations == other.nNumberOfConfirmations &&
+                nRequiredDepositSigners == other.nRequiredDepositSigners &&
+                nTotalDepositSigners == other.nTotalDepositSigners &&
+                nMaxTradeExpParam == other.nMaxTradeExpParam);
+    }
+    inline bool operator!=(const CAssetVote& other) const
+    {
+        return !(*this == other);
+    }
+    bool operator< (const CAssetVote& other) const
+    {
+        if (nBlockchainId != other.nBlockchainId)
+            return nBlockchainId < other.nBlockchainId;
+        if (nAssetId != other.nAssetId)
+            return nAssetId < other.nAssetId;
+        if (nNumberOfConfirmations != other.nNumberOfConfirmations)
+            return nNumberOfConfirmations < other.nNumberOfConfirmations;
+        if (nRequiredDepositSigners != other.nRequiredDepositSigners)
+            return nRequiredDepositSigners < other.nRequiredDepositSigners;
+        if (nTotalDepositSigners != other.nTotalDepositSigners)
+            return nTotalDepositSigners < other.nTotalDepositSigners;
+        if (nMaxTradeExpParam != other.nMaxTradeExpParam)
+            return nMaxTradeExpParam < other.nMaxTradeExpParam;
+        return false;
+    }
+
+    bool ProducesAsset(const CAsset& asset) const
+    {
+        return (nBlockchainId == asset.nBlockchainId &&
+                nAssetId == asset.nAssetId &&
+                nNumberOfConfirmations == asset.nNumberOfConfirmations &&
+                nRequiredDepositSigners == asset.nRequiredDepositSigners &&
+                nTotalDepositSigners == asset.nTotalDepositSigners &&
+                GetMaxTrade() == asset.nMaxTrade);
+    }
+};
+
 class CVote
 {
 public:
@@ -334,6 +445,7 @@ public:
     std::vector<uint160> vMotion;
     std::map<unsigned char, uint32_t> mapFeeVote;
     std::vector<CReputationVote> vReputationVote;
+    std::vector<CAssetVote> vAssetVote;
 
     int64 nCoinAgeDestroyed;
 
@@ -351,6 +463,7 @@ public:
         vMotion.clear();
         mapFeeVote.clear();
         vReputationVote.clear();
+        vAssetVote.clear();
         nCoinAgeDestroyed = 0;
     }
 
@@ -414,9 +527,15 @@ public:
             const_cast<CVote*>(this)->mapFeeVote.clear();
 
         if (nVersion >= PROTOCOL_V4_0)
+        {
             READWRITE(vReputationVote);
+            READWRITE(vAssetVote);
+        }
         else if (fRead)
+        {
             const_cast<CVote*>(this)->vReputationVote.clear();
+            const_cast<CVote*>(this)->vAssetVote.clear();
+        }
     )
 
     CScript ToScript(int nProtocolVersion) const;
@@ -431,7 +550,8 @@ public:
                 vParkRateVote == other.vParkRateVote &&
                 vMotion == other.vMotion &&
                 mapFeeVote == other.mapFeeVote &&
-                vReputationVote == other.vReputationVote);
+                vReputationVote == other.vReputationVote) &&
+                vAssetVote == other.vAssetVote;
     }
     inline bool operator!=(const CVote& other) const
     {
@@ -503,5 +623,8 @@ bool IsProtocolActiveForNextBlock(const CBlockIndex* pPrevIndex, int nSwitchTime
 bool CalculateVotedFees(CBlockIndex* pindex);
 
 bool CalculateReputationResult(const CBlockIndex* pindex, std::map<CBitcoinAddress, int64>& mapReputation);
+
+bool ExtractAssetVoteResult(const CBlockIndex *pindex, std::vector<CAsset> &vAssets);
+bool CalculateVotedAssets(CBlockIndex* pindex);
 
 #endif
