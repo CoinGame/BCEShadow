@@ -5,10 +5,19 @@
 #ifndef SRC_COINMETADATA_H_
 #define SRC_COINMETADATA_H_
 
+#include <boost/tuple/tuple.hpp>
 #include <string>
 #include "util.h"
 
-std::string GetAssetSymbol(uint64 gid);
-std::string GetAssetName(uint64 gid);
+using std::string;
+
+typedef boost::tuple<string, string, unsigned char> coin_metadata;
+typedef std::map<uint64, coin_metadata> coin_metadata_map;
+
+extern coin_metadata_map const COIN_METADATA;
+
+string GetAssetSymbol(uint64 gid);
+string GetAssetName(uint64 gid);
+unsigned char GetAssetUnitExponent(uint64 gid);
 
 #endif /* SRC_COINMETADATA_H_ */

@@ -18,8 +18,6 @@
 using std::string;
 using boost::assign::map_list_of;
 
-typedef boost::tuple<string, string, unsigned char> coin_metadata;
-typedef std::map<uint64, coin_metadata> coin_metadata_map;
 
 // TODO maybe move in a config file
 coin_metadata_map const COIN_METADATA = map_list_of

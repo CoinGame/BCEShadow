@@ -784,6 +784,16 @@ inline static uint64 AssetGlobalId(int blockchainId, int assetId)
     return (uint64) blockchainId << 32 ^ (uint64) assetId;
 }
 
+inline static int GetBlockchainId(uint64 globalId)
+{
+    return globalId >> 32;
+}
+
+inline static int GetAssetId(uint64 globalId)
+{
+    return globalId & 0xFFFFFFFF;
+}
+
 /*
  * Pre-calculated table for exponential series that follow the pattern:
  *

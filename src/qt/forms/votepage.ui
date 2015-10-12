@@ -114,7 +114,7 @@
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
-         <widget class="QTableWidget" name="assets_table">
+         <widget class="QTableWidget" name="assetTable">
           <property name="sortingEnabled">
            <bool>true</bool>
           </property>
@@ -126,12 +126,47 @@
           </attribute>
           <column>
            <property name="text">
-            <string>Address</string>
+            <string>ID</string>
            </property>
           </column>
           <column>
            <property name="text">
-            <string>Score</string>
+            <string>Name</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Chain</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Asset</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Conf.</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Req. sig.</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Tot. sig.</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Max trade (units)</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Max trade (coins)</string>
            </property>
           </column>
          </widget>
@@ -164,6 +199,13 @@
       <widget class="QPushButton" name="feeVote">
        <property name="text">
         <string>Fee vote...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="assetVote">
+       <property name="text">
+        <string>Asset vote...</string>
        </property>
       </widget>
      </item>

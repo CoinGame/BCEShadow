@@ -29,11 +29,13 @@ private:
     CBlockIndex* lastBestBlock;
     void fillCustodianTable();
     void fillReputationTable();
+    void fillAssetTable();
 
 private slots:
     void on_custodianVote_clicked();
     void on_motionVote_clicked();
     void on_feeVote_clicked();
+    void on_assetVote_clicked();
     void on_reputationVote_clicked();
     void on_dataFeedButton_clicked();
     void update();
