@@ -12,12 +12,12 @@
 using std::string;
 
 typedef boost::tuple<string, string, unsigned char> coin_metadata;
-typedef std::map<uint64, coin_metadata> coin_metadata_map;
+typedef std::map<uint32_t, coin_metadata> coin_metadata_map;
 
 extern coin_metadata_map const COIN_METADATA;
 
-string GetAssetSymbol(uint64 gid);
-string GetAssetName(uint64 gid);
-unsigned char GetAssetUnitExponent(uint64 gid);
+string GetAssetSymbol(uint32_t gid);
+string GetAssetName(uint32_t gid);
+unsigned char GetAssetUnitExponent(uint32_t gid);
 
 #endif /* SRC_COINMETADATA_H_ */

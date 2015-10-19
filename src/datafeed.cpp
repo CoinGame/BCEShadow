@@ -339,19 +339,20 @@ CVote ParseVote(const Object& objVote)
                 CAssetVote assetVote;
                 BOOST_FOREACH(const Pair& assetVoteAttribute, assetVoteObject.get_obj())
                 {
-                    if (assetVoteAttribute.name_ == "blockchainid")
+                    if (assetVoteAttribute.name_ == "globalid")
                     {
-                        int nBlockchainId = assetVoteAttribute.value_.get_int();
+                        uint32_t nGlobalId = assetVoteAttribute.value_.get_int();
+
+                        int nBlockchainId = GetBlockchainId(nGlobalId);
                         if (nBlockchainId < 0 || nBlockchainId > MAX_BLOCKCHAIN_ID)
-                            throw runtime_error("Invalid blockchain id");
-                        assetVote.nBlockchainId = nBlockchainId;
-                    }
-                    else if (assetVoteAttribute.name_ == "assetid")
-                    {
-                        int nAssetId = assetVoteAttribute.value_.get_int();
+                            throw runtime_error("Invalid global id (wrong blockchain id)");
+
+                        int nAssetId = GetAssetId(nGlobalId);
                         if (nAssetId < 0 || nAssetId > MAX_ASSET_ID)
-                            throw runtime_error("Invalid asset id");
+                            throw runtime_error("Invalid global id (wrong asset id)");
+
                         assetVote.nAssetId = nAssetId;
+                        assetVote.nBlockchainId = nBlockchainId;
                     }
                     else if (assetVoteAttribute.name_ == "confirmations")
                     {
@@ -386,7 +387,7 @@ CVote ParseVote(const Object& objVote)
                         assetVote.nMaxTradeExpParam = GetExponentialSeriesParameter(nMaxTrade);
                     }
                     else
-                        throw runtime_error("Invalid reputation vote object");
+                        throw runtime_error("Invalid asset vote object");
                 }
                 vote.vAssetVote.push_back(assetVote);
             }

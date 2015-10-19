@@ -518,7 +518,7 @@ bool CVote::IsValid(int nProtocolVersion) const
             return false;
     }
 
-    set<uint64> seenAssetVotes;
+    set<uint32_t> seenAssetVotes;
     BOOST_FOREACH(const CAssetVote& assetVote, vAssetVote)
     {
         if (!assetVote.IsValid(nProtocolVersion))
@@ -954,24 +954,103 @@ bool CalculateReputationResult(const CBlockIndex* pindex, std::map<CBitcoinAddre
 bool ExtractAssetVoteResult(const CBlockIndex* pindex, vector<CAsset>& vAssets)
 {
     vAssets.clear();
-    map<CAssetVote, int> mapAssetVotes;
-    for (int i = 0; i < ASSET_VOTES && pindex; i++, pindex = pindex->pprev)
-        BOOST_FOREACH(const CAssetVote& vote, pindex->vote.vAssetVote)
-            mapAssetVotes[vote]++;
 
-    BOOST_FOREACH(PAIRTYPE(const CAssetVote, int)& item, mapAssetVotes)
+    static const int nHalfAssetVotes = ASSET_VOTES / 2;
+    CBlockIndex* pvoteindex = const_cast<CBlockIndex*>(pindex);
+    map<uint32_t, vector<CAssetVote> > mapAssetsVotes;
+
+    for (int i = 0; i < ASSET_VOTES && pvoteindex; i++, pvoteindex = pvoteindex->pprev)
+        BOOST_FOREACH(const CAssetVote& vote, pvoteindex->vote.vAssetVote)
+            mapAssetsVotes[vote.GetGlobalId()].push_back(vote);
+
+    BOOST_FOREACH(PAIRTYPE(const uint32_t, vector<CAssetVote>)& item, mapAssetsVotes)
     {
-        const CAssetVote& assetVote = item.first;
-        const int votes = item.second;
-        if (votes >= ASSET_VOTES_REQ)
+        const uint32_t gid = item.first;
+        const vector<CAssetVote>& vAssetVotes = item.second;
+        CAsset currentAsset;
+        bool assetExists = pindex->GetVotedAsset(gid, currentAsset);
+
+        if (assetExists || vAssetVotes.size() > nHalfAssetVotes)
         {
+            map<uint16_t, int> mapNumberOfConfirmations;
+            map<uint8_t, int> mapRequiredDepositSigners;
+            map<uint8_t, int> mapTotalDepositSigners;
+            map<int64, int> mapMaxTrade;
+
+            int totalVotes = ASSET_VOTES;
+
+            BOOST_FOREACH(const CAssetVote assetVote, vAssetVotes)
+            {
+                mapNumberOfConfirmations[assetVote.nNumberOfConfirmations]++;
+                mapRequiredDepositSigners[assetVote.nRequiredDepositSigners]++;
+                mapTotalDepositSigners[assetVote.nTotalDepositSigners]++;
+                mapMaxTrade[assetVote.GetMaxTrade()]++;
+            }
+
+            int nDefaultVotes = ASSET_VOTES - vAssetVotes.size();
+            // If asset exists, fill in the current asset values that act as default values
+            if (assetExists && vAssetVotes.size() < ASSET_VOTES)
+            {
+                mapNumberOfConfirmations[currentAsset.nNumberOfConfirmations] += nDefaultVotes;
+                mapRequiredDepositSigners[currentAsset.nRequiredDepositSigners] += nDefaultVotes;
+                mapTotalDepositSigners[currentAsset.nTotalDepositSigners] += nDefaultVotes;
+                mapMaxTrade[currentAsset.nMaxTrade] += nDefaultVotes;
+            }
+            else if (!assetExists)
+            {
+                totalVotes = vAssetVotes.size();
+                // Max trade is special, so that the non votes can still influence it's value
+                mapMaxTrade[0] += nDefaultVotes;
+            }
+
             CAsset newAsset;
-            newAsset.nBlockchainId = assetVote.nBlockchainId;
-            newAsset.nAssetId = assetVote.nAssetId;
-            newAsset.nNumberOfConfirmations = assetVote.nNumberOfConfirmations;
-            newAsset.nRequiredDepositSigners = assetVote.nRequiredDepositSigners;
-            newAsset.nTotalDepositSigners = assetVote.nTotalDepositSigners;
-            newAsset.nMaxTrade = assetVote.GetMaxTrade();
+            newAsset.SetGlobalId(gid);
+
+            int total = 0;
+            BOOST_FOREACH(PAIRTYPE(const uint16_t, int)& item, mapNumberOfConfirmations)
+            {
+                total += item.second;
+                if (total > totalVotes / 2)
+                {
+                    newAsset.nNumberOfConfirmations = item.first;
+                    break;
+                }
+            }
+
+            total = 0;
+            BOOST_FOREACH(PAIRTYPE(const uint8_t, int)& item, mapRequiredDepositSigners)
+            {
+                total += item.second;
+                if (total > totalVotes / 2)
+                {
+                    newAsset.nRequiredDepositSigners = item.first;
+                    break;
+                }
+            }
+
+            total = 0;
+            BOOST_FOREACH(PAIRTYPE(const uint8_t, int)& item, mapTotalDepositSigners)
+            {
+                total += item.second;
+                if (total > totalVotes / 2)
+                {
+                    newAsset.nTotalDepositSigners = item.first;
+                    break;
+                }
+            }
+
+            total = 0;
+            BOOST_FOREACH(PAIRTYPE(const int64, int)& item, mapMaxTrade)
+            {
+                total += item.second;
+                // Max trade is has always ASSET_VOTES votes
+                if (total > ASSET_VOTES / 2)
+                {
+                    newAsset.nMaxTrade = item.first;
+                    break;
+                }
+            }
+
             vAssets.push_back(newAsset);
         }
     }
@@ -1003,10 +1082,10 @@ bool CalculateVotedAssets(CBlockIndex* pindex)
 
     BOOST_FOREACH(CAsset& newAsset, vAssets)
     {
-        uint64 gid = newAsset.GetGlobalId();
+        uint32_t gid = newAsset.GetGlobalId();
         CAsset currentAsset;
         // Set the new asset to this block if it is different than the current one
-        CBlockIndex::GetAsset(pindex, gid, currentAsset);
+        pindex->GetVotedAsset(gid, currentAsset);
         if (currentAsset != newAsset)
             pindex->mapAssets[gid] = newAsset;
     }

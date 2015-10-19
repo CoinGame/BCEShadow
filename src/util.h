@@ -779,19 +779,19 @@ inline uint32_t ByteReverse(uint32_t value)
 }
 
 
-inline static uint64 AssetGlobalId(int blockchainId, int assetId)
+inline static uint32_t AssetGlobalId(uint16_t blockchainId, uint16_t assetId)
 {
-    return (uint64) blockchainId << 32 ^ (uint64) assetId;
+    return ((uint32_t) blockchainId << 16) ^ ((uint32_t) assetId);
 }
 
-inline static int GetBlockchainId(uint64 globalId)
+inline static uint16_t GetBlockchainId(uint32_t globalId)
 {
-    return globalId >> 32;
+    return globalId >> 16;
 }
 
-inline static int GetAssetId(uint64 globalId)
+inline static uint16_t GetAssetId(uint32_t globalId)
 {
-    return globalId & 0xFFFFFFFF;
+    return globalId & 0xFFFF;
 }
 
 /*

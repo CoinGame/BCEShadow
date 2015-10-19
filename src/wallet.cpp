@@ -1481,23 +1481,20 @@ extern int nForcedVersionVote;
 
 void RemoveVotedAssets(CBlockIndex& pindexdummy, vector<CAssetVote>& vAssetVotes)
 {
-    printf("RemoveVotedAssets\n");
     CAsset asset;
     set<CAssetVote> assetVotesToRemove;
     BOOST_FOREACH(const CAssetVote& assetVote, vAssetVotes)
     {
         asset.SetNull();
-        if (CBlockIndex::GetAsset(&pindexdummy, assetVote.GetGlobalId(), asset) && assetVote.ProducesAsset(asset))
+        if (pindexdummy.GetVotedAsset(assetVote.GetGlobalId(), asset) && assetVote.ProducesAsset(asset))
             assetVotesToRemove.insert(assetVote);
     }
 
     BOOST_FOREACH(const CAssetVote& assetVote, assetVotesToRemove)
     {
-        printf("Removing already voted asset %ld\n", assetVote.GetGlobalId());
+        printf("Removing already voted asset %d\n", assetVote.GetGlobalId());
         vAssetVotes.erase(std::remove(vAssetVotes.begin(), vAssetVotes.end(), assetVote), vAssetVotes.end());
     }
-
-
 }
 
 // ppcoin: create coin stake transaction

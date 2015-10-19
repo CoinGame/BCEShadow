@@ -4,8 +4,7 @@ When(/^node "(.*?)" votes for the following assets:$/) do |arg1, table|
   vote = {
     "assets" => table.hashes.map do |row|
       {
-        "blockchainid" => row["BlockchainId"].to_i,
-        "assetid" => row["AssetId"].to_i,
+        "globalid" => row["GlobalId"].to_i,
         "confirmations" => row["Confirmations"].to_i,
         "reqsigners" => row["M"].to_i,
         "totalsigners" => row["N"].to_i,
@@ -15,7 +14,10 @@ When(/^node "(.*?)" votes for the following assets:$/) do |arg1, table|
   }
 
   node.rpc("setvote", vote)
-  expect(node.rpc("getvote")["assets"]).to eq(vote["assets"])
+  
+  asset_votes = node.rpc("getvote")["assets"]
+
+  expect(asset_votes).to eq(vote["assets"])
 end
 
 Then(/^block "(.*?)" on node "(.*?)" should contain the following asset votes:$/) do |arg1, arg2, table|
@@ -29,8 +31,7 @@ Then(/^block "(.*?)" on node "(.*?)" should contain the following asset votes:$/
 
   expected_asset_votes = table.hashes.map do |row|
     {
-      "blockchainid" => row["BlockchainId"].to_i,
-      "assetid" => row["AssetId"].to_i,
+      "globalid" => row["GlobalId"].to_i,
       "confirmations" => row["Confirmations"].to_i,
       "reqsigners" => row["M"].to_i,
       "totalsigners" => row["N"].to_i,
@@ -63,8 +64,7 @@ Then(/^the active assets in node "(.*?)" are:$/) do |arg1, table|
 
   expected_assets = table.hashes.map do |row|
     {
-      "blockchainid" => row["BlockchainId"].to_i,
-      "assetid" => row["AssetId"].to_i,
+      "globalid" => row["GlobalId"].to_i,
       "confirmations" => row["Confirmations"].to_i,
       "reqsigners" => row["M"].to_i,
       "totalsigners" => row["N"].to_i,

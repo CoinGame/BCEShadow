@@ -18,7 +18,6 @@
 using std::string;
 using boost::assign::map_list_of;
 
-
 // TODO maybe move in a config file
 coin_metadata_map const COIN_METADATA = map_list_of
         (AssetGlobalId(0, 0), coin_metadata("BKS", "Blockshares", 4))
@@ -59,7 +58,7 @@ coin_metadata_map const COIN_METADATA = map_list_of
         (AssetGlobalId(33, 0), coin_metadata("SDC", "ShadowCash", 8))
         ;
 
-std::string GetAssetSymbol(uint64 gid)
+std::string GetAssetSymbol(uint32_t gid)
 {
     coin_metadata_map::const_iterator itMetadata = COIN_METADATA.find(gid);
     if (itMetadata == COIN_METADATA.end())
@@ -68,7 +67,7 @@ std::string GetAssetSymbol(uint64 gid)
     return metadata.get<COIN_SYMBOL_INDEX>();
 }
 
-std::string GetAssetName(uint64 gid)
+std::string GetAssetName(uint32_t gid)
 {
     coin_metadata_map::const_iterator itMetadata = COIN_METADATA.find(gid);
     if (itMetadata == COIN_METADATA.end())
@@ -77,7 +76,7 @@ std::string GetAssetName(uint64 gid)
     return metadata.get<COIN_NAME_INDEX>();
 }
 
-unsigned char GetAssetUnitExponent(uint64 gid)
+unsigned char GetAssetUnitExponent(uint32_t gid)
 {
     coin_metadata_map::const_iterator itMetadata = COIN_METADATA.find(gid);
     if (itMetadata == COIN_METADATA.end())

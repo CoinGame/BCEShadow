@@ -9,6 +9,11 @@
 
 using namespace std;
 
+#define DEFAULT_CONFIRMATIONS (6)
+#define DEFAULT_REQ_SIGNERS (2)
+#define DEFAULT_TOTAL_SIGNERS (3)
+#define DEFAULT_MAX_TRADE (1e8)
+
 AddAssetVoteDialog::AddAssetVoteDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AddAssetVoteDialog)
@@ -85,10 +90,10 @@ void AddAssetVoteDialog::setModel(WalletModel *model)
     ui->maxTradeCoins->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
     updateIds();
-    ui->confirmations->setText(QString::number(6));
-    ui->requiredDepositSigners->setText(QString::number(MIN_REQ_SIGNERS));
-    ui->totalDepositSigners->setText(QString::number(MIN_TOTAL_SIGNERS));
-    ui->maxTrade->setText(QString::number(1000000));
+    ui->confirmations->setText(QString::number(DEFAULT_CONFIRMATIONS));
+    ui->requiredDepositSigners->setText(QString::number(DEFAULT_REQ_SIGNERS));
+    ui->totalDepositSigners->setText(QString::number(DEFAULT_TOTAL_SIGNERS));
+    ui->maxTrade->setText(QString::number(DEFAULT_MAX_TRADE));
 }
 
 void AddAssetVoteDialog::error(const QString &message)

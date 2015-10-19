@@ -73,13 +73,11 @@ static const int64 MAX_COIN_AGE = 100000000000000; // To make sure coin days can
 static const int VOTE_DELAY_BLOCKS = 3;
 static const int FEE_VOTES = 5;
 static const int ASSET_VOTES = 5;
-static const int ASSET_VOTES_REQ = 3;
 static const int SAFE_FEE_BLOCKS = 2;
 #else
 static const int VOTE_DELAY_BLOCKS = 60; // Some votes are effective this number of blocks after the actual vote result
 static const int FEE_VOTES = 2000;
 static const int ASSET_VOTES = 2000;
-static const int ASSET_VOTES_REQ = 1300; // 65% of the asset votes are required to change the asset values. We want something more than just 51% to avoid passing a vote by a minority because of the stochastic nature of the block creation
 static const int SAFE_FEE_BLOCKS = 10; // When a new transaction is created, the highest min fee of the next SAFE_FEE_BLOCKS blocks will be used, to make sure this transaction can be included in any of these blocks
 #endif
 
@@ -1594,7 +1592,7 @@ public:
 
         // First copy the assets from the previous blocks
         BOOST_FOREACH(const PAIRTYPE(const uint64, CBlockIndex*)& item, pEffectiveIndex->mapAssetsPrev)
-            GetAssetFromBlock(item.second, item.first, mapEffectiveAssets[item.first]);
+            item.second->GetBlockVotedAsset(item.first, mapEffectiveAssets[item.first]);
 
         // Copy any assets that are voted in this block
         BOOST_FOREACH(const PAIRTYPE(const uint64, CAsset)& item, pEffectiveIndex->mapAssets)
@@ -1603,26 +1601,30 @@ public:
         return true;
     }
 
-    bool GetEffectiveAsset(uint64 nGlobalId, CAsset& asset)
+    bool GetEffectiveAsset(uint32_t nGlobalId, CAsset& asset) const
     {
-        return GetAsset(GetEffectiveVoteIndex(), nGlobalId, asset);
+        const CBlockIndex* pEffectiveIndex = GetEffectiveVoteIndex();
+        if (pEffectiveIndex)
+            return pEffectiveIndex->GetVotedAsset(nGlobalId, asset);
+        else
+            return false;
     }
 
     /**
      * Get an asset that was voted on the pindex or the previous blocks
      */
-    static bool GetAsset(const CBlockIndex* pindex, uint64 nGlobalId, CAsset& asset)
+    bool GetVotedAsset(uint32_t nGlobalId, CAsset& asset) const
     {
         // Get this asset from the current block
-        if (GetAssetFromBlock(pindex, nGlobalId, asset))
+        if (GetBlockVotedAsset(nGlobalId, asset))
             return true;
 
         // Try to get the asset from a previous block
-        std::map<uint64, CBlockIndex*>::const_iterator it = pindex->mapAssetsPrev.find(nGlobalId);
-        if(it != pindex->mapAssetsPrev.end())
+        std::map<uint64, CBlockIndex*>::const_iterator it = mapAssetsPrev.find(nGlobalId);
+        if(it != mapAssetsPrev.end())
         {
             CBlockIndex* pPrevBlock = it->second;
-            if (GetAssetFromBlock(pPrevBlock, nGlobalId, asset))
+            if (pPrevBlock->GetBlockVotedAsset(nGlobalId, asset))
                 return true;
         }
         return false;
@@ -1631,10 +1633,10 @@ public:
     /**
      * Get a specific asset that was voted on a specific pindex
      */
-    static bool GetAssetFromBlock(const CBlockIndex* pindex, uint64 nGlobalId, CAsset& asset)
+    bool GetBlockVotedAsset(uint32_t nGlobalId, CAsset& asset) const
     {
-        std::map<uint64, CAsset>::const_iterator it = pindex->mapAssets.find(nGlobalId);
-        if(it != pindex->mapAssets.end())
+        std::map<uint64, CAsset>::const_iterator it = mapAssets.find(nGlobalId);
+        if(it != mapAssets.end())
         {
             asset = it->second;
             return true;

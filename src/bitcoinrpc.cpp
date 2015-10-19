@@ -426,12 +426,8 @@ Object voteToJSON(const CVote& vote)
     BOOST_FOREACH(const CAssetVote& assetVote, vote.vAssetVote)
     {
         Object object;
-        uint64 gid = assetVote.GetGlobalId();
-        object.push_back(Pair("globalid", (boost::uint64_t)gid));
-        object.push_back(Pair("name", GetAssetName(gid)));
-        object.push_back(Pair("symbol", GetAssetSymbol(gid)));
-        object.push_back(Pair("blockchainid", assetVote.nBlockchainId));
-        object.push_back(Pair("assetid", assetVote.nAssetId));
+        uint32_t gid = assetVote.GetGlobalId();
+        object.push_back(Pair("globalid", (boost::int32_t)gid));
         object.push_back(Pair("confirmations", assetVote.nNumberOfConfirmations));
         object.push_back(Pair("reqsigners", assetVote.nRequiredDepositSigners));
         object.push_back(Pair("totalsigners", assetVote.nTotalDepositSigners));
@@ -3567,7 +3563,7 @@ Value getassetinfo(const Array& params, bool fHelp)
 
     CBlockIndex *pindex = pindexBest;
 
-    uint64 nGlobalId = params[0].get_int();
+    uint32_t nGlobalId = params[0].get_int();
 
     if (params.size() > 1)
     {
@@ -3585,10 +3581,9 @@ Value getassetinfo(const Array& params, bool fHelp)
         throw JSONRPCError(-4, "Could not get asset");
 
     Object object;
-    uint64 gid = asset.GetGlobalId();
-    object.push_back(Pair("globalid", (boost::uint64_t)gid));
-    object.push_back(Pair("name", GetAssetName(gid)));
-    object.push_back(Pair("symbol", GetAssetSymbol(gid)));
+    object.push_back(Pair("globalid", (boost::int32_t)nGlobalId));
+    object.push_back(Pair("name", GetAssetName(nGlobalId)));
+    object.push_back(Pair("symbol", GetAssetSymbol(nGlobalId)));
     object.push_back(Pair("blockchainid", asset.nBlockchainId));
     object.push_back(Pair("assetid", asset.nAssetId));
     object.push_back(Pair("confirmations", asset.nNumberOfConfirmations));
@@ -3624,12 +3619,11 @@ Value getassets(const Array& params, bool fHelp)
         throw JSONRPCError(-4, "Could not get assets");
 
     Array assetsArray;
-    BOOST_FOREACH(const PAIRTYPE(const uint64, CAsset)& pair, assets)
+    BOOST_FOREACH(const PAIRTYPE(const uint32_t, CAsset)& pair, assets)
     {
         CAsset asset = pair.second;
         Object object;
-        object.push_back(Pair("blockchainid", asset.nBlockchainId));
-        object.push_back(Pair("assetid", asset.nAssetId));
+        object.push_back(Pair("globalid", (boost::int32_t)asset.GetGlobalId()));
         object.push_back(Pair("confirmations", asset.nNumberOfConfirmations));
         object.push_back(Pair("reqsigners", asset.nRequiredDepositSigners));
         object.push_back(Pair("totalsigners", asset.nTotalDepositSigners));
@@ -4473,7 +4467,7 @@ Value setdatafeed(const Array& params, bool fHelp)
             "setdatafeed <url> [<signature url> <address>] [<parts>]\n"
             "Change the vote data feed. Set <url> to an empty string to disable.\n"
             "If <signature url> and <address> are specified and not empty strings a signature will also be retrieved at <signature url> and verified.\n"
-            "Parts is the list of the top level vote parts that will be taken from the feed, separated by a coma. The other parts will not affect the vote. Default is \"custodians,parkrates,motions,fees,reputations\".");
+            "Parts is the list of the top level vote parts that will be taken from the feed, separated by a coma. The other parts will not affect the vote. Default is \"custodians,parkrates,motions,fees,reputations,assets\".");
 
     string sURL = params[0].get_str();
 
@@ -4485,7 +4479,7 @@ Value setdatafeed(const Array& params, bool fHelp)
     if (params.size() > 2)
         sAddress = params[2].get_str();
 
-    string sParts("custodians,parkrates,motions,fees,reputations");
+    string sParts("custodians,parkrates,motions,fees,reputations,assets");
     if (params.size() > 3)
         sParts = params[3].get_str();
     vector<string> vParts;
@@ -4493,7 +4487,7 @@ Value setdatafeed(const Array& params, bool fHelp)
 
     BOOST_FOREACH(const string sPart, vParts)
     {
-        if (sPart != "custodians" && sPart != "parkrates" && sPart != "motions" && sPart != "fees" && sPart != "reputations")
+        if (sPart != "custodians" && sPart != "parkrates" && sPart != "motions" && sPart != "fees" && sPart != "reputations" && sPart != "assets")
             throw runtime_error("Invalid parts");
     }
 

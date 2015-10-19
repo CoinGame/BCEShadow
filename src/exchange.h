@@ -11,16 +11,16 @@
 class CAsset
 {
 public:
-    int nBlockchainId;
-    int nAssetId;
-    unsigned short nNumberOfConfirmations;
-    unsigned char nRequiredDepositSigners;
-    unsigned char nTotalDepositSigners;
+    uint16_t nBlockchainId;
+    uint16_t nAssetId;
+    uint16_t nNumberOfConfirmations;
+    uint8_t nRequiredDepositSigners;
+    uint8_t nTotalDepositSigners;
     int64 nMaxTrade;
 
     CAsset() :
-        nBlockchainId(-1),
-        nAssetId(-1),
+        nBlockchainId(0),
+        nAssetId(0),
         nNumberOfConfirmations(0),
         nRequiredDepositSigners(0),
         nTotalDepositSigners(0),
@@ -30,8 +30,8 @@ public:
 
     void SetNull()
     {
-        nBlockchainId = -1;
-        nAssetId = -1;
+        nBlockchainId = 0;
+        nAssetId = 0;
         nNumberOfConfirmations = 0;
         nRequiredDepositSigners = 0;
         nTotalDepositSigners = 0;
@@ -40,17 +40,23 @@ public:
 
     IMPLEMENT_SERIALIZE
     (
-            READWRITE(nBlockchainId);
-            READWRITE(nAssetId);
-            READWRITE(nNumberOfConfirmations);
-            READWRITE(nRequiredDepositSigners);
-            READWRITE(nTotalDepositSigners);
-            READWRITE(nMaxTrade);
+        READWRITE(nBlockchainId);
+        READWRITE(nAssetId);
+        READWRITE(nNumberOfConfirmations);
+        READWRITE(nRequiredDepositSigners);
+        READWRITE(nTotalDepositSigners);
+        READWRITE(nMaxTrade);
     )
 
-    uint64 GetGlobalId() const
+    uint32_t GetGlobalId() const
     {
         return AssetGlobalId(nBlockchainId, nAssetId);
+    }
+
+    void SetGlobalId(uint32_t globalId)
+    {
+        nBlockchainId = GetBlockchainId(globalId);
+        nAssetId = GetAssetId(globalId);
     }
 
     inline bool operator==(const CAsset& other) const

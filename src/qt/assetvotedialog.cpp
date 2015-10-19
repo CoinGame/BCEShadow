@@ -45,7 +45,7 @@ void AssetVoteDialog::addTableRow(int blockchainId,
     table->setSortingEnabled(false);
     table->setRowCount(row + 1);
 
-    uint64 globalId = AssetGlobalId(blockchainId, assetId);
+    uint32_t globalId = AssetGlobalId(blockchainId, assetId);
 
     QTableWidgetItem *idItem = new QTableWidgetItem();
     idItem->setData(Qt::DisplayRole, globalId);

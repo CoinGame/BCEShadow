@@ -2233,43 +2233,12 @@ bool CBlock::AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos)
         if (!CalculateVotedFees(pindexNew))
             return error("Unable to calculate voted fees");
 
-        ////////////TODO debuging, remove
-        {
-            CBlockIndex* pindex = pindexNew;
-
-            printf("blockIndexes: ");
-            for (int i = 0; i < 3*ASSET_VOTES && pindex; i++, pindex = pindex->pprev)
-            {
-                printf(" -> 0x%016llx [", pindex);
-                BOOST_FOREACH(const CAssetVote &vote, pindex->vote.vAssetVote)
-                {
-                    printf("%ld, ", vote.GetGlobalId());
-                }
-                printf("]");
-            }
-            printf("\n");
-
-            pindex = pindexNew;
-            map<CAssetVote, int> mapAssetVotes;
-            for (int i = 0; i < ASSET_VOTES && pindex; i++, pindex = pindex->pprev)
-                BOOST_FOREACH(const CAssetVote &vote, pindex->vote.vAssetVote)
-                    mapAssetVotes[vote]++;
-
-            BOOST_FOREACH(PAIRTYPE(const CAssetVote, int)& item, mapAssetVotes)
-            {
-                const CAssetVote& assetVote = item.first;
-                const int votes = item.second;
-                printf("asset gid=%ld votes %d/%d\n", assetVote.GetGlobalId(), votes, ASSET_VOTES_REQ);
-            }
-        }
-        ////////////TODO debuging, remove
-
         if (!CalculateVotedAssets(pindexNew))
             return error("Unable to calculate voted assets");
         else if (pindexNew->mapAssets.size() != 0)
         {
-            BOOST_FOREACH(const PAIRTYPE(const uint64, CAsset)& pair, pindexNew->mapAssets)
-                printf("New asset with gid=%ld, confirmations=%d, %d-of-%d signers, maxTrade=%ld\n",
+            BOOST_FOREACH(const PAIRTYPE(const uint32_t, CAsset)& pair, pindexNew->mapAssets)
+                printf("New asset with gid=%d, confirmations=%d, %d-of-%d signers, maxTrade=%"PRI64d"\n",
                        pair.first, pair.second.nNumberOfConfirmations, pair.second.nRequiredDepositSigners,
                        pair.second.nTotalDepositSigners, pair.second.nMaxTrade);
 

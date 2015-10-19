@@ -19,8 +19,8 @@ static const unsigned char MAX_COMPACT_DURATION = 30; // about 2000 years
 static const int64 MAX_PARK_DURATION = 1000000000; // about 1900 years
 
 // Limit the blockchain and asset ids. If more ids are needed a protocol update is needed
-static const int MAX_BLOCKCHAIN_ID = 100000;
-static const int MAX_ASSET_ID = 100000;
+static const int MAX_BLOCKCHAIN_ID = 65519; // == 0xFFF0 - 1, that leaves us 4bits for future expansion
+static const int MAX_ASSET_ID = 65519;
 
 // Confirmations is a unsigned short
 static const int MAX_CONFIRMATIONS = 65535;
@@ -28,10 +28,9 @@ static const int MAX_CONFIRMATIONS = 65535;
 // Signers is a 8bit uint
 static const int MAX_SIGNERS = 255;
 
-// The minimum M-of-N signers is 2-of-3 as it is the smallest that provide redunduncy and trust minimization
-static const int MIN_REQ_SIGNERS = 2;
-static const int MIN_TOTAL_SIGNERS = 3;
-
+// Normally the minimum M-of-N signers is 2-of-3 but we keep open the possibility for non-multisig blockchains
+static const int MIN_REQ_SIGNERS = 1;
+static const int MIN_TOTAL_SIGNERS = 1;
 
 class CCustodianVote
 {
@@ -345,44 +344,42 @@ public:
 class CAssetVote
 {
 public:
-    int nBlockchainId;
-    int nAssetId;
+    uint16_t nBlockchainId;
+    uint16_t nAssetId;
     uint16_t nNumberOfConfirmations;
     uint8_t nRequiredDepositSigners;
     uint8_t nTotalDepositSigners;
     uint8_t nMaxTradeExpParam;
 
     CAssetVote() :
-            nBlockchainId(-1),
-            nAssetId(-1),
-            nNumberOfConfirmations(0),
-            nRequiredDepositSigners(0),
-            nTotalDepositSigners(0),
-            nMaxTradeExpParam(0)
+        nBlockchainId(0),
+        nAssetId(0),
+        nNumberOfConfirmations(0),
+        nRequiredDepositSigners(0),
+        nTotalDepositSigners(0),
+        nMaxTradeExpParam(0)
     {
     }
 
     bool IsValid(int nProtocolVersion) const
     {
-        return (nProtocolVersion >= PROTOCOL_V3_1 &&
-                nBlockchainId >= 0 && nBlockchainId <= MAX_BLOCKCHAIN_ID &&
-                nAssetId >= 0 && nAssetId <= MAX_ASSET_ID &&
+        return (nBlockchainId <= MAX_BLOCKCHAIN_ID &&
+                nAssetId <= MAX_ASSET_ID &&
                 nNumberOfConfirmations > 0 &&
                 nRequiredDepositSigners >= MIN_REQ_SIGNERS &&
                 nTotalDepositSigners >= MIN_TOTAL_SIGNERS &&
                 nRequiredDepositSigners < nTotalDepositSigners &&
-                nMaxTradeExpParam > 0 && nMaxTradeExpParam <= EXP_SERIES_MAX_PARAM);
+                nMaxTradeExpParam <= EXP_SERIES_MAX_PARAM);
     }
 
-    inline uint64 GetGlobalId() const
+    inline uint32_t GetGlobalId() const
     {
         return AssetGlobalId(nBlockchainId, nAssetId);
     }
 
     inline int64 GetMaxTrade() const
     {
-        return nMaxTradeExpParam > 0 && nMaxTradeExpParam <= EXP_SERIES_MAX_PARAM ?
-               pnExponentialSeries[nMaxTradeExpParam] : 0;
+        return nMaxTradeExpParam <= EXP_SERIES_MAX_PARAM ? pnExponentialSeries[nMaxTradeExpParam] : 0;
     }
 
     IMPLEMENT_SERIALIZE
