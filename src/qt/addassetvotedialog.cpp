@@ -12,7 +12,7 @@ using namespace std;
 #define DEFAULT_CONFIRMATIONS (6)
 #define DEFAULT_REQ_SIGNERS (2)
 #define DEFAULT_TOTAL_SIGNERS (3)
-#define DEFAULT_MAX_TRADE (1e8)
+#define DEFAULT_MAX_TRADE (100000000)
 
 AddAssetVoteDialog::AddAssetVoteDialog(QWidget *parent) :
     QDialog(parent),
@@ -63,7 +63,7 @@ void AddAssetVoteDialog::updateIds()
 
     // Force update of maxTrade and maxTradeCoins fields
     ui->maxTrade->clear();
-    ui->maxTrade->setText(QString::number(1000000));
+    ui->maxTrade->setText(QString::number(DEFAULT_MAX_TRADE));
 }
 
 void AddAssetVoteDialog::setModel(WalletModel *model)
