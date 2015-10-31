@@ -126,6 +126,11 @@ int64 AmountFromValue(const Value& value)
     return nAmount;
 }
 
+Value ValueFromAmount(int64 amount, uint8_t exponent)
+{
+    return (double)amount / pow(10, exponent);
+}
+
 Value ValueFromAmount(int64 amount)
 {
     return (double)amount / (double)COIN;
@@ -426,12 +431,14 @@ Object voteToJSON(const CVote& vote)
     BOOST_FOREACH(const CAssetVote& assetVote, vote.vAssetVote)
     {
         Object object;
-        uint32_t gid = assetVote.GetGlobalId();
-        object.push_back(Pair("globalid", (boost::int32_t)gid));
+        object.push_back(Pair("assetid", (boost::int32_t)assetVote.nAssetId));
         object.push_back(Pair("confirmations", assetVote.nNumberOfConfirmations));
         object.push_back(Pair("reqsigners", assetVote.nRequiredDepositSigners));
         object.push_back(Pair("totalsigners", assetVote.nTotalDepositSigners));
-        object.push_back(Pair("maxtrade", (boost::int64_t)assetVote.GetMaxTrade()));
+        object.push_back(Pair("maxtrade", ValueFromAmount(assetVote.GetMaxTrade(), assetVote.nUnitExponent)));
+        object.push_back(Pair("mintrade", ValueFromAmount(assetVote.GetMinTrade(), assetVote.nUnitExponent)));
+        object.push_back(Pair("unitexponent", assetVote.nUnitExponent));
+
         assetVotes.push_back(object);
     }
     result.push_back(Pair("assets", assetVotes));
@@ -3558,12 +3565,12 @@ Value getassetinfo(const Array& params, bool fHelp)
 
     if (fHelp || params.size() > 2 || params.size() < 1)
         throw runtime_error(
-                "getassetinfo <asset global id> [<block height>]\n"
+                "getassetinfo <asset id> [<block height>]\n"
                         "Returns an object information about an asset on a specific height (default is the current)");
 
     CBlockIndex *pindex = pindexBest;
 
-    uint32_t nGlobalId = params[0].get_int();
+    uint32_t nAssetId = params[0].get_int();
 
     if (params.size() > 1)
     {
@@ -3577,19 +3584,19 @@ Value getassetinfo(const Array& params, bool fHelp)
     }
 
     CAsset asset;
-    if (!pindex->GetEffectiveAsset(nGlobalId, asset))
+    if (!pindex->GetEffectiveAsset(nAssetId, asset))
         throw JSONRPCError(-4, "Could not get asset");
 
     Object object;
-    object.push_back(Pair("globalid", (boost::int32_t)nGlobalId));
-    object.push_back(Pair("name", GetAssetName(nGlobalId)));
-    object.push_back(Pair("symbol", GetAssetSymbol(nGlobalId)));
-    object.push_back(Pair("blockchainid", asset.nBlockchainId));
-    object.push_back(Pair("assetid", asset.nAssetId));
+    object.push_back(Pair("assetid", (boost::int32_t)nAssetId));
+    object.push_back(Pair("name", GetAssetName(nAssetId)));
+    object.push_back(Pair("symbol", GetAssetSymbol(nAssetId)));
     object.push_back(Pair("confirmations", asset.nNumberOfConfirmations));
     object.push_back(Pair("reqsigners", asset.nRequiredDepositSigners));
     object.push_back(Pair("totalsigners", asset.nTotalDepositSigners));
-    object.push_back(Pair("maxtrade", (boost::int64_t)asset.nMaxTrade));
+    object.push_back(Pair("maxtrade", ValueFromAmount(asset.GetMaxTrade(), asset.nUnitExponent)));
+    object.push_back(Pair("mintrade", ValueFromAmount(asset.GetMinTrade(), asset.nUnitExponent)));
+    object.push_back(Pair("unitexponent", asset.nUnitExponent));
 
     return object;
 }
@@ -3623,11 +3630,13 @@ Value getassets(const Array& params, bool fHelp)
     {
         CAsset asset = pair.second;
         Object object;
-        object.push_back(Pair("globalid", (boost::int32_t)asset.GetGlobalId()));
+        object.push_back(Pair("assetid", (boost::int32_t)asset.nAssetId));
         object.push_back(Pair("confirmations", asset.nNumberOfConfirmations));
         object.push_back(Pair("reqsigners", asset.nRequiredDepositSigners));
         object.push_back(Pair("totalsigners", asset.nTotalDepositSigners));
-        object.push_back(Pair("maxtrade", (boost::int64_t)asset.nMaxTrade));
+        object.push_back(Pair("maxtrade", ValueFromAmount(asset.GetMaxTrade(), asset.nUnitExponent)));
+        object.push_back(Pair("mintrade", ValueFromAmount(asset.GetMinTrade(), asset.nUnitExponent)));
+        object.push_back(Pair("unitexponent", asset.nUnitExponent));
         assetsArray.push_back(object);
     }
 

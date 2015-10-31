@@ -337,22 +337,18 @@ CVote ParseVote(const Object& objVote)
             BOOST_FOREACH(const Value& assetVoteObject, voteAttribute.value_.get_array())
             {
                 CAssetVote assetVote;
+                double maxTrade = 0.0;
+                double minTrade = 0.0;
                 BOOST_FOREACH(const Pair& assetVoteAttribute, assetVoteObject.get_obj())
                 {
-                    if (assetVoteAttribute.name_ == "globalid")
+                    if (assetVoteAttribute.name_ == "assetid")
                     {
-                        uint32_t nGlobalId = assetVoteAttribute.value_.get_int();
+                        uint32_t nAssetId = assetVoteAttribute.value_.get_uint64();
 
-                        int nBlockchainId = GetBlockchainId(nGlobalId);
-                        if (nBlockchainId < 0 || nBlockchainId > MAX_BLOCKCHAIN_ID)
-                            throw runtime_error("Invalid global id (wrong blockchain id)");
-
-                        int nAssetId = GetAssetId(nGlobalId);
-                        if (nAssetId < 0 || nAssetId > MAX_ASSET_ID)
-                            throw runtime_error("Invalid global id (wrong asset id)");
+                        if (!IsValidAssetId(nAssetId))
+                            throw runtime_error("Invalid asset id");
 
                         assetVote.nAssetId = nAssetId;
-                        assetVote.nBlockchainId = nBlockchainId;
                     }
                     else if (assetVoteAttribute.name_ == "confirmations")
                     {
@@ -381,14 +377,31 @@ CVote ParseVote(const Object& objVote)
                     }
                     else if (assetVoteAttribute.name_ == "maxtrade")
                     {
-                        int64 nMaxTrade = assetVoteAttribute.value_.get_int64();
-                        if (nMaxTrade <= 0)
+                        maxTrade = assetVoteAttribute.value_.get_real();
+                        if (maxTrade < 0)
                             throw runtime_error("Invalid max trade value");
-                        assetVote.nMaxTradeExpParam = GetExponentialSeriesParameter(nMaxTrade);
+                        // Set later when we find out the exponent
+                    }
+                    else if (assetVoteAttribute.name_ == "mintrade")
+                    {
+                        minTrade = assetVoteAttribute.value_.get_real();
+                        if (minTrade < 0)
+                            throw runtime_error("Invalid minimum trade value");
+                        // Set later when we find out the exponent
+                    }
+                    else if (assetVoteAttribute.name_ == "unitexponent")
+                    {
+                        int nUnitExponent = assetVoteAttribute.value_.get_int();
+                        if (nUnitExponent <= 0 || nUnitExponent > MAX_TRADABLE_UNIT_EXPONENT)
+                            throw runtime_error("Invalid unit exponent value");
+                        assetVote.nUnitExponent = nUnitExponent;
                     }
                     else
                         throw runtime_error("Invalid asset vote object");
                 }
+                // Set the max/min trades as we know the unit exponent
+                assetVote.nMaxTradeExpParam = ExponentialParameter(maxTrade * pow(10, assetVote.nUnitExponent));
+                assetVote.nMinTradeExpParam = ExponentialParameter(minTrade * pow(10, assetVote.nUnitExponent));
                 vote.vAssetVote.push_back(assetVote);
             }
         }

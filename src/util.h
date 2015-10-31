@@ -23,9 +23,11 @@ typedef int pid_t; /* define for windows compatiblity */
 #include <vector>
 #include <string>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/foreach.hpp>
 #include <boost/interprocess/sync/interprocess_recursive_mutex.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
@@ -407,12 +409,14 @@ inline int64 abs64(int64 n)
     return (n >= 0 ? n : -n);
 }
 
+static char hexmap[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
+                           '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+
 template<typename T>
 std::string HexStr(const T itbegin, const T itend, bool fSpaces=false)
 {
     std::vector<char> rv;
-    static char hexmap[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
-                               '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+
     rv.reserve((itend-itbegin)*3);
     for(T it = itbegin; it < itend; ++it)
     {
@@ -779,19 +783,156 @@ inline uint32_t ByteReverse(uint32_t value)
 }
 
 
-inline static uint32_t AssetGlobalId(uint16_t blockchainId, uint16_t assetId)
+/**
+ * Asset IDs can be random numbers or encode capital Latin characters typically the asset symbol.
+ *
+ * The 2 HO bits encode the id header and it can take 3 values: letters only, letters and numbers and raw value.
+ *
+ * The raw id is a number that has the header bits set to 00.
+ *
+ * The alphanumeric IDs are encoded with 5 or 6 bits per character depending if it encodes numbers as well.
+ *
+ * The header 11 is reserved and the ID 0xFFFFFFFF is the invalid constant
+ */
+
+#define ASSET_SYMBOL_ALPHA_MAX          (6)
+#define ASSET_SYMBOL_ALPHANUM_MAX       (5)
+#define ASCII_ALPHA_START               (0x41)  // 'A'
+#define ASCII_ALPHA_END                 (0x5A)  // 'Z'
+#define ASCII_NUM_START                 (0x30)  // '0'
+#define ASCII_NUM_END                   (0x39)  // '9'
+#define ASCII_ALPHA_ENCODING_BASE       (0x40)  // so that A-Z will be in the rage 0x01- 0x1A
+#define ASCII_NUM_ENCODING_BASE         (0x10)  // so that 0-1 will be in the rage 0x20- 0x29
+#define ASCII_ENCODED_ALPHA_START       (ASCII_ALPHA_START - ASCII_ALPHA_ENCODING_BASE)
+#define ASCII_ENCODED_ALPHA_END         (ASCII_ALPHA_END - ASCII_ALPHA_ENCODING_BASE)
+#define ASCII_ENCODED_NUM_START         (ASCII_NUM_START - ASCII_NUM_ENCODING_BASE)
+#define ASCII_ENCODED_NUM_END           (ASCII_NUM_END - ASCII_NUM_ENCODING_BASE)
+#define ASSET_ID_ALPHA_SHIFT            (5)     // 5 bits per character
+#define ASSET_ID_ALPHA_CHAR_MASK        (0x1f)
+#define ASSET_ID_ALPHANUM_SHIFT         (6)     // 6 bits per character
+#define ASSET_ID_ALPHANUM_CHAR_MASK     (0x3f)
+#define ASSET_ID_HEADER_SHIFT           (30)    // Where the headers is located
+#define ASSET_ID_HEADER_MASK            (0xC0000000)
+#define ASSET_ID_HEADER_RAW             (0x0)   // 00.. - the id has no encoding
+#define ASSET_ID_HEADER_ALPHA           (0x1)   // 01.. - id contains only letters + 5 undefined symbols
+#define ASSET_ID_HEADER_ALPHANUM        (0x2)   // 10.. - contains letters, numbers and many more symbols
+#define ASSET_ID_HEADER_RESERVED        (0x3)   // 11.. - reserved
+#define ASSET_ID_INVALID                (0xFFFFFFFF)
+
+
+inline static uint8_t GetAssetIdHeader(uint32_t nId)
 {
-    return ((uint32_t) blockchainId << 16) ^ ((uint32_t) assetId);
+    return (nId & ASSET_ID_HEADER_MASK) >> ASSET_ID_HEADER_SHIFT;
 }
 
-inline static uint16_t GetBlockchainId(uint32_t globalId)
+static uint32_t EncodeAssetId(std::string symbol)
 {
-    return globalId >> 16;
+    if (symbol.length() > ASSET_SYMBOL_ALPHA_MAX)
+        return ASSET_ID_INVALID;
+
+    char pSymbolItems[ASSET_SYMBOL_ALPHA_MAX];
+    int nItems = 0;
+    bool fHasNumbers = false;
+
+    // Extract symbol characters
+    BOOST_FOREACH(char c, boost::to_upper_copy(symbol))
+    {
+        if (c >= ASCII_ALPHA_START && c <= ASCII_ALPHA_END)
+            pSymbolItems[nItems++] = c - ASCII_ALPHA_ENCODING_BASE;
+        else if (c >= ASCII_NUM_START && c <= ASCII_NUM_END)
+        {
+            pSymbolItems[nItems++] = c - ASCII_NUM_ENCODING_BASE;
+            fHasNumbers = true;
+        }
+        else
+            return ASSET_ID_INVALID;
+    }
+
+    // Alphanumeric symbols can have less characters
+    if (fHasNumbers && nItems > ASSET_SYMBOL_ALPHANUM_MAX)
+        return ASSET_ID_INVALID;
+
+    // Set values
+    uint32_t id = 0;
+    for (int i = 0; i < nItems; i++)
+    {
+        if (fHasNumbers)
+            id <<= ASSET_ID_ALPHANUM_SHIFT;
+        else
+            id <<= ASSET_ID_ALPHA_SHIFT;
+        id |= pSymbolItems[i];
+    }
+
+    // Set headers
+    if (fHasNumbers)
+        id |= ASSET_ID_HEADER_ALPHANUM << ASSET_ID_HEADER_SHIFT;
+    else
+        id |= ASSET_ID_HEADER_ALPHA << ASSET_ID_HEADER_SHIFT;
+
+    return id;
 }
 
-inline static uint16_t GetAssetId(uint32_t globalId)
+static uint32_t EncodeAssetId(uint32_t nRawId)
 {
-    return globalId & 0xFFFF;
+    if (GetAssetIdHeader(nRawId) == ASSET_ID_HEADER_RAW)
+        return nRawId;
+    else
+        return ASSET_ID_INVALID;
+}
+
+static std::string AssetIdToStr(uint32_t nId)
+{
+    std::vector<char> rv;
+    uint8_t header = GetAssetIdHeader(nId);
+
+    switch(header)
+    {
+    case ASSET_ID_HEADER_ALPHA:
+        for (int i = ASSET_SYMBOL_ALPHA_MAX - 1; i >= 0; i--)
+        {
+            uint8_t c = (nId >> i * ASSET_ID_ALPHA_SHIFT) & ASSET_ID_ALPHA_CHAR_MASK;
+            if (c == 0)
+                continue;
+
+            if (c >= ASCII_ENCODED_ALPHA_START && c <= ASCII_ENCODED_ALPHA_END)
+                rv.push_back(c + ASCII_ALPHA_ENCODING_BASE);
+            else
+                rv.push_back('?');
+        }
+        break;
+    case ASSET_ID_HEADER_ALPHANUM:
+        for (int i = ASSET_SYMBOL_ALPHANUM_MAX - 1; i >= 0; i--)
+        {
+            uint8_t c = (nId >> i * ASSET_ID_ALPHANUM_SHIFT) & ASSET_ID_ALPHANUM_CHAR_MASK;
+            if (c == 0)
+                continue;
+
+            if (c >= ASCII_ENCODED_ALPHA_START && c <= ASCII_ENCODED_ALPHA_END)
+                rv.push_back(c + ASCII_ALPHA_ENCODING_BASE);
+            else if (c >= ASCII_ENCODED_NUM_START && c <= ASCII_ENCODED_NUM_END)
+                rv.push_back(c + ASCII_NUM_ENCODING_BASE);
+            else
+                rv.push_back('?');
+        }
+        break;
+    case ASSET_ID_HEADER_RAW:
+        // Iterate over nibbles
+        for (int i = sizeof(nId) * 2 - 1; i >= 0 ; i--)
+            rv.push_back(hexmap[nId >> i * 4 & 0xf]);
+        break;
+    case ASSET_ID_HEADER_RESERVED:
+    default:
+        return "INVALID_ID";
+    }
+    return std::string(rv.begin(), rv.end());
+}
+
+inline static bool IsValidAssetId(uint32_t nId)
+{
+    if (GetAssetIdHeader(nId) == ASSET_ID_HEADER_RESERVED)
+        return false;
+    else
+        return true;
 }
 
 /*
@@ -802,16 +943,17 @@ inline static uint16_t GetAssetId(uint32_t globalId)
  * The maximum value 9E18 is lower than the highest signed 64 bit integer (9223372036854775807L).
  * The parameter range is [0, 171].
  *
- * The function GetExponentialSeriesParameter(int64 value) returns the highest parameter where:
+ * The function ExponentialParameter(int64 value) returns the highest parameter where:
  *
- *     pnExponentialSeries[GetExponentialSeriesParameter(value)] <= value
+ *     pnExponentialSeries[ExponentialParameter(value)] <= value
  *
  * The following python lambda produces the teble values:
  * lambda(i):(i%9) * 10**(i/9) if i == 0 or i%9 != 0 else 9*10**(i/9 - 1)
  */
 #define EXP_SERIES_MAX_PARAM (171)
 
-unsigned char GetExponentialSeriesParameter(int64 value);
+unsigned char ExponentialParameter(int64 value);
+unsigned char ConvertExpParameter(unsigned char nExpParam, unsigned char nFromUnitExponent, unsigned char nToUnitExponent);
 
 static const int64 pnExponentialSeries[] = {
     0L, // 0

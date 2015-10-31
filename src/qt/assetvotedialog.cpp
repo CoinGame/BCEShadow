@@ -260,7 +260,7 @@ void AssetVoteDialog::accept()
         }
 
         uint64 nMaxTrade = maxTradeItem->text().toULongLong(&ok);
-        uint8_t nMaxTradeExpParam = GetExponentialSeriesParameter(nMaxTrade);
+        uint8_t nMaxTradeExpParam = ExponentialParameter(nMaxTrade);
         if(!ok || (nMaxTradeExpParam > EXP_SERIES_MAX_PARAM))
         {
             error(tr("Invalid max trade on row %1").arg(row));

@@ -18,10 +18,6 @@ static const int64 MAX_PARK_RATE = 1000000 * COIN_PARK_RATE;
 static const unsigned char MAX_COMPACT_DURATION = 30; // about 2000 years
 static const int64 MAX_PARK_DURATION = 1000000000; // about 1900 years
 
-// Limit the blockchain and asset ids. If more ids are needed a protocol update is needed
-static const int MAX_BLOCKCHAIN_ID = 65519; // == 0xFFF0 - 1, that leaves us 4bits for future expansion
-static const int MAX_ASSET_ID = 65519;
-
 // Confirmations is a unsigned short
 static const int MAX_CONFIRMATIONS = 65535;
 
@@ -344,37 +340,35 @@ public:
 class CAssetVote
 {
 public:
-    uint16_t nBlockchainId;
-    uint16_t nAssetId;
+    uint32_t nAssetId;
     uint16_t nNumberOfConfirmations;
     uint8_t nRequiredDepositSigners;
     uint8_t nTotalDepositSigners;
     uint8_t nMaxTradeExpParam;
+    uint8_t nMinTradeExpParam;
+    uint8_t nUnitExponent;
 
     CAssetVote() :
-        nBlockchainId(0),
         nAssetId(0),
         nNumberOfConfirmations(0),
         nRequiredDepositSigners(0),
         nTotalDepositSigners(0),
-        nMaxTradeExpParam(0)
+        nMaxTradeExpParam(0),
+        nMinTradeExpParam(0),
+        nUnitExponent(0)
     {
     }
 
     bool IsValid(int nProtocolVersion) const
     {
-        return (nBlockchainId <= MAX_BLOCKCHAIN_ID &&
-                nAssetId <= MAX_ASSET_ID &&
+        return (IsValidAssetId(nAssetId) &&
                 nNumberOfConfirmations > 0 &&
                 nRequiredDepositSigners >= MIN_REQ_SIGNERS &&
                 nTotalDepositSigners >= MIN_TOTAL_SIGNERS &&
                 nRequiredDepositSigners < nTotalDepositSigners &&
-                nMaxTradeExpParam <= EXP_SERIES_MAX_PARAM);
-    }
-
-    inline uint32_t GetGlobalId() const
-    {
-        return AssetGlobalId(nBlockchainId, nAssetId);
+                nMaxTradeExpParam <= EXP_SERIES_MAX_PARAM &&
+                nMinTradeExpParam <= nMaxTradeExpParam &&
+                nUnitExponent <= MAX_TRADABLE_UNIT_EXPONENT);
     }
 
     inline int64 GetMaxTrade() const
@@ -382,24 +376,31 @@ public:
         return nMaxTradeExpParam <= EXP_SERIES_MAX_PARAM ? pnExponentialSeries[nMaxTradeExpParam] : 0;
     }
 
+    inline int64 GetMinTrade() const
+    {
+        return nMinTradeExpParam <= EXP_SERIES_MAX_PARAM ? pnExponentialSeries[nMinTradeExpParam] : 0;
+    }
+
     IMPLEMENT_SERIALIZE
     (
-        READWRITE(nBlockchainId);
         READWRITE(nAssetId);
         READWRITE(nNumberOfConfirmations);
         READWRITE(nRequiredDepositSigners);
         READWRITE(nTotalDepositSigners);
         READWRITE(nMaxTradeExpParam);
+        READWRITE(nMinTradeExpParam);
+        READWRITE(nUnitExponent);
     )
 
     inline bool operator==(const CAssetVote& other) const
     {
-        return (nBlockchainId == other.nBlockchainId &&
-                nAssetId == other.nAssetId &&
+        return (nAssetId == other.nAssetId &&
                 nNumberOfConfirmations == other.nNumberOfConfirmations &&
                 nRequiredDepositSigners == other.nRequiredDepositSigners &&
                 nTotalDepositSigners == other.nTotalDepositSigners &&
-                nMaxTradeExpParam == other.nMaxTradeExpParam);
+                nMaxTradeExpParam == other.nMaxTradeExpParam &&
+                nMinTradeExpParam == other.nMinTradeExpParam &&
+                nUnitExponent == other.nUnitExponent);
     }
     inline bool operator!=(const CAssetVote& other) const
     {
@@ -407,8 +408,6 @@ public:
     }
     bool operator< (const CAssetVote& other) const
     {
-        if (nBlockchainId != other.nBlockchainId)
-            return nBlockchainId < other.nBlockchainId;
         if (nAssetId != other.nAssetId)
             return nAssetId < other.nAssetId;
         if (nNumberOfConfirmations != other.nNumberOfConfirmations)
@@ -419,17 +418,22 @@ public:
             return nTotalDepositSigners < other.nTotalDepositSigners;
         if (nMaxTradeExpParam != other.nMaxTradeExpParam)
             return nMaxTradeExpParam < other.nMaxTradeExpParam;
+        if (nMinTradeExpParam != other.nMinTradeExpParam)
+            return nMinTradeExpParam < other.nMinTradeExpParam;
+        if (nUnitExponent != other.nUnitExponent)
+            return nUnitExponent < other.nUnitExponent;
         return false;
     }
 
     bool ProducesAsset(const CAsset& asset) const
     {
-        return (nBlockchainId == asset.nBlockchainId &&
-                nAssetId == asset.nAssetId &&
+        return (nAssetId == asset.nAssetId &&
                 nNumberOfConfirmations == asset.nNumberOfConfirmations &&
                 nRequiredDepositSigners == asset.nRequiredDepositSigners &&
                 nTotalDepositSigners == asset.nTotalDepositSigners &&
-                GetMaxTrade() == asset.nMaxTrade);
+                GetMaxTrade() == asset.GetMaxTrade() &&
+                GetMinTrade() == asset.GetMinTrade() &&
+                nUnitExponent == asset.nUnitExponent);
     }
 };
 

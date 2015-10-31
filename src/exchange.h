@@ -8,65 +8,71 @@
 #include "serialize.h"
 #include "util.h"
 
+#define MAX_TRADABLE_UNIT_EXPONENT (18)
+
 class CAsset
 {
 public:
-    uint16_t nBlockchainId;
-    uint16_t nAssetId;
+    uint32_t nAssetId;
     uint16_t nNumberOfConfirmations;
     uint8_t nRequiredDepositSigners;
     uint8_t nTotalDepositSigners;
-    int64 nMaxTrade;
+    uint8_t nMaxTradeExpParam;
+    uint8_t nMinTradeExpParam;
+    uint8_t nUnitExponent;
 
     CAsset() :
-        nBlockchainId(0),
         nAssetId(0),
         nNumberOfConfirmations(0),
         nRequiredDepositSigners(0),
         nTotalDepositSigners(0),
-        nMaxTrade(0)
+        nMaxTradeExpParam(0),
+        nMinTradeExpParam(0),
+        nUnitExponent(0)
     {
     }
 
     void SetNull()
     {
-        nBlockchainId = 0;
         nAssetId = 0;
         nNumberOfConfirmations = 0;
         nRequiredDepositSigners = 0;
         nTotalDepositSigners = 0;
-        nMaxTrade = 0;
+        nMaxTradeExpParam = 0;
+        nMinTradeExpParam = 0;
+        nUnitExponent = 0;
     }
 
     IMPLEMENT_SERIALIZE
     (
-        READWRITE(nBlockchainId);
         READWRITE(nAssetId);
         READWRITE(nNumberOfConfirmations);
         READWRITE(nRequiredDepositSigners);
         READWRITE(nTotalDepositSigners);
-        READWRITE(nMaxTrade);
+        READWRITE(nMaxTradeExpParam);
+        READWRITE(nMinTradeExpParam);
+        READWRITE(nUnitExponent);
     )
 
-    uint32_t GetGlobalId() const
+    inline int64 GetMaxTrade() const
     {
-        return AssetGlobalId(nBlockchainId, nAssetId);
+        return nMaxTradeExpParam <= EXP_SERIES_MAX_PARAM ? pnExponentialSeries[nMaxTradeExpParam] : 0;
     }
 
-    void SetGlobalId(uint32_t globalId)
+    inline int64 GetMinTrade() const
     {
-        nBlockchainId = GetBlockchainId(globalId);
-        nAssetId = GetAssetId(globalId);
+        return nMinTradeExpParam <= EXP_SERIES_MAX_PARAM ? pnExponentialSeries[nMinTradeExpParam] : 0;
     }
 
     inline bool operator==(const CAsset& other) const
     {
-        return (nBlockchainId == other.nBlockchainId &&
-                nAssetId == other.nAssetId &&
+        return (nAssetId == other.nAssetId &&
                 nNumberOfConfirmations == other.nNumberOfConfirmations &&
                 nRequiredDepositSigners == other.nRequiredDepositSigners &&
                 nTotalDepositSigners == other.nTotalDepositSigners &&
-                nMaxTrade == other.nMaxTrade);
+                nMaxTradeExpParam == other.nMaxTradeExpParam &&
+                nMinTradeExpParam == other.nMinTradeExpParam &&
+                nUnitExponent == other.nUnitExponent);
     }
     inline bool operator!=(const CAsset& other) const
     {

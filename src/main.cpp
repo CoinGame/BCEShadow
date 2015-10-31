@@ -2238,9 +2238,9 @@ bool CBlock::AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos)
         else if (pindexNew->mapAssets.size() != 0)
         {
             BOOST_FOREACH(const PAIRTYPE(const uint32_t, CAsset)& pair, pindexNew->mapAssets)
-                printf("New asset with gid=%d, confirmations=%d, %d-of-%d signers, maxTrade=%"PRI64d"\n",
+                printf("New asset with gid=%d, confirmations=%d, %d-of-%d signers, maxTrade=%"PRI64d", minTrade=%"PRI64d", unitExponent=%d\n",
                        pair.first, pair.second.nNumberOfConfirmations, pair.second.nRequiredDepositSigners,
-                       pair.second.nTotalDepositSigners, pair.second.nMaxTrade);
+                       pair.second.nTotalDepositSigners, pair.second.GetMaxTrade(), pair.second.GetMinTrade(), pair.second.nUnitExponent);
 
             printf("The new assets will become effective in %d blocks\n", VOTE_DELAY_BLOCKS);
         }

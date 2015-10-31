@@ -30,8 +30,8 @@ Feature: The user can define a data feed URL to automatically update his vote fr
            {"address": "tHpbt9ZTgWfGxYDoukHj1P3AMsuvKm5XtG", "weight": -2}
          ],
          "assets":[
-           {"globalid": 65536, "confirmations": 6, "reqsigners": 2, "totalsigners": 3, "maxtrade": 100000000000},
-           {"globalid": 65537, "confirmations": 60, "reqsigners": 2, "totalsigners": 3, "maxtrade": 900000000000}
+           {"assetid": 65536, "confirmations": 6, "reqsigners": 2, "totalsigners": 3, "maxtrade": 20.0, "mintrade": 0.001, "unitexponent": 8},
+           {"assetid": 65537, "confirmations": 60, "reqsigners": 2, "totalsigners": 3, "maxtrade": 50000.0, "mintrade": 0.01, "unitexponent": 4}
          ]
       }
       """
@@ -62,7 +62,7 @@ Feature: The user can define a data feed URL to automatically update his vote fr
            {"address": "tUgyRr1JHgw1AqMc1Zq9VzFEbukpYBKAX2", "weight": 1}
          ],
          "assets":[
-           {"globalid": 65536, "confirmations": 10, "reqsigners": 3, "totalsigners": 5, "maxtrade": 200000000000}
+           {"assetid": 65536, "confirmations": 10, "reqsigners": 3, "totalsigners": 5, "maxtrade": 20.0, "mintrade": 0.001, "unitexponent": 8 }
          ]
       }
       """

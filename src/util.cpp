@@ -1624,7 +1624,7 @@ int64 AnnualInterestRatePercentageToRate(double percentage, int64 blocks)
     return round(percentage * DurationInYears(blocks) / 100 * COIN_PARK_RATE);
 }
 
-unsigned char GetExponentialSeriesParameter(int64 value)
+unsigned char ExponentialParameter(int64 value)
 {
     /*
      * This function searches the pnExponentialSeries table to find a parameter that produces a value lower than the
@@ -1662,4 +1662,21 @@ unsigned char GetExponentialSeriesParameter(int64 value)
     }
 
     return (unsigned char) min;
+}
+
+unsigned char ConvertExpParameter(unsigned char nExpParam, unsigned char nFromUnitExponent, unsigned char nToUnitExponent)
+{
+    // No conversion is needed
+    if (nExpParam == 0 || nToUnitExponent == nFromUnitExponent)
+        return nExpParam;
+
+    int nNewExpParam = nExpParam + 9 * (nToUnitExponent - nFromUnitExponent);
+
+    // Always return a sane value
+    if (nNewExpParam <= 0)
+        return 1;
+    else if (nNewExpParam > EXP_SERIES_MAX_PARAM)
+        return EXP_SERIES_MAX_PARAM;
+    else
+        return nNewExpParam;
 }

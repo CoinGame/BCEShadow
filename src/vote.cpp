@@ -524,9 +524,9 @@ bool CVote::IsValid(int nProtocolVersion) const
         if (!assetVote.IsValid(nProtocolVersion))
             return false;
 
-        if (seenAssetVotes.count(assetVote.GetGlobalId()))
+        if (seenAssetVotes.count(assetVote.nAssetId))
             return false;
-        seenAssetVotes.insert(assetVote.GetGlobalId());
+        seenAssetVotes.insert(assetVote.nAssetId);
     }
 
     return true;
@@ -956,35 +956,62 @@ bool ExtractAssetVoteResult(const CBlockIndex* pindex, vector<CAsset>& vAssets)
     vAssets.clear();
 
     static const int nHalfAssetVotes = ASSET_VOTES / 2;
-    CBlockIndex* pvoteindex = const_cast<CBlockIndex*>(pindex);
+    const CBlockIndex* pvoteindex = pindex;
     map<uint32_t, vector<CAssetVote> > mapAssetsVotes;
 
     for (int i = 0; i < ASSET_VOTES && pvoteindex; i++, pvoteindex = pvoteindex->pprev)
         BOOST_FOREACH(const CAssetVote& vote, pvoteindex->vote.vAssetVote)
-            mapAssetsVotes[vote.GetGlobalId()].push_back(vote);
+            mapAssetsVotes[vote.nAssetId].push_back(vote);
 
     BOOST_FOREACH(PAIRTYPE(const uint32_t, vector<CAssetVote>)& item, mapAssetsVotes)
     {
-        const uint32_t gid = item.first;
+        const uint32_t nId = item.first;
         const vector<CAssetVote>& vAssetVotes = item.second;
         CAsset currentAsset;
-        bool assetExists = pindex->GetVotedAsset(gid, currentAsset);
+        bool assetExists = pindex->GetVotedAsset(nId, currentAsset);
 
         if (assetExists || vAssetVotes.size() > nHalfAssetVotes)
         {
+            CAsset newAsset;
+            newAsset.nAssetId = nId;
+            uint8_t nUnitExponent = currentAsset.nUnitExponent;
+            int totalVotes = ASSET_VOTES;
             map<uint16_t, int> mapNumberOfConfirmations;
             map<uint8_t, int> mapRequiredDepositSigners;
             map<uint8_t, int> mapTotalDepositSigners;
-            map<int64, int> mapMaxTrade;
+            map<uint8_t, int> mapMaxTrade;
+            map<uint8_t, int> mapMinTrade;
 
-            int totalVotes = ASSET_VOTES;
+            // If asset is new, calculate the unit exponent
+            if (!assetExists)
+            {
+                map<uint8_t, int> mapUnitExponent;
+                BOOST_FOREACH(const CAssetVote assetVote, vAssetVotes)
+                    mapUnitExponent[assetVote.nUnitExponent]++;
+
+                int nMaxVotes = 0;
+                BOOST_FOREACH(PAIRTYPE(const uint8_t, int)& item, mapUnitExponent)
+                {
+                    if (item.second >= nMaxVotes)
+                    {
+                        // When creating an asset use a unit exponent that any majority votes
+                        // In case of equality use the highest value
+                        nUnitExponent = item.first;
+                        nMaxVotes = item.second;
+                    }
+                }
+            }
+
+            newAsset.nUnitExponent = nUnitExponent;
 
             BOOST_FOREACH(const CAssetVote assetVote, vAssetVotes)
             {
                 mapNumberOfConfirmations[assetVote.nNumberOfConfirmations]++;
                 mapRequiredDepositSigners[assetVote.nRequiredDepositSigners]++;
                 mapTotalDepositSigners[assetVote.nTotalDepositSigners]++;
-                mapMaxTrade[assetVote.GetMaxTrade()]++;
+                // Convert the values to use the voted unit exponent
+                mapMaxTrade[ConvertExpParameter(assetVote.nMaxTradeExpParam, assetVote.nUnitExponent, nUnitExponent)]++;
+                mapMinTrade[ConvertExpParameter(assetVote.nMinTradeExpParam, assetVote.nUnitExponent, nUnitExponent)]++;
             }
 
             int nDefaultVotes = ASSET_VOTES - vAssetVotes.size();
@@ -994,17 +1021,16 @@ bool ExtractAssetVoteResult(const CBlockIndex* pindex, vector<CAsset>& vAssets)
                 mapNumberOfConfirmations[currentAsset.nNumberOfConfirmations] += nDefaultVotes;
                 mapRequiredDepositSigners[currentAsset.nRequiredDepositSigners] += nDefaultVotes;
                 mapTotalDepositSigners[currentAsset.nTotalDepositSigners] += nDefaultVotes;
-                mapMaxTrade[currentAsset.nMaxTrade] += nDefaultVotes;
+                mapMaxTrade[currentAsset.nMaxTradeExpParam] += nDefaultVotes;
+                mapMinTrade[currentAsset.nMinTradeExpParam] += nDefaultVotes;
             }
             else if (!assetExists)
             {
                 totalVotes = vAssetVotes.size();
-                // Max trade is special, so that the non votes can still influence it's value
+                // Max/min trade is special, so that the non votes can still influence it's value
                 mapMaxTrade[0] += nDefaultVotes;
+                mapMinTrade[0] += nDefaultVotes;
             }
-
-            CAsset newAsset;
-            newAsset.SetGlobalId(gid);
 
             int total = 0;
             BOOST_FOREACH(PAIRTYPE(const uint16_t, int)& item, mapNumberOfConfirmations)
@@ -1040,13 +1066,25 @@ bool ExtractAssetVoteResult(const CBlockIndex* pindex, vector<CAsset>& vAssets)
             }
 
             total = 0;
-            BOOST_FOREACH(PAIRTYPE(const int64, int)& item, mapMaxTrade)
+            BOOST_FOREACH(PAIRTYPE(const uint8_t, int)& item, mapMaxTrade)
             {
                 total += item.second;
                 // Max trade is has always ASSET_VOTES votes
                 if (total > ASSET_VOTES / 2)
                 {
-                    newAsset.nMaxTrade = item.first;
+                    newAsset.nMaxTradeExpParam = item.first;
+                    break;
+                }
+            }
+
+            total = 0;
+            BOOST_FOREACH(PAIRTYPE(const uint8_t, int)& item, mapMinTrade)
+            {
+                total += item.second;
+                // Min trade is has always ASSET_VOTES votes
+                if (total > ASSET_VOTES / 2)
+                {
+                    newAsset.nMinTradeExpParam = item.first;
                     break;
                 }
             }
@@ -1082,7 +1120,7 @@ bool CalculateVotedAssets(CBlockIndex* pindex)
 
     BOOST_FOREACH(CAsset& newAsset, vAssets)
     {
-        uint32_t gid = newAsset.GetGlobalId();
+        uint32_t gid = newAsset.nAssetId;
         CAsset currentAsset;
         // Set the new asset to this block if it is different than the current one
         pindex->GetVotedAsset(gid, currentAsset);

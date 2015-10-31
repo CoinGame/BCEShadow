@@ -1486,13 +1486,13 @@ void RemoveVotedAssets(CBlockIndex& pindexdummy, vector<CAssetVote>& vAssetVotes
     BOOST_FOREACH(const CAssetVote& assetVote, vAssetVotes)
     {
         asset.SetNull();
-        if (pindexdummy.GetVotedAsset(assetVote.GetGlobalId(), asset) && assetVote.ProducesAsset(asset))
+        if (pindexdummy.GetVotedAsset(assetVote.nAssetId, asset) && assetVote.ProducesAsset(asset))
             assetVotesToRemove.insert(assetVote);
     }
 
     BOOST_FOREACH(const CAssetVote& assetVote, assetVotesToRemove)
     {
-        printf("Removing already voted asset %d\n", assetVote.GetGlobalId());
+        printf("Removing already voted asset %d\n", assetVote.nAssetId);
         vAssetVotes.erase(std::remove(vAssetVotes.begin(), vAssetVotes.end(), assetVote), vAssetVotes.end());
     }
 }

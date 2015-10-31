@@ -4,17 +4,19 @@ When(/^node "(.*?)" votes for the following assets:$/) do |arg1, table|
   vote = {
     "assets" => table.hashes.map do |row|
       {
-        "globalid" => row["GlobalId"].to_i,
+        "assetid" => row["AssetId"].to_i,
         "confirmations" => row["Confirmations"].to_i,
         "reqsigners" => row["M"].to_i,
         "totalsigners" => row["N"].to_i,
-        "maxtrade" => row["MaxTrade"].to_i,
+        "maxtrade" => row["MaxTrade"].to_f,
+        "mintrade" => row["MinTrade"].to_f,
+        "unitexponent" => row["UnitExponent"].to_i,
       }
     end
   }
 
   node.rpc("setvote", vote)
-  
+
   asset_votes = node.rpc("getvote")["assets"]
 
   expect(asset_votes).to eq(vote["assets"])
@@ -31,11 +33,13 @@ Then(/^block "(.*?)" on node "(.*?)" should contain the following asset votes:$/
 
   expected_asset_votes = table.hashes.map do |row|
     {
-      "globalid" => row["GlobalId"].to_i,
+      "assetid" => row["AssetId"].to_i,
       "confirmations" => row["Confirmations"].to_i,
       "reqsigners" => row["M"].to_i,
       "totalsigners" => row["N"].to_i,
-      "maxtrade" => row["MaxTrade"].to_i,
+      "maxtrade" => row["MaxTrade"].to_f,
+      "mintrade" => row["MinTrade"].to_f,
+      "unitexponent" => row["UnitExponent"].to_i,
     }
   end
 
@@ -64,11 +68,13 @@ Then(/^the active assets in node "(.*?)" are:$/) do |arg1, table|
 
   expected_assets = table.hashes.map do |row|
     {
-      "globalid" => row["GlobalId"].to_i,
+      "assetid" => row["AssetId"].to_i,
       "confirmations" => row["Confirmations"].to_i,
       "reqsigners" => row["M"].to_i,
       "totalsigners" => row["N"].to_i,
-      "maxtrade" => row["MaxTrade"].to_i,
+      "maxtrade" => row["MaxTrade"].to_f,
+      "mintrade" => row["MinTrade"].to_f,
+      "unitexponent" => row["UnitExponent"].to_i,
     }
   end
 

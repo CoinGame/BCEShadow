@@ -73,11 +73,13 @@ static const int64 MAX_COIN_AGE = 100000000000000; // To make sure coin days can
 static const int VOTE_DELAY_BLOCKS = 3;
 static const int FEE_VOTES = 5;
 static const int ASSET_VOTES = 5;
+static const int ASSET_VOTES_MAJORITY = 3;
 static const int SAFE_FEE_BLOCKS = 2;
 #else
 static const int VOTE_DELAY_BLOCKS = 60; // Some votes are effective this number of blocks after the actual vote result
 static const int FEE_VOTES = 2000;
 static const int ASSET_VOTES = 2000;
+static const int ASSET_VOTES_MAJORITY = 1500; // 75% mainly used to update the unit exponent of the asset
 static const int SAFE_FEE_BLOCKS = 10; // When a new transaction is created, the highest min fee of the next SAFE_FEE_BLOCKS blocks will be used, to make sure this transaction can be included in any of these blocks
 #endif
 
@@ -1601,11 +1603,11 @@ public:
         return true;
     }
 
-    bool GetEffectiveAsset(uint32_t nGlobalId, CAsset& asset) const
+    bool GetEffectiveAsset(uint32_t nAssetId, CAsset& asset) const
     {
         const CBlockIndex* pEffectiveIndex = GetEffectiveVoteIndex();
         if (pEffectiveIndex)
-            return pEffectiveIndex->GetVotedAsset(nGlobalId, asset);
+            return pEffectiveIndex->GetVotedAsset(nAssetId, asset);
         else
             return false;
     }
@@ -1613,18 +1615,18 @@ public:
     /**
      * Get an asset that was voted on the pindex or the previous blocks
      */
-    bool GetVotedAsset(uint32_t nGlobalId, CAsset& asset) const
+    bool GetVotedAsset(uint32_t nAssetId, CAsset& asset) const
     {
         // Get this asset from the current block
-        if (GetBlockVotedAsset(nGlobalId, asset))
+        if (GetBlockVotedAsset(nAssetId, asset))
             return true;
 
         // Try to get the asset from a previous block
-        std::map<uint64, CBlockIndex*>::const_iterator it = mapAssetsPrev.find(nGlobalId);
+        std::map<uint64, CBlockIndex*>::const_iterator it = mapAssetsPrev.find(nAssetId);
         if(it != mapAssetsPrev.end())
         {
             CBlockIndex* pPrevBlock = it->second;
-            if (pPrevBlock->GetBlockVotedAsset(nGlobalId, asset))
+            if (pPrevBlock->GetBlockVotedAsset(nAssetId, asset))
                 return true;
         }
         return false;
@@ -1633,9 +1635,9 @@ public:
     /**
      * Get a specific asset that was voted on a specific pindex
      */
-    bool GetBlockVotedAsset(uint32_t nGlobalId, CAsset& asset) const
+    bool GetBlockVotedAsset(uint32_t nAssetId, CAsset& asset) const
     {
-        std::map<uint64, CAsset>::const_iterator it = mapAssets.find(nGlobalId);
+        std::map<uint64, CAsset>::const_iterator it = mapAssets.find(nAssetId);
         if(it != mapAssets.end())
         {
             asset = it->second;
