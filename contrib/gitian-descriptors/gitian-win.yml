@@ -71,7 +71,7 @@ script: |
     cp -f release/bcexchange.exe $BINDIR/
 
     cd src
-    make -f makefile.linux-mingw $MAKEOPTS HOST=$HOST DEPSDIR=$STAGING bcexchanged.exe USE_UPNP=1 DEBUGFLAGS="-frandom-seed=bcexchange"
+    make -f makefile.linux-mingw $MAKEOPTS HOST=$HOST DEPSDIR=$STAGING bcexchanged.exe USE_UPNP=0 DEBUGFLAGS="-frandom-seed=bcexchange"
     ${HOST}-strip bcexchanged.exe
     cp -f bcexchanged.exe $BINDIR/
 
