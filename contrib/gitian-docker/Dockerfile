@@ -2,6 +2,7 @@ FROM ubuntu:14.04
 RUN apt-get update # 2014-11-03
 RUN apt-get install -y cpu-checker
 RUN apt-get install -y git apache2 apt-cacher-ng python-vm-builder ruby qemu-utils qemu-kvm
+RUN apt-get install -y zip
 
 RUN mkdir /root/.ssh/
 RUN touch /root/.ssh/known_hosts
@@ -9,7 +10,7 @@ RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
 RUN git clone git://github.com/devrandom/gitian-builder.git
 
 RUN mkdir -p gitian-builder/inputs
-RUN cd gitian-builder/inputs && wget 'http://miniupnp.free.fr/files/download.php?file=miniupnpc-1.9.tar.gz' -O miniupnpc-1.9.tar.gz
+RUN cd gitian-builder/inputs && wget 'http://miniupnp.free.fr/files/download.php?file=miniupnpc-1.9.20151008.tar.gz' -O miniupnpc-1.9.20151008.tar.gz
 RUN cd gitian-builder/inputs && wget 'http://www.openssl.org/source/openssl-1.0.1g.tar.gz'
 RUN cd gitian-builder/inputs && wget 'http://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz'
 RUN cd gitian-builder/inputs && wget 'http://zlib.net/zlib-1.2.8.tar.gz'
