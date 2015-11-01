@@ -48,6 +48,10 @@ contains(CURL_STATIC, 1) {
     DEFINES += CURL_STATICLIB
 }
 
+contains(MINIUPNP_STATICLIB, 1) {
+    DEFINES += MINIUPNP_STATICLIB
+}
+
 # use: qmake "USE_QRCODE=1"
 # libqrencode (http://fukuchi.org/works/qrencode/index.en.html) must be installed for support
 contains(USE_QRCODE, 1) {
