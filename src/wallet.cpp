@@ -1475,6 +1475,10 @@ static map<const CWalletTx*, CTxIndex> mapTxIndex;
 static map<const CWalletTx*, CBlock> mapTxBlock;
 static map<const CWalletTx*, int64> mapTxLastUse;
 
+#ifdef TESTING
+extern int nForcedVersionVote;
+#endif
+
 // ppcoin: create coin stake transaction
 bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int64 nSearchInterval, CTransaction& txNew, CBlockIndex* pindexprev)
 {
@@ -1690,6 +1694,11 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     // nubit: Add current vote
     if (!blockVote.IsValidInBlock(nProtocolVersion))
         return error("CreateCoinStake : generated vote is invalid");
+
+#ifdef TESTING
+    if (nForcedVersionVote != -1)
+        blockVote.nVersionVote = nForcedVersionVote;
+#endif
 
     txNew.vout.push_back(CTxOut(0, blockVote.ToScript(nProtocolVersion)));
 

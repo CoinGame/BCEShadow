@@ -4696,6 +4696,17 @@ Value manualunpark(const Array& params, bool fHelp)
     return wtx.GetHash().ToString();
 }
 
+int nForcedVersionVote = -1;
+Value setversionvote(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "setversionvote <version>\n"
+            );
+
+    nForcedVersionVote = params[0].get_int();
+    return Value::null;
+}
 
 #endif
 
@@ -4801,6 +4812,7 @@ static const CRPCCommand vRPCCommands[] =
     { "shutdown",               &shutdown,               true },
     { "timetravel",             &timetravel,             true },
     { "manualunpark",           &manualunpark,           true },
+    { "setversionvote",         &setversionvote,         true },
 #endif
 };
 
@@ -5633,6 +5645,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "burn"                    && n > 0) ConvertTo<double>(params[0]);
 #ifdef TESTING
     if (strMethod == "timetravel"              && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "setversionvote"          && n > 0) ConvertTo<boost::int64_t>(params[0]);
 #endif
 
     if (strMethod == "signmessage"             && n == 1)
