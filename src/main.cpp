@@ -1918,6 +1918,9 @@ bool Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
     BOOST_FOREACH(CTransaction& tx, vDelete)
         mempool.remove(tx);
 
+    // The new chain may have changed some stake modifiers
+    ClearStakeModifierCache();
+
     printf("REORGANIZE: done\n");
 
     return true;
@@ -2040,9 +2043,6 @@ bool CBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
     }
 
     RemoveExpiredLiquidityInfo(nBestHeight);
-
-    // The new chain may have changed some stake modifiers
-    ClearStakeModifierCache();
 
     strProtocolWarning.clear();
     if (pindexBest->vote.nVersionVote > PROTOCOL_VERSION)
