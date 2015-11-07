@@ -526,61 +526,61 @@ BOOST_AUTO_TEST_CASE(vote_validity_tests)
     vote.vCustodianVote[0].hashAddress--;
 
     {
-        // Reputation vote only valid from 3.1
+        // Reputation vote only valid from 4.0
         CVote vote;
         BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
         BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V2_0));
-        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
-        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V4_0));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V4_0));
         vote.vReputationVote.push_back(CReputationVote(CBitcoinAddress("8VZRy4CAWKVC2HBWFE9YppLki5FJJhfrkY"), 1));
         BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
         BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V2_0));
-        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
-        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V4_0));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V4_0));
     }
 
     {
-        // Signer reward vote only valid from 3.1
+        // Signer reward vote only valid from 4.0
         CVote vote;
         BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
         BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V2_0));
-        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
-        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V4_0));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V4_0));
 
         vote.signerReward.nCount = -1;
         vote.signerReward.nAmount = -1;
         BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
         BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V2_0));
-        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
-        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V4_0));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V4_0));
 
         vote.signerReward.nCount = 0;
         vote.signerReward.nAmount = 0;
         BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
         BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V2_0));
-        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
-        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V4_0));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V4_0));
 
         vote.signerReward.nCount = 1;
         vote.signerReward.nAmount = 0;
         BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
         BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V2_0));
-        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
-        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V4_0));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V4_0));
 
         vote.signerReward.nCount = 0;
         vote.signerReward.nAmount = 1;
         BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
         BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V2_0));
-        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
-        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V4_0));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V4_0));
 
         vote.signerReward.nCount = 10;
         vote.signerReward.nAmount = 21;
         BOOST_CHECK(vote.IsValid(PROTOCOL_V2_0));
         BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V2_0));
-        BOOST_CHECK(vote.IsValid(PROTOCOL_V3_1));
-        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1));
+        BOOST_CHECK(vote.IsValid(PROTOCOL_V4_0));
+        BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V4_0));
     }
 }
 
@@ -932,6 +932,158 @@ BOOST_AUTO_TEST_CASE(protocol_voting)
     */
 }
 
+struct CProtocolSwitchTestChain
+{
+    CBlockIndex* pindexBest;
+    CBlockIndex* pindex;
+
+    CProtocolSwitchTestChain(int nStartTime)
+    {
+        pindexBest = new CBlockIndex;
+        pindex = pindexBest;
+        pindex->nProtocolVersion = PROTOCOL_V2_0;
+        pindex->nTime = 1441116000;
+    }
+
+    ~CProtocolSwitchTestChain()
+    {
+        CBlockIndex* pi = pindexBest;
+        pindexBest = NULL;
+        pindex = NULL;
+        while (pi)
+        {
+            CBlockIndex* pd = pi;
+            pi = pd->pprev;
+            pd->pprev = NULL;
+            if (pi)
+                pi->pnext = NULL;
+            delete pd;
+        }
+    }
+
+    CBlockIndex* AddChild()
+    {
+        pindex->pnext = new CBlockIndex;
+        pindex->pnext->pprev = pindex;
+        pindex = pindex->pnext;
+        return pindex;
+    }
+
+    void AddVotes(int nCount, int nVersionVote)
+    {
+        for (int i = 0; i < nCount; i++)
+        {
+            CBlockIndex *pindex = AddChild();
+            pindex->nTime = pindex->pprev->nTime + 60;
+            pindex->nProtocolVersion = GetProtocolForNextBlock(pindex->pprev);;
+            pindex->vote.nVersionVote = nVersionVote;
+        }
+    }
+
+    CBlockIndex* AddTimeBlock(int nTime)
+    {
+        CBlockIndex *pindex = AddChild();
+        pindex->nTime = nTime;
+        pindex->nProtocolVersion = GetProtocolForNextBlock(pindex->pprev);;
+        return pindex;
+    }
+};
+
+BOOST_AUTO_TEST_CASE(protocol_v4_switch)
+{
+    const int week = 7 * 24 * 3600;
+    const int nStartTime = 1441116000; // 2015-09-01 14:00:00 UTC
+
+    {
+        // With only 2.0 votes, no switch
+        CProtocolSwitchTestChain chain(nStartTime);
+        chain.AddVotes(4000, PROTOCOL_V2_0);
+        chain.AddTimeBlock(chain.pindex->nTime + 3 * week);
+        BOOST_CHECK_EQUAL(PROTOCOL_V2_0, chain.pindex->nProtocolVersion);
+    }
+
+    {
+        // With almost a switch
+        CProtocolSwitchTestChain chain(nStartTime);
+        chain.AddVotes(2000, PROTOCOL_V2_0);
+        chain.AddVotes(1000, PROTOCOL_V4_0);
+        chain.AddVotes( 201, PROTOCOL_V2_0);
+        chain.AddVotes(1799, PROTOCOL_V4_0);
+        chain.AddVotes(1000, PROTOCOL_V2_0);
+        for (int i = 0; i < 5; i++)
+        {
+            chain.AddTimeBlock(chain.pindex->nTime + 3 * week + i * 3600);
+            BOOST_CHECK_EQUAL(PROTOCOL_V2_0, chain.pindex->nProtocolVersion);
+        }
+    }
+
+    {
+        // With a switch
+        CProtocolSwitchTestChain chain(nStartTime);
+        chain.AddVotes(2000, PROTOCOL_V2_0);
+        chain.AddVotes(1800, PROTOCOL_V4_0);
+
+        // The last block is the one that passes 90%
+        unsigned int nVotePassTime = chain.pindex->nTime;
+        BOOST_CHECK_EQUAL(nStartTime + 3800 * 60, nVotePassTime); // 2015-09-04 05:20:00 UTC
+
+        // The blocks after do not change the protocol
+        chain.AddVotes(2000, PROTOCOL_V2_0);
+        BOOST_CHECK_EQUAL(PROTOCOL_V2_0, chain.pindex->nProtocolVersion);
+
+        // Exactly 2 weeks after, the protocol is still 2.0
+        chain.AddTimeBlock(nVotePassTime + 2 * week);
+        BOOST_CHECK_EQUAL(PROTOCOL_V2_0, chain.pindex->nProtocolVersion);
+
+        // And also on the next blocks
+        chain.AddVotes(100, PROTOCOL_V2_0);
+        BOOST_CHECK_EQUAL(PROTOCOL_V2_0, chain.pindex->nProtocolVersion);
+
+        // The expected switch time
+        unsigned int nSwitchTime = 1442584800; // 2015-09-18 14:00:00 UTC (14 days after at 14:00)
+
+        // On 2015-09-04 at 13:59:59 UTC the protocol is still 2.0
+        chain.AddTimeBlock(nSwitchTime - 1);
+        BOOST_CHECK_EQUAL(PROTOCOL_V2_0, chain.pindex->nProtocolVersion);
+
+        // The first block after 14:00:00 UTC triggers the switch, but its effective only on the next block
+        chain.AddTimeBlock(nSwitchTime);
+        BOOST_CHECK_EQUAL(PROTOCOL_V2_0, chain.pindex->nProtocolVersion);
+        BOOST_CHECK_EQUAL(PROTOCOL_V4_0, GetProtocolForNextBlock(chain.pindex));
+
+        // The first block after is 4.0
+        chain.AddTimeBlock(nSwitchTime + 1);
+        BOOST_CHECK_EQUAL(PROTOCOL_V4_0, chain.pindex->nProtocolVersion);
+
+        // All all the others after
+        chain.AddVotes(2000, PROTOCOL_V2_0);
+        BOOST_CHECK_EQUAL(PROTOCOL_V4_0, chain.pindex->nProtocolVersion);
+    }
+
+    {
+        // With a switch before 14:00 because a whole day was skipped (may happen during testing or on testnet)
+        CProtocolSwitchTestChain chain(nStartTime);
+        chain.AddVotes(2000, PROTOCOL_V2_0);
+        chain.AddVotes(1800, PROTOCOL_V4_0);
+
+        // The last block is the one that passes 90%
+        unsigned int nVotePassTime = chain.pindex->nTime;
+        BOOST_CHECK_EQUAL(nStartTime + 3800 * 60, nVotePassTime); // 2015-09-04 05:20:00 UTC
+
+        // The expected switch time
+        unsigned int nSwitchTime = 1442584800; // 2015-09-18 14:00:00 UTC (14 days after at 14:00)
+
+        // The first block after 2015-09-04 14:00:00 UTC is the day after
+        chain.AddTimeBlock(nSwitchTime + 16 * 3600);
+        BOOST_CHECK_EQUAL(PROTOCOL_V2_0, chain.pindex->nProtocolVersion);
+        BOOST_CHECK_EQUAL(PROTOCOL_V4_0, GetProtocolForNextBlock(chain.pindex));
+
+        // The first block after is 4.0
+        chain.AddTimeBlock(nSwitchTime + 16 * 3600 + 60);
+        BOOST_CHECK_EQUAL(PROTOCOL_V4_0, chain.pindex->nProtocolVersion);
+    }
+}
+
 BOOST_AUTO_TEST_CASE(vote_v50000_unserialization)
 {
     // Serialized with v0.5.2 vote code:
@@ -1118,7 +1270,7 @@ BOOST_AUTO_TEST_CASE(reputation_vote_distribution)
     map<CBitcoinAddress, int> mapAddressCount;
     for (int i = 0; i < 10000; i++)
     {
-        CVote blockVote = vote.GenerateBlockVote(PROTOCOL_V3_1);
+        CVote blockVote = vote.GenerateBlockVote(PROTOCOL_V4_0);
         BOOST_CHECK_EQUAL(3, blockVote.vReputationVote.size());
         BOOST_FOREACH(const CReputationVote& reputationVote, blockVote.vReputationVote)
         {
@@ -1156,7 +1308,7 @@ BOOST_AUTO_TEST_CASE(reputation_vote_result)
     // A single vote should add the corresponding reputations
     // We are in the last 5000 blocks so the score is multiplied by 4
     pindex->vote.vReputationVote.push_back(CReputationVote(address1, 1));
-    BOOST_CHECK(pindex->vote.IsValidInBlock(PROTOCOL_V3_1));
+    BOOST_CHECK(pindex->vote.IsValidInBlock(PROTOCOL_V4_0));
     BOOST_CHECK(CalculateReputationResult(pindexBest, mapReputation));
     BOOST_CHECK_EQUAL(1, mapReputation.size());
     BOOST_CHECK_EQUAL(4, mapReputation[address1]);
@@ -1167,7 +1319,7 @@ BOOST_AUTO_TEST_CASE(reputation_vote_result)
     pindex->vote.vReputationVote.push_back(CReputationVote(address1, 1));
     pindex->vote.vReputationVote.push_back(CReputationVote(address2, -1));
     pindex->vote.vReputationVote.push_back(CReputationVote(address1, 1));
-    BOOST_CHECK(pindex->vote.IsValidInBlock(PROTOCOL_V3_1));
+    BOOST_CHECK(pindex->vote.IsValidInBlock(PROTOCOL_V4_0));
     BOOST_CHECK(CalculateReputationResult(pindexBest, mapReputation));
     BOOST_CHECK_EQUAL(2, mapReputation.size());
     BOOST_CHECK_EQUAL(3*4, mapReputation[address1]);
@@ -1219,7 +1371,7 @@ BOOST_AUTO_TEST_CASE(reputation_vote_result)
     // address2: 1 downvote at weight 4 and 15,000 upvotes at weight 2
     // address3: 4,998 upvotes at weight 4 and 5,000 downvotes at weight 2
     // address4: 5,000 upvotes at weight 2 and 20,000 downvotes at weight 1
-    BOOST_CHECK(pindex->vote.IsValidInBlock(PROTOCOL_V3_1));
+    BOOST_CHECK(pindex->vote.IsValidInBlock(PROTOCOL_V4_0));
     BOOST_CHECK(CalculateReputationResult(pindexBest, mapReputation));
     BOOST_CHECK_EQUAL(4, mapReputation.size());
     BOOST_CHECK_EQUAL((3-4998)*4, mapReputation[address1]);
@@ -1453,7 +1605,7 @@ public:
     CSignerRewardChain()
     {
         pindexBest = new CBlockIndex;
-        pindexBest->nProtocolVersion = PROTOCOL_V3_1;
+        pindexBest->nProtocolVersion = PROTOCOL_V4_0;
         pindex = pindexBest;
     }
 
@@ -1550,7 +1702,7 @@ BOOST_AUTO_TEST_CASE(signer_reward_vote_result)
     }
 
     {
-        // Pre-3.1 blocks do not get any reward
+        // Pre-4.0 blocks do not get any reward
         CSignerRewardChain chain;
         chain.pindex->nProtocolVersion = PROTOCOL_V2_0;
         chain.AddParent()->signerRewardVoteResult.Set(0, 0);

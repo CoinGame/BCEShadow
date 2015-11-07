@@ -85,6 +85,9 @@ int64 nSplitShareOutputs = MIN_COINSTAKE_VALUE;
 static map<const CBlockIndex*, CTxDestination> mapRewardedSignerCache;
 static CCriticalSection cs_mapRewardedSignerCache;
 
+static string strProtocolWarningMessage = _("Unknown protocol vote received. You may need to upgrade your client.");
+string strProtocolWarning = "";
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1970,6 +1973,9 @@ bool Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
     BOOST_FOREACH(CTransaction& tx, vDelete)
         mempool.remove(tx);
 
+    // The new chain may have changed some stake modifiers
+    ClearStakeModifierCache();
+
     printf("REORGANIZE: done\n");
 
     return true;
@@ -2093,8 +2099,29 @@ bool CBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
 
     RemoveExpiredLiquidityInfo(nBestHeight);
 
-    // The new chain may have changed some stake modifiers
-    ClearStakeModifierCache();
+    strProtocolWarning.clear();
+    if (pindexBest->vote.nVersionVote > PROTOCOL_VERSION)
+    {
+#ifdef TESTING
+        const int nCheckedBlocks = 10;
+#else
+        const int nCheckedBlocks = 2000;
+#endif
+        const CBlockIndex* pi = pindexBest;
+        int nCount = 0;
+        for (int i = 0; pi && i < nCheckedBlocks; i++, pi = pi->pprev)
+        {
+            if (pi->vote.nVersionVote > PROTOCOL_VERSION)
+            {
+                nCount++;
+                if (nCount >= nCheckedBlocks * 20 / 100)
+                {
+                    strProtocolWarning = strProtocolWarningMessage;
+                    break;
+                }
+            }
+        }
+    }
 
     return true;
 }
@@ -3136,6 +3163,12 @@ string GetWarnings(string strFor)
     string strRPC;
     if (GetBoolArg("-testsafemode"))
         strRPC = "test";
+
+    if (strProtocolWarning.size())
+    {
+        nPriority = 0;
+        strStatusBar = strProtocolWarning;
+    }
 
     if (strDataFeedError != "")
     {

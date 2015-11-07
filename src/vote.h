@@ -376,7 +376,7 @@ public:
 
     bool IsValidInBlock(int nProtocolVersion) const
     {
-        if (nProtocolVersion < PROTOCOL_V3_1 && (nCount > 0 || nAmount > 0))
+        if (nProtocolVersion < PROTOCOL_V4_0 && (nCount > 0 || nAmount > 0))
             return false;
         return true;
     }
@@ -481,7 +481,7 @@ public:
         else if (fRead)
             const_cast<CVote*>(this)->mapFeeVote.clear();
 
-        if (nVersion >= PROTOCOL_V3_1)
+        if (nVersion >= PROTOCOL_V4_0)
         {
             READWRITE(vReputationVote);
             READWRITE(signerReward);

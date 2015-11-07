@@ -1,7 +1,7 @@
 Then(/^the total unspent amount of all the Bitcoin keys on node "(.*?)" should be "(.*?)"$/) do |arg1, arg2|
   expected = parse_number(arg2)
   node = @nodes[arg1]
-  addresses = node.rpc("getpeercoinaddresses", "").keys
+  addresses = node.rpc("getdividendaddresses", "").keys
   unspent_amounts = addresses.map do |address|
     unspent = node.rpc("listunspent", 0, 999999, [address])
     unspent.map { |u| u["amount"] }

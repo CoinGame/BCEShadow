@@ -14,7 +14,7 @@ Feature: Shareholders can vote for or against signer addresses
     Voting would be weighted most heavily toward recent votes. The last 5000 blocks of votes would receive full weight, the next most recent 10000 blocks would receive half weight, and the 20000 before that would receive quarter weight.
 
   Scenario: An user votes for signers
-    Given a network at protocol 3.1 with nodes "Alice" and "Bob"
+    Given a network at protocol 4.0 with nodes "Alice" and "Bob"
     When node "Alice" votes for the following signers:
       | Address                            | Number |
       | tBfFT8qt88FGRvCDKiaqFB7Zw8cAtKnyPW |      5 |
@@ -30,7 +30,7 @@ Feature: Shareholders can vote for or against signer addresses
       | t82WQUtxiXJZjzSSC1nF5tDaNrxGHwsV3H |     -1 |
 
   Scenario: An user votes for a single address with a weight of 0
-    Given a network at protocol 3.1 with nodes "Alice" and "Bob"
+    Given a network at protocol 4.0 with nodes "Alice" and "Bob"
     When node "Alice" votes for the following signers:
       | Address                            | Number |
       | tBfFT8qt88FGRvCDKiaqFB7Zw8cAtKnyPW |      0 |
@@ -38,7 +38,7 @@ Feature: Shareholders can vote for or against signer addresses
     Then block "A" on node "Alice" should contain 0 reputed signer votes
 
   Scenario: Reputation RPC
-    Given a network at protocol 3.1 with nodes "Alice" and "Bob"
+    Given a network at protocol 4.0 with nodes "Alice" and "Bob"
     When node "Alice" upvotes "tBfFT8qt88FGRvCDKiaqFB7Zw8cAtKnyPW" for 3 blocks
     And node "Bob" downvotes "tBfFT8qt88FGRvCDKiaqFB7Zw8cAtKnyPW" for 2 blocks
     And node "Alice" upvotes "tBfFT8qt88FGRvCDKiaqFB7Zw8cAtKnyPW" for 3 blocks

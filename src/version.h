@@ -17,8 +17,8 @@
 // These need to be macro's, as version.cpp's voodoo requires it
 
 // nu version
-#define CLIENT_VERSION_MAJOR       3
-#define CLIENT_VERSION_MINOR       1
+#define CLIENT_VERSION_MAJOR       4
+#define CLIENT_VERSION_MINOR       0
 #define CLIENT_VERSION_REVISION    0
 
 static const int CLIENT_VERSION =
@@ -52,10 +52,8 @@ static const int PROTOCOL_V2_0 = 2000000;
 static const unsigned int PROTOCOL_V2_0_VOTE_TIME      = 1438696800; // 2015-08-04 14:00:00 UTC
 static const unsigned int PROTOCOL_V2_0_TEST_VOTE_TIME = 1433858400; // 2015-06-09 14:00:00 UTC
 
-// V3.1
-static const int PROTOCOL_V3_1 = 3010000;
-static const unsigned int PROTOCOL_V3_1_VOTE_TIME      = 1442325600; // 2015-09-15 14:00:00 UTC
-static const unsigned int PROTOCOL_V3_1_TEST_VOTE_TIME = 1441116000; // 2015-09-01 14:00:00 UTC
+// V4.0
+static const int PROTOCOL_V4_0 = 4000000;
 
 #ifdef TESTING
 static const unsigned int PROTOCOL_SWITCH_REQUIRE_VOTES = 9;
@@ -66,7 +64,7 @@ static const unsigned int PROTOCOL_SWITCH_COUNT_VOTES = 2000;
 #endif
 
 // Current client protocol
-static const int PROTOCOL_VERSION = PROTOCOL_V3_1;
+static const int PROTOCOL_VERSION = PROTOCOL_V4_0;
 
 // earlier versions not supported as of Feb 2012, and are disconnected
 // NOTE: as of bitcoin v0.6 message serialization (vSend, vRecv) still

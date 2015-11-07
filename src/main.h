@@ -1645,7 +1645,7 @@ public:
         if (nVersion >= PROTOCOL_V2_0)
             READWRITE(nProtocolVersion);
         else if (fRead)
-            const_cast<CDiskBlockIndex*>(this)->nProtocolVersion = 0;
+            const_cast<CDiskBlockIndex*>(this)->nProtocolVersion = PROTOCOL_V2_0;
 
         READWRITE(hashNext);
         READWRITE(nFile);
@@ -1675,7 +1675,7 @@ public:
             READWRITE(prevoutStake);
             READWRITE(nStakeTime);
             READWRITE(hashProofOfStake);
-            READWRITE(vote);
+            nSerSize += SerReadWrite(s, vote, nType, nProtocolVersion, ser_action);
             READWRITE(vParkRateResult);
             READWRITE(nCoinAgeDestroyed);
             READWRITE(vElectedCustodian);
@@ -1684,7 +1684,7 @@ public:
             else if (fRead)
                 const_cast<CDiskBlockIndex*>(this)->mapVotedFee.clear();
 
-            if (nProtocolVersion >= PROTOCOL_V3_1)
+            if (nProtocolVersion >= PROTOCOL_V4_0)
                 READWRITE(signerRewardVoteResult);
             else if (fRead)
                 const_cast<CDiskBlockIndex*>(this)->signerRewardVoteResult.Set(0, 0);

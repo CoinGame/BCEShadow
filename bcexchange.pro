@@ -1,6 +1,6 @@
 TEMPLATE = app
 TARGET = bcexchange
-VERSION = 3.1.0
+VERSION = 4.0.0
 INCLUDEPATH += src src/json src/qt
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE
 CONFIG += no_include_pwd
@@ -198,7 +198,8 @@ HEADERS += src/qt/bitcoingui.h \
     src/datafeed.h \
     src/qt/datafeeddialog.h \
     src/qt/feevotedialog.h \
-    src/qt/reputationvotedialog.h
+    src/qt/reputationvotedialog.h \
+    src/qt/dividendkeysdialog.h
 
 SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/transactiontablemodel.cpp \
@@ -270,7 +271,8 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/datafeed.cpp \
     src/qt/datafeeddialog.cpp \
     src/qt/feevotedialog.cpp \
-    src/qt/reputationvotedialog.cpp
+    src/qt/reputationvotedialog.cpp \
+    src/qt/dividendkeysdialog.cpp
 
 RESOURCES += \
     src/qt/bitcoin.qrc
@@ -294,7 +296,8 @@ FORMS += \
     src/qt/forms/motionvotedialog.ui \
     src/qt/forms/datafeeddialog.ui \
     src/qt/forms/feevotedialog.ui \
-    src/qt/forms/reputationvotedialog.ui
+    src/qt/forms/reputationvotedialog.ui \
+    src/qt/forms/dividendkeysdialog.ui
 
 contains(USE_QRCODE, 1) {
 HEADERS += src/qt/qrcodedialog.h

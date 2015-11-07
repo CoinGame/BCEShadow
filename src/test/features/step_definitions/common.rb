@@ -1,6 +1,6 @@
 %w(
   PROTOCOL_V2_0
-  PROTOCOL_V3_1
+  PROTOCOL_V4_0
 ).each do |const_name|
   value = File.read(File.expand_path("../../../../version.h", __FILE__)).scan(/#{const_name} = (\d+);/).first.first.to_i
   Kernel.const_set(const_name, value)
@@ -588,9 +588,7 @@ end
 
 When(/^the nodes travel to the protocol (.+) switch time$/) do |arg1|
   case arg1
-  when "3.1"
-    switch_time = File.read(File.expand_path("../../../../version.h", __FILE__)).scan(/PROTOCOL_V3_1_TEST_VOTE_TIME = (\d+);/).first.first
-    switch_time = Time.at(switch_time.to_i)
+  when "4.0"
   else
     raise "Unknown protocol version: #{arg1.inspect}"
   end
@@ -757,11 +755,12 @@ Given(/^the network is at protocol (.*?)$/) do |arg1|
   case arg1
   when "2.0"
     # bcexchange starts at protocol 2.0
-  when "3.1"
-    if node.info["protocolversion"] < PROTOCOL_V3_1
-      step %Q(the nodes travel to the protocol 3.1 switch time)
-      step %Q(node "#{node_name}" finds 10 blocks received by all nodes)
-      step %Q(node "#{node_name}" should use protocol #{PROTOCOL_V3_1})
+  when "4.0"
+    if node.info["protocolversion"] < PROTOCOL_V4_0
+      step %Q(node "#{node_name}" finds 10 blocks)
+      time_travel 15 * 24 * 3600
+      step %Q(node "#{node_name}" finds 2 blocks received by all nodes)
+      step %Q(node "#{node_name}" should use protocol #{PROTOCOL_V4_0})
     end
   else
     raise "unknown protocol: #{arg1.inspect}"

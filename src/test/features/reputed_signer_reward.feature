@@ -22,7 +22,7 @@ Feature: Reputed signers receive a extra reward according to their relative repu
   > [the signer reward amount] should be an additional item that can be voted on. The mint reward should never be subject to a vote, but the reputed signer block reward should be of variable size according to its own vote.
 
   Scenario: Reputed signers receive a reward
-    Given a network at protocol 3.1 with nodes "Alice" and "Bob"
+    Given a network at protocol 4.0 with nodes "Alice" and "Bob"
     And a node "Carol"
     And a node "Dan"
     And node "Carol" generates a new address "carol"
