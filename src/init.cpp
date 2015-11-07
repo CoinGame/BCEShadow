@@ -231,6 +231,7 @@ bool AppInit2(int argc, char* argv[])
 #endif
             "  -testnet         \t\t  " + _("Use the test network") + "\n" +
             "  -debug           \t\t  " + _("Output extra debugging information") + "\n" +
+            "  -debugmint       \t\t  " + _("Display the reasons why a block was not found during minting") + "\n" +
             "  -logtimestamps   \t  "   + _("Prepend debug output with timestamp") + "\n" +
             "  -printtoconsole  \t  "   + _("Send trace/debug info to console instead of debug.log file") + "\n" +
 #ifdef WIN32

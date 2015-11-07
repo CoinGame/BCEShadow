@@ -1525,20 +1525,34 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     vector<const CWalletTx*> vwtxPrev;
     int64 nValueIn = 0;
     if (!SelectCoins(nBalance - nReserveBalance, txNew.nTime, setCoins, nValueIn))
+    {
+        if (GetBoolArg("-debugmint"))
+            printf("Minting: unable to select coins\n");
         return false;
+    }
     if (setCoins.empty())
+    {
+        if (GetBoolArg("-debugmint"))
+            printf("Minting: unable to set coins\n");
         return false;
+    }
     int64 nCredit = 0;
     CScript scriptPubKeyKernel;
     int nOutputs = -1;
 
+    map<string, int> mapFailCount;
+    bool fKernelFound = false;
 
     BOOST_FOREACH(PAIRTYPE(const CWalletTx*, unsigned int) pcoin, setCoins)
     {
         mapTxLastUse[pcoin.first] = nNow;
 
         if (pcoin.first->vout[pcoin.second].nValue < MIN_COINSTAKE_VALUE)
+        {
+            if (GetBoolArg("-debugmint"))
+                mapFailCount["Value below minimum value"]++;
             continue; // nu: only count coins meeting min value requirement
+        }
 
         map<const CWalletTx*, uint256>::const_iterator itHash = mapTxHash.find(pcoin.first);
         if (itHash == mapTxHash.end())
@@ -1554,7 +1568,11 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
             pair<const CWalletTx*, CTxIndex> value(pcoin.first, CTxIndex());
             CTxDB txdb("r");
             if (!txdb.ReadTxIndex(txHash, value.second))
+            {
+                if (GetBoolArg("-debugmint"))
+                    mapFailCount["Unable to load transaction from database"]++;
                 continue;
+            }
             itTxIndex = mapTxIndex.insert(value).first;
         }
         const CTxIndex& txindex = itTxIndex->second;
@@ -1565,23 +1583,35 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         {
             pair<const CWalletTx*, CBlock> value(pcoin.first, CBlock());
             if (!value.second.ReadFromDisk(txindex.pos.nFile, txindex.pos.nBlockPos, false))
+            {
+                if (GetBoolArg("-debugmint"))
+                    mapFailCount["Unable to read transaction block from database"]++;
                 continue;
+            }
             itTxBlock = mapTxBlock.insert(value).first;
         }
         const CBlock& block = itTxBlock->second;
 
         static int nMaxStakeSearchInterval = 60;
         if (block.GetBlockTime() + nStakeMinAge > txNew.nTime - nMaxStakeSearchInterval)
+        {
+            if (GetBoolArg("-debugmint"))
+                mapFailCount["Block does not meet min age requirement"]++;
             continue; // only count coins meeting min age requirement
+        }
 
-        bool fKernelFound = false;
+        fKernelFound = false;
         for (unsigned int n=0; n<min(nSearchInterval,(int64)nMaxStakeSearchInterval) && !fKernelFound && !fShutdown; n++)
         {
             // Search backward in time from the given txNew timestamp 
             // Search nSearchInterval seconds back up to nMaxStakeSearchInterval
             uint256 hashProofOfStake = 0;
             COutPoint prevoutStake = COutPoint(txHash, pcoin.second);
-            if (CheckStakeKernelHash(nBits, block, txindex.pos.nTxPos - txindex.pos.nBlockPos, *pcoin.first, prevoutStake, txNew.nTime - n, hashProofOfStake))
+            string failReason;
+            fKernelFound = CheckStakeKernelHash(nBits, block, txindex.pos.nTxPos - txindex.pos.nBlockPos, *pcoin.first, prevoutStake, txNew.nTime - n, hashProofOfStake, false, GetBoolArg("-debugmint") ? &failReason : NULL);
+            if (!fKernelFound && GetBoolArg("-debugmint"))
+                mapFailCount[failReason]++;
+            if (fKernelFound)
             {
                 // Found a kernel
                 if (fDebug && GetBoolArg("-printcoinstake"))
@@ -1626,13 +1656,24 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
                 txNew.vout.push_back(CTxOut(0, scriptPubKeyOut));
                 if (fDebug && GetBoolArg("-printcoinstake"))
                     printf("CreateCoinStake : added kernel type=%d\n", whichType);
-                fKernelFound = true;
                 break;
             }
         }
         if (fKernelFound || fShutdown)
             break; // if kernel is found stop searching
     }
+
+    if (!fKernelFound && GetBoolArg("-debugmint"))
+    {
+        printf("Minting: unable to find kernel. Reasons:\n");
+        BOOST_FOREACH(PAIRTYPE(const string, int) pair, mapFailCount)
+        {
+            const string& sReason = pair.first;
+            const int& nCount = pair.second;
+            printf("  %s: %d times\n", sReason.c_str(), nCount);
+        }
+    }
+
     if (nCredit == 0 || nCredit > nBalance - nReserveBalance)
         return false;
     BOOST_FOREACH(PAIRTYPE(const CWalletTx*, unsigned int) pcoin, setCoins)
