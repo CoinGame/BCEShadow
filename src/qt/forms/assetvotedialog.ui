@@ -35,7 +35,7 @@
         <bool>true</bool>
        </property>
        <property name="columnCount">
-        <number>9</number>
+        <number>8</number>
        </property>
        <attribute name="horizontalHeaderStretchLastSection">
         <bool>true</bool>
@@ -55,16 +55,6 @@
        </column>
        <column>
         <property name="text">
-         <string>Chain</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Asset</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
          <string>Conf.</string>
         </property>
        </column>
@@ -80,12 +70,17 @@
        </column>
        <column>
         <property name="text">
-         <string>Max trade (units)</string>
+         <string>Unit exp.</string>
         </property>
        </column>
        <column>
         <property name="text">
-         <string>Max trade (coins)</string>
+         <string>Max trade</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Min trade</string>
         </property>
        </column>
       </widget>

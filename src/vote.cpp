@@ -543,7 +543,7 @@ bool CVote::IsValidInBlock(int nProtocolVersion) const
     if (vReputationVote.size() > REPUTATION_VOTES_PER_BLOCK)
         return false;
 
-    if (vAssetVote.size() && nProtocolVersion < PROTOCOL_V3_1)
+    if (vAssetVote.size() && nProtocolVersion < PROTOCOL_V4_0)
         return false;
 
     BOOST_FOREACH(const CReputationVote& reputationVote, vReputationVote)
@@ -595,7 +595,7 @@ CVote CUserVote::GenerateBlockVote(int nProtocolVersion) const
         }
     }
 
-    if (nProtocolVersion < PROTOCOL_V3_1)
+    if (nProtocolVersion < PROTOCOL_V4_0)
         blockVote.vAssetVote.clear();
 
     return blockVote;

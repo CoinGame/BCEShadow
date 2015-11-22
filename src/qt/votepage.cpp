@@ -201,82 +201,62 @@ void VotePage::fillAssetTable()
 
     BOOST_FOREACH(PAIRTYPE(const uint64, CAsset) &pair, mapAssets)
     {
-        const uint64 globalId = pair.first;
+        const uint32_t assetId = (uint32_t) pair.first;
         const CAsset &asset = pair.second;
 
         table->setRowCount(row + 1);
 
         QTableWidgetItem *idItem = new QTableWidgetItem();
-        idItem->setData(Qt::DisplayRole, globalId);
+        idItem->setData(Qt::DisplayRole, QString::fromStdString(AssetIdToStr(assetId)));
         idItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
         idItem->setFlags(idItem->flags() & ~Qt::ItemIsEditable);
         table->setItem(row, 0, idItem);
 
         QTableWidgetItem *assetNameItem = new QTableWidgetItem();
-        QString assetName = QString::fromStdString(GetAssetName(globalId));
-        QString assetSymbol = QString::fromStdString(GetAssetSymbol(globalId));
-        QString assetStr = "";
-        if(!assetName.isEmpty())
+        QString assetName = QString::fromStdString(GetAssetName(assetId));
+        if(assetName.isEmpty())
         {
-            if(!assetSymbol.isEmpty())
-                assetStr = assetName + " (" + assetSymbol + ")";
-            else
-                assetStr = assetName;
+            assetName = QString::fromStdString(AssetIdToStr(assetId));
         }
-        else if(!assetSymbol.isEmpty())
-            assetStr = "(" + assetSymbol + ")";
-        assetNameItem->setData(Qt::DisplayRole, assetStr);
+        assetNameItem->setData(Qt::DisplayRole, assetName);
         assetNameItem->setFlags(assetNameItem->flags() & ~Qt::ItemIsEditable);
         table->setItem(row, 1, assetNameItem);
-
-        QTableWidgetItem *blockchainItem = new QTableWidgetItem();
-        blockchainItem->setData(Qt::DisplayRole, asset.nBlockchainId);
-        blockchainItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
-        blockchainItem->setFlags(blockchainItem->flags() & ~Qt::ItemIsEditable);
-        table->setItem(row, 2, blockchainItem);
-
-        QTableWidgetItem *assetItem = new QTableWidgetItem();
-        assetItem->setData(Qt::DisplayRole, asset.nAssetId);
-        assetItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
-        assetItem->setFlags(assetItem->flags() & ~Qt::ItemIsEditable);
-        table->setItem(row, 3, assetItem);
 
         QTableWidgetItem *confirmationsItem = new QTableWidgetItem();
         confirmationsItem->setData(Qt::DisplayRole, asset.nNumberOfConfirmations);
         confirmationsItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
         confirmationsItem->setFlags(confirmationsItem->flags() & ~Qt::ItemIsEditable);
-        table->setItem(row, 4, confirmationsItem);
+        table->setItem(row, 2, confirmationsItem);
 
         QTableWidgetItem *requiredSignersItem = new QTableWidgetItem();
         requiredSignersItem->setData(Qt::DisplayRole, asset.nRequiredDepositSigners);
         requiredSignersItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
         requiredSignersItem->setFlags(requiredSignersItem->flags() & ~Qt::ItemIsEditable);
-        table->setItem(row, 5, requiredSignersItem);
+        table->setItem(row, 3, requiredSignersItem);
 
         QTableWidgetItem *totalSignersItem = new QTableWidgetItem();
         totalSignersItem->setData(Qt::DisplayRole, asset.nTotalDepositSigners);
         totalSignersItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
         totalSignersItem->setFlags(totalSignersItem->flags() & ~Qt::ItemIsEditable);
-        table->setItem(row, 6, totalSignersItem);
+        table->setItem(row, 4, totalSignersItem);
+
+        QTableWidgetItem *unitExponentItem = new QTableWidgetItem();
+        unitExponentItem->setData(Qt::DisplayRole, asset.nUnitExponent);
+        unitExponentItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
+        unitExponentItem->setFlags(unitExponentItem->flags() & ~Qt::ItemIsEditable);
+        table->setItem(row, 5, unitExponentItem);
 
         QTableWidgetItem *maxTradeItem = new QTableWidgetItem();
-        maxTradeItem->setData(Qt::DisplayRole, asset.nMaxTrade);
+        maxTradeItem->setData(Qt::DisplayRole, GUIUtil::unitsToCoins(asset.GetMaxTrade(), asset.nUnitExponent));
         maxTradeItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
         maxTradeItem->setFlags(maxTradeItem->flags() & ~Qt::ItemIsEditable);
-        table->setItem(row, 7, maxTradeItem);
+        table->setItem(row, 6, maxTradeItem);
 
-        QTableWidgetItem *maxTradeCoinsItem = new QTableWidgetItem();
-        QString maxTradeStr = "";
-        if(!assetSymbol.isEmpty())
-        {
-            unsigned char exponent = GetAssetUnitExponent(globalId);
-            maxTradeStr = GUIUtil::unitsToCoins(asset.nMaxTrade, exponent);
-            maxTradeStr = maxTradeStr + " " + assetSymbol;
-        }
-        maxTradeCoinsItem->setData(Qt::DisplayRole, maxTradeStr);
-        maxTradeCoinsItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
-        maxTradeCoinsItem->setFlags(maxTradeCoinsItem->flags() & ~Qt::ItemIsEditable);
-        table->setItem(row, 8, maxTradeCoinsItem);
+        QTableWidgetItem *minTradeItem = new QTableWidgetItem();
+        minTradeItem->setData(Qt::DisplayRole, GUIUtil::unitsToCoins(asset.GetMinTrade(), asset.nUnitExponent));
+        minTradeItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
+        minTradeItem->setFlags(minTradeItem->flags() & ~Qt::ItemIsEditable);
+        table->setItem(row, 7, minTradeItem);
 
         row++;
     }

@@ -23,13 +23,12 @@ class AddAssetVoteDialog : public QDialog
   private:
     Ui::AddAssetVoteDialog *ui;
     WalletModel *model;
-    void updateIds();
+    void updateFields();
 
   private slots:
     void accept();
     void on_assetList_currentIndexChanged(int index);
-    void on_maxTrade_textChanged(const QString &maxTrade);
-    void on_maxTradeCoins_textChanged(const QString &maxTradeCoins);
+    void on_assetId_textChanged(const QString &assetId);
 };
 
 #endif //ADDASSETVOTEDIALOG_H

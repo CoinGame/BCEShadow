@@ -4,6 +4,7 @@
 #include "ui_addassetvotedialog.h"
 #include "assetvotedialog.h"
 #include "coinmetadata.h"
+#include "exchange.h"
 #include "guiutil.h"
 #include "walletmodel.h"
 
@@ -13,6 +14,8 @@ using namespace std;
 #define DEFAULT_REQ_SIGNERS (2)
 #define DEFAULT_TOTAL_SIGNERS (3)
 #define DEFAULT_MAX_TRADE (100000000)
+#define DEFAULT_MIN_TRADE (100000)
+#define DEFAULT_UNIT_EXPONENT (8)
 
 AddAssetVoteDialog::AddAssetVoteDialog(QWidget *parent) :
     QDialog(parent),
@@ -27,7 +30,7 @@ AddAssetVoteDialog::~AddAssetVoteDialog()
     delete ui;
 }
 
-void AddAssetVoteDialog::updateIds()
+void AddAssetVoteDialog::updateFields()
 {
     QComboBox *assetList = ui->assetList;
     int index = assetList->currentIndex();
@@ -35,35 +38,29 @@ void AddAssetVoteDialog::updateIds()
     if(index == assetList->count() - 1)
     {
         // Custom asset
-        ui->blockchainId->clear();
-        ui->blockchainId->setReadOnly(false);
-        ui->blockchainId->setEnabled(true);
         ui->assetId->clear();
         ui->assetId->setReadOnly(false);
         ui->assetId->setEnabled(true);
-        ui->maxTradeCoins->setEnabled(false);
-        ui->assetSymbol->clear();
+        ui->unitExponent->setText(QString::number(DEFAULT_UNIT_EXPONENT));
+        ui->unitExponent->setReadOnly(false);
+        ui->unitExponent->setEnabled(true);
+        ui->assetSymbol1->clear();
+        ui->assetSymbol2->clear();
     }
     else
     {
-        uint64 globalId = assetList->itemData(index).toULongLong();
-        int blockchainId = GetBlockchainId(globalId);
-        int assetId = GetAssetId(globalId);
-        QString assetSymbol = QString::fromStdString(GetAssetSymbol(globalId));
+        uint32_t assetId = assetList->itemData(index).toUInt();
+        QString assetSymbol = QString::fromStdString(GetAssetSymbol(assetId));
 
-        ui->blockchainId->setText(QString::number(blockchainId));
-        ui->blockchainId->setReadOnly(true);
-        ui->blockchainId->setEnabled(false);
-        ui->assetId->setText(QString::number(assetId));
+        ui->assetId->setText(QString::fromStdString(AssetIdToStr(assetId)));
         ui->assetId->setReadOnly(true);
         ui->assetId->setEnabled(false);
-        ui->maxTradeCoins->setEnabled(true);
-        ui->assetSymbol->setText(assetSymbol);
+        ui->unitExponent->setText(QString::number(GetAssetUnitExponent(assetId)));
+        ui->unitExponent->setReadOnly(true);
+        ui->unitExponent->setEnabled(false);
+        ui->assetSymbol1->setText(assetSymbol);
+        ui->assetSymbol2->setText(assetSymbol);
     }
-
-    // Force update of maxTrade and maxTradeCoins fields
-    ui->maxTrade->clear();
-    ui->maxTrade->setText(QString::number(DEFAULT_MAX_TRADE));
 }
 
 void AddAssetVoteDialog::setModel(WalletModel *model)
@@ -74,26 +71,28 @@ void AddAssetVoteDialog::setModel(WalletModel *model)
     assetList->clear();
     for(coin_metadata_map::const_iterator it = COIN_METADATA.begin(); it != COIN_METADATA.end(); it++)
     {
-        uint64 globalId = it->first;
-        QString assetName = QString::fromStdString(GetAssetName(globalId));
-        QString assetSymbol = QString::fromStdString(GetAssetSymbol(globalId));
-        assetList->addItem(assetName + " (" + assetSymbol + ")", globalId);
+        uint32_t assetId = it->first;
+        QString assetName = QString::fromStdString(GetAssetName(assetId));
+        QString assetSymbol = QString::fromStdString(GetAssetSymbol(assetId));
+        assetList->addItem(assetName + " (" + assetSymbol + ")", assetId);
     }
     assetList->addItem(tr("other..."));
 
-    ui->blockchainId->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    ui->assetId->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     ui->confirmations->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     ui->requiredDepositSigners->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     ui->totalDepositSigners->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     ui->maxTrade->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    ui->maxTradeCoins->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    ui->minTrade->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    ui->unitExponent->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
-    updateIds();
     ui->confirmations->setText(QString::number(DEFAULT_CONFIRMATIONS));
     ui->requiredDepositSigners->setText(QString::number(DEFAULT_REQ_SIGNERS));
     ui->totalDepositSigners->setText(QString::number(DEFAULT_TOTAL_SIGNERS));
-    ui->maxTrade->setText(QString::number(DEFAULT_MAX_TRADE));
+    ui->unitExponent->setText(QString::number(DEFAULT_UNIT_EXPONENT));
+    ui->maxTrade->setText(GUIUtil::unitsToCoins(DEFAULT_MAX_TRADE, DEFAULT_UNIT_EXPONENT));
+    ui->minTrade->setText(GUIUtil::unitsToCoins(DEFAULT_MIN_TRADE, DEFAULT_UNIT_EXPONENT));
+
+    updateFields();
 }
 
 void AddAssetVoteDialog::error(const QString &message)
@@ -104,93 +103,88 @@ void AddAssetVoteDialog::error(const QString &message)
 void AddAssetVoteDialog::accept()
 {
     bool ok;
-    int nBlockchainId = ui->blockchainId->text().toInt(&ok);
-    if(!ok || (nBlockchainId < 0) || (nBlockchainId > MAX_BLOCKCHAIN_ID))
-    {
-        error(tr("Invalid blockchain id"));
-        return;
-    }
 
-    int nAssetId = ui->assetId->text().toInt(&ok);
-    if(!ok || (nAssetId < 0) || (nAssetId > MAX_ASSET_ID))
+    uint32_t nAssetId = EncodeAssetId(ui->assetId->text().toStdString());
+    if(!IsValidAssetId(nAssetId))
     {
         error(tr("Invalid asset id"));
         return;
     }
 
-    uint16_t nNumberOfConfirmations = ui->confirmations->text().toInt(&ok);
-    if(!ok)
+    uint16_t nNumberOfConfirmations = ui->confirmations->text().toUInt(&ok);
+    if(!ok || (nNumberOfConfirmations == 0))
     {
         error(tr("Invalid number of confirmations"));
         return;
     }
 
-    uint8_t nRequiredDepositSigners = ui->requiredDepositSigners->text().toInt(&ok);
+    uint8_t nRequiredDepositSigners = ui->requiredDepositSigners->text().toUInt(&ok);
     if(!ok || (nRequiredDepositSigners < MIN_REQ_SIGNERS))
     {
         error(tr("Invalid number of required deposit signers"));
         return;
     }
 
-    uint8_t nTotalDepositSigners = ui->totalDepositSigners->text().toInt(&ok);
-    if(!ok || (nTotalDepositSigners < MIN_TOTAL_SIGNERS))
+    uint8_t nTotalDepositSigners = ui->totalDepositSigners->text().toUInt(&ok);
+    if(!ok || (nTotalDepositSigners < MIN_TOTAL_SIGNERS) || (nTotalDepositSigners < nRequiredDepositSigners))
     {
         error(tr("Invalid number of total deposit signers"));
         return;
     }
 
-    uint64 nMaxTrade = ui->maxTrade->text().toULongLong(&ok);
-    if(!ok)
+    uint8_t nUnitExponent = ui->unitExponent->text().toUInt();
+    if(!ok || (nUnitExponent > MAX_TRADABLE_UNIT_EXPONENT))
+    {
+        error(tr("Invalid unit exponent"));
+        return;
+    }
+
+    uint64 nMaxTrade = GUIUtil::coinsToUnits(ui->maxTrade->text(), nUnitExponent);
+    if(nMaxTrade == 0)
     {
         error(tr("Invalid max trade"));
         return;
     }
 
-    ((AssetVoteDialog *) parentWidget())->addTableRow(nBlockchainId,
-                                                      nAssetId,
+    uint64 nMinTrade = GUIUtil::coinsToUnits(ui->minTrade->text(), nUnitExponent);
+    if(nMinTrade > nMaxTrade)
+    {
+        error(tr("Invalid min trade"));
+        return;
+    }
+
+    ((AssetVoteDialog *) parentWidget())->addTableRow(nAssetId,
                                                       nNumberOfConfirmations,
                                                       nRequiredDepositSigners,
                                                       nTotalDepositSigners,
-                                                      nMaxTrade);
+                                                      nMaxTrade,
+                                                      nMinTrade,
+                                                      nUnitExponent);
 
     QDialog::accept();
 }
 
 void AddAssetVoteDialog::on_assetList_currentIndexChanged(int index)
 {
-    updateIds();
+    updateFields();
 }
 
-void AddAssetVoteDialog::on_maxTrade_textChanged(const QString &maxTrade)
+void AddAssetVoteDialog::on_assetId_textChanged(const QString &assetId)
 {
     int index = ui->assetList->currentIndex();
+
     if(index == ui->assetList->count() - 1)
-        return;
-
-    uint64 globalId = ui->assetList->itemData(index).toULongLong();
-    unsigned char exponent = GetAssetUnitExponent(globalId);
-    bool ok;
-    uint64 n = maxTrade.toULongLong(&ok);
-    if(!ok)
-        return;
-
-    if(n != GUIUtil::coinsToUnits(ui->maxTradeCoins->text(), exponent))
     {
-        QString maxTradeCoins = GUIUtil::unitsToCoins(n, exponent);
-        ui->maxTradeCoins->setText(maxTradeCoins);
+        // Custom asset
+        if(IsValidAssetId(EncodeAssetId(assetId.toStdString())))
+        {
+            ui->assetSymbol1->setText(assetId);
+            ui->assetSymbol2->setText(assetId);
+        }
+        else
+        {
+            ui->assetSymbol1->setText("");
+            ui->assetSymbol2->setText("");
+        }
     }
-}
-
-void AddAssetVoteDialog::on_maxTradeCoins_textChanged(const QString &maxTradeCoins)
-{
-    int index = ui->assetList->currentIndex();
-    if(index == ui->assetList->count() - 1)
-        return;
-
-    uint64 globalId = ui->assetList->itemData(index).toULongLong();
-    unsigned char exponent = GetAssetUnitExponent(globalId);
-    uint64 n = GUIUtil::coinsToUnits(maxTradeCoins, exponent);
-
-    if(n != ui->maxTrade->text().toULongLong())
-        ui->maxTrade->setText(QString::number(n));
 }

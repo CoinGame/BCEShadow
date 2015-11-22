@@ -1393,10 +1393,10 @@ BOOST_AUTO_TEST_CASE(asset_vote_result)
     vote.vAssetVote.push_back(NewAssetVote(ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE_EXP_PARAM, MIN_TRADE_EXP_PARAM, UNIT_EXPONENT));
     vote.vAssetVote.push_back(NewAssetVote(ASSET_ID_2, CONFIRMATIONS_2, M_2, N_2, MAX_TRADE_EXP_PARAM_2, MIN_TRADE_EXP_PARAM_2, UNIT_EXPONENT_2));
     BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V2_0)); // not valid in old blocks
-    BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V3_1)); // valid in new blocks
+    BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V4_0)); // valid in new blocks
     // Add a duplicate vote for the same asset
     vote.vAssetVote.push_back(NewAssetVote(ASSET_ID, CONFIRMATIONS+1, M, N, MAX_TRADE_EXP_PARAM+1, MIN_TRADE_EXP_PARAM+1, UNIT_EXPONENT));
-    BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V3_1)); // not valid due to duplicate vote
+    BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V4_0)); // not valid due to duplicate vote
 
     // No vote, no assets
     BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
@@ -1404,7 +1404,7 @@ BOOST_AUTO_TEST_CASE(asset_vote_result)
 
     // Add a single vote
     pindex->vote.vAssetVote.push_back(NewAssetVote(ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE_EXP_PARAM, MIN_TRADE_EXP_PARAM, UNIT_EXPONENT));
-    BOOST_CHECK(pindex->vote.IsValidInBlock(PROTOCOL_V3_1));
+    BOOST_CHECK(pindex->vote.IsValidInBlock(PROTOCOL_V4_0));
     BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
     BOOST_CHECK_EQUAL(0, vAssets.size());
     BOOST_CHECK(CalculateVotedAssets(pindexBest));

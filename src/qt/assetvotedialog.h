@@ -23,7 +23,7 @@ class AssetVoteDialog : public QDialog
     ~AssetVoteDialog();
     void setModel(WalletModel *model);
     void error(const QString &message);
-    void addTableRow(int blockchainId, int assetId, uint16_t confirmations, uint8_t requiredSigners, uint8_t totalSigners, uint64 maxTrade);
+    void addTableRow(uint32_t assetId, uint16_t confirmations, uint8_t requiredSigners, uint8_t totalSigners, uint64 maxTrade, uint64 minTrade, uint8_t nativeUnitExponent);
 
   private:
     Ui::AssetVoteDialog *ui;
@@ -36,7 +36,6 @@ class AssetVoteDialog : public QDialog
     void accept();
     void on_addAssetVoteButton_clicked();
     void on_removeAssetVoteButton_clicked();
-    void on_assetVoteTable_cellChanged(int row, int column);
 };
 
 #endif // ASSETVOTEDIALOG_H

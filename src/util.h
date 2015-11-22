@@ -825,54 +825,9 @@ inline static uint8_t GetAssetIdHeader(uint32_t nId)
     return (nId & ASSET_ID_HEADER_MASK) >> ASSET_ID_HEADER_SHIFT;
 }
 
-static uint32_t EncodeAssetId(std::string symbol)
-{
-    if (symbol.length() > ASSET_SYMBOL_ALPHA_MAX)
-        return ASSET_ID_INVALID;
+uint32_t EncodeAssetId(std::string symbol);
 
-    char pSymbolItems[ASSET_SYMBOL_ALPHA_MAX];
-    int nItems = 0;
-    bool fHasNumbers = false;
-
-    // Extract symbol characters
-    BOOST_FOREACH(char c, boost::to_upper_copy(symbol))
-    {
-        if (c >= ASCII_ALPHA_START && c <= ASCII_ALPHA_END)
-            pSymbolItems[nItems++] = c - ASCII_ALPHA_ENCODING_BASE;
-        else if (c >= ASCII_NUM_START && c <= ASCII_NUM_END)
-        {
-            pSymbolItems[nItems++] = c - ASCII_NUM_ENCODING_BASE;
-            fHasNumbers = true;
-        }
-        else
-            return ASSET_ID_INVALID;
-    }
-
-    // Alphanumeric symbols can have less characters
-    if (fHasNumbers && nItems > ASSET_SYMBOL_ALPHANUM_MAX)
-        return ASSET_ID_INVALID;
-
-    // Set values
-    uint32_t id = 0;
-    for (int i = 0; i < nItems; i++)
-    {
-        if (fHasNumbers)
-            id <<= ASSET_ID_ALPHANUM_SHIFT;
-        else
-            id <<= ASSET_ID_ALPHA_SHIFT;
-        id |= pSymbolItems[i];
-    }
-
-    // Set headers
-    if (fHasNumbers)
-        id |= ASSET_ID_HEADER_ALPHANUM << ASSET_ID_HEADER_SHIFT;
-    else
-        id |= ASSET_ID_HEADER_ALPHA << ASSET_ID_HEADER_SHIFT;
-
-    return id;
-}
-
-static uint32_t EncodeAssetId(uint32_t nRawId)
+inline uint32_t EncodeAssetId(uint32_t nRawId)
 {
     if (GetAssetIdHeader(nRawId) == ASSET_ID_HEADER_RAW)
         return nRawId;
@@ -880,54 +835,9 @@ static uint32_t EncodeAssetId(uint32_t nRawId)
         return ASSET_ID_INVALID;
 }
 
-static std::string AssetIdToStr(uint32_t nId)
-{
-    std::vector<char> rv;
-    uint8_t header = GetAssetIdHeader(nId);
+std::string AssetIdToStr(uint32_t nId);
 
-    switch(header)
-    {
-    case ASSET_ID_HEADER_ALPHA:
-        for (int i = ASSET_SYMBOL_ALPHA_MAX - 1; i >= 0; i--)
-        {
-            uint8_t c = (nId >> i * ASSET_ID_ALPHA_SHIFT) & ASSET_ID_ALPHA_CHAR_MASK;
-            if (c == 0)
-                continue;
-
-            if (c >= ASCII_ENCODED_ALPHA_START && c <= ASCII_ENCODED_ALPHA_END)
-                rv.push_back(c + ASCII_ALPHA_ENCODING_BASE);
-            else
-                rv.push_back('?');
-        }
-        break;
-    case ASSET_ID_HEADER_ALPHANUM:
-        for (int i = ASSET_SYMBOL_ALPHANUM_MAX - 1; i >= 0; i--)
-        {
-            uint8_t c = (nId >> i * ASSET_ID_ALPHANUM_SHIFT) & ASSET_ID_ALPHANUM_CHAR_MASK;
-            if (c == 0)
-                continue;
-
-            if (c >= ASCII_ENCODED_ALPHA_START && c <= ASCII_ENCODED_ALPHA_END)
-                rv.push_back(c + ASCII_ALPHA_ENCODING_BASE);
-            else if (c >= ASCII_ENCODED_NUM_START && c <= ASCII_ENCODED_NUM_END)
-                rv.push_back(c + ASCII_NUM_ENCODING_BASE);
-            else
-                rv.push_back('?');
-        }
-        break;
-    case ASSET_ID_HEADER_RAW:
-        // Iterate over nibbles
-        for (int i = sizeof(nId) * 2 - 1; i >= 0 ; i--)
-            rv.push_back(hexmap[nId >> i * 4 & 0xf]);
-        break;
-    case ASSET_ID_HEADER_RESERVED:
-    default:
-        return "INVALID_ID";
-    }
-    return std::string(rv.begin(), rv.end());
-}
-
-inline static bool IsValidAssetId(uint32_t nId)
+inline bool IsValidAssetId(uint32_t nId)
 {
     if (GetAssetIdHeader(nId) == ASSET_ID_HEADER_RESERVED)
         return false;

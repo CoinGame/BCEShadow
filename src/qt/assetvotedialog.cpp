@@ -32,91 +32,71 @@ void AssetVoteDialog::setModel(WalletModel *model)
     fillAssetVoteTable();
 }
 
-void AssetVoteDialog::addTableRow(int blockchainId,
-                                  int assetId,
+void AssetVoteDialog::addTableRow(uint32_t assetId,
                                   uint16_t confirmations,
                                   uint8_t requiredSigners,
                                   uint8_t totalSigners,
-                                  uint64 maxTrade)
+                                  uint64 maxTrade,
+                                  uint64 minTrade,
+                                  uint8_t unitExponent)
 {
     QTableWidget *table = ui->assetVoteTable;
     int row = table->rowCount();
+    bool preDefinedAsset = true;
 
     table->setSortingEnabled(false);
     table->setRowCount(row + 1);
 
-    uint32_t globalId = AssetGlobalId(blockchainId, assetId);
-
     QTableWidgetItem *idItem = new QTableWidgetItem();
-    idItem->setData(Qt::DisplayRole, globalId);
+    idItem->setData(Qt::DisplayRole, QString::fromStdString(AssetIdToStr(assetId)));
     idItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
     idItem->setFlags(idItem->flags() & ~Qt::ItemIsEditable);
     table->setItem(row, 0, idItem);
 
     QTableWidgetItem *assetNameItem = new QTableWidgetItem();
-    QString assetName = QString::fromStdString(GetAssetName(globalId));
-    QString assetSymbol = QString::fromStdString(GetAssetSymbol(globalId));
-    QString assetStr = "";
-    if(!assetName.isEmpty())
+    QString assetName = QString::fromStdString(GetAssetName(assetId));
+    if(assetName.isEmpty())
     {
-        if(!assetSymbol.isEmpty())
-            assetStr = assetName + " (" + assetSymbol + ")";
-        else
-            assetStr = assetName;
+        preDefinedAsset = false;
+        assetName = QString::fromStdString(AssetIdToStr(assetId));
     }
-    else if(!assetSymbol.isEmpty())
-        assetStr = "(" + assetSymbol + ")";
-    assetNameItem->setData(Qt::DisplayRole, assetStr);
+    assetNameItem->setData(Qt::DisplayRole, assetName);
     assetNameItem->setFlags(assetNameItem->flags() & ~Qt::ItemIsEditable);
     table->setItem(row, 1, assetNameItem);
-
-    QTableWidgetItem *blockchainItem = new QTableWidgetItem();
-    blockchainItem->setData(Qt::DisplayRole, blockchainId);
-    blockchainItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
-    blockchainItem->setFlags(blockchainItem->flags() & ~Qt::ItemIsEditable);
-    table->setItem(row, 2, blockchainItem);
-
-    QTableWidgetItem *assetItem = new QTableWidgetItem();
-    assetItem->setData(Qt::DisplayRole, assetId);
-    assetItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
-    assetItem->setFlags(assetItem->flags() & ~Qt::ItemIsEditable);
-    table->setItem(row, 3, assetItem);
 
     QTableWidgetItem *confirmationsItem = new QTableWidgetItem();
     confirmationsItem->setData(Qt::DisplayRole, confirmations);
     confirmationsItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
-    table->setItem(row, 4, confirmationsItem);
+    table->setItem(row, 2, confirmationsItem);
 
     QTableWidgetItem *requiredSignersItem = new QTableWidgetItem();
     requiredSignersItem->setData(Qt::DisplayRole, requiredSigners);
     requiredSignersItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
-    table->setItem(row, 5, requiredSignersItem);
+    table->setItem(row, 3, requiredSignersItem);
 
     QTableWidgetItem *totalSignersItem = new QTableWidgetItem();
     totalSignersItem->setData(Qt::DisplayRole, totalSigners);
     totalSignersItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
-    table->setItem(row, 6, totalSignersItem);
+    table->setItem(row, 4, totalSignersItem);
+
+    QTableWidgetItem *unitExponentItem = new QTableWidgetItem();
+    unitExponentItem->setData(Qt::DisplayRole, unitExponent);
+    unitExponentItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
+    if(preDefinedAsset)
+    {
+        unitExponentItem->setFlags(unitExponentItem->flags() & ~Qt::ItemIsEditable);
+    }
+    table->setItem(row, 5, unitExponentItem);
 
     QTableWidgetItem *maxTradeItem = new QTableWidgetItem();
-    maxTradeItem->setData(Qt::DisplayRole, maxTrade);
+    maxTradeItem->setData(Qt::DisplayRole, GUIUtil::unitsToCoins(maxTrade, unitExponent));
     maxTradeItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
-    table->setItem(row, 7, maxTradeItem);
+    table->setItem(row, 6, maxTradeItem);
 
-    QTableWidgetItem *maxTradeCoinsItem = new QTableWidgetItem();
-    QString maxTradeStr = "";
-    if(!assetSymbol.isEmpty())
-    {
-        unsigned char exponent = GetAssetUnitExponent(globalId);
-        maxTradeStr = GUIUtil::unitsToCoins(maxTrade, exponent);
-        maxTradeStr = maxTradeStr + " " + assetSymbol;
-        maxTradeCoinsItem->setFlags(maxTradeCoinsItem->flags() | Qt::ItemIsEditable);
-    }
-    else
-        maxTradeCoinsItem->setFlags(maxTradeCoinsItem->flags() & ~Qt::ItemIsEditable);
-    maxTradeCoinsItem->setData(Qt::DisplayRole, maxTradeStr);
-    maxTradeCoinsItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
-
-    table->setItem(row, 8, maxTradeCoinsItem);
+    QTableWidgetItem *minTradeItem = new QTableWidgetItem();
+    minTradeItem->setData(Qt::DisplayRole, GUIUtil::unitsToCoins(minTrade, unitExponent));
+    minTradeItem->setData(Qt::TextAlignmentRole, QVariant(Qt::AlignRight | Qt::AlignVCenter));
+    table->setItem(row, 7, minTradeItem);
 
     table->setSortingEnabled(true);
 }
@@ -131,12 +111,13 @@ void AssetVoteDialog::fillAssetVoteTable()
     {
         const CAssetVote &assetVote = vote.vAssetVote[i];
 
-        addTableRow(assetVote.nBlockchainId,
-                    assetVote.nAssetId,
+        addTableRow(assetVote.nAssetId,
                     assetVote.nNumberOfConfirmations,
                     assetVote.nRequiredDepositSigners,
                     assetVote.nTotalDepositSigners,
-                    assetVote.GetMaxTrade());
+                    assetVote.GetMaxTrade(),
+                    assetVote.GetMinTrade(),
+                    assetVote.nUnitExponent);
     }
 
     table->setVisible(false);
@@ -204,76 +185,78 @@ void AssetVoteDialog::accept()
 
     for(int i = 0; i < rows; i++)
     {
+        CAssetVote assetVote;
         int row = i + 1;
         QTableWidgetItem *idItem = table->item(i, 0);
-        QTableWidgetItem *blockchainItem = table->item(i, 2);
-        QTableWidgetItem *assetItem = table->item(i, 3);
-        QTableWidgetItem *confirmationsItem = table->item(i, 4);
-        QTableWidgetItem *requiredSignersItem = table->item(i, 5);
-        QTableWidgetItem *totalSignersItem = table->item(i, 6);
-        QTableWidgetItem *maxTradeItem = table->item(i, 7);
+        QTableWidgetItem *confirmationsItem = table->item(i, 2);
+        QTableWidgetItem *requiredSignersItem = table->item(i, 3);
+        QTableWidgetItem *totalSignersItem = table->item(i, 4);
+        QTableWidgetItem *unitExponentItem = table->item(i, 5);
+        QTableWidgetItem *maxTradeItem = table->item(i, 6);
+        QTableWidgetItem *minTradeItem = table->item(i, 7);
 
-        if(!idItem && !blockchainItem && !assetItem && !confirmationsItem && !requiredSignersItem && !totalSignersItem && !maxTradeItem)
+        if(!idItem && !confirmationsItem && !requiredSignersItem && !totalSignersItem && !unitExponentItem && !maxTradeItem && !minTradeItem)
             continue;
 
         bool ok;
-        int nBlockchainId = blockchainItem->text().toInt(&ok);
-        if(!ok || (nBlockchainId < 0) || (nBlockchainId > MAX_BLOCKCHAIN_ID))
+
+        uint32_t nAssetId = EncodeAssetId(idItem->text().toStdString());
+        if(!IsValidAssetId(nAssetId))
         {
-            error(tr("Invalid blockchain id on row %1").arg(row));
+            error(tr("Invalid asset ID on row %1").arg(row));
             return;
         }
+        assetVote.nAssetId = nAssetId;
 
-        int nAssetId = assetItem->text().toInt(&ok);
-        if(!ok || (nAssetId < 0) || (nAssetId > MAX_ASSET_ID))
+        uint16_t nNumberOfConfirmations = confirmationsItem->text().toUInt(&ok);
+        if(!ok || (nNumberOfConfirmations == 0))
         {
-            error(tr("Invalid asset id on row %1").arg(row));
+            error(tr("Invalid number of confirmations on row %1").arg(row));
             return;
         }
+        assetVote.nNumberOfConfirmations = nNumberOfConfirmations;
 
-        uint64 globalId = idItem->text().toULongLong(&ok);
-        if(!ok || (globalId != AssetGlobalId(nBlockchainId, nAssetId)))
-        {
-            error(tr("Invalid id on row %1").arg(row));
-            return;
-        }
-
-        uint16_t nNumberOfConfirmations = confirmationsItem->text().toInt(&ok);
-        if(!ok)
-          {
-            error(tr("Invalid number of confirmations"));
-            return;
-          }
-
-        uint8_t nRequiredDepositSigners = requiredSignersItem->text().toInt(&ok);
+        uint8_t nRequiredDepositSigners = requiredSignersItem->text().toUInt(&ok);
         if(!ok || (nRequiredDepositSigners < MIN_REQ_SIGNERS))
         {
             error(tr("Invalid number of required deposit signers on row %1").arg(row));
             return;
         }
+        assetVote.nRequiredDepositSigners = nRequiredDepositSigners;
 
-        uint8_t nTotalDepositSigners = totalSignersItem->text().toInt(&ok);
-        if(!ok || (nTotalDepositSigners < MIN_TOTAL_SIGNERS))
+        uint8_t nTotalDepositSigners = totalSignersItem->text().toUInt(&ok);
+        if(!ok || (nTotalDepositSigners < MIN_TOTAL_SIGNERS) || (nTotalDepositSigners < nRequiredDepositSigners))
         {
             error(tr("Invalid number of total deposit signers on row %1").arg(row));
             return;
         }
+        assetVote.nTotalDepositSigners = nTotalDepositSigners;
 
-        uint64 nMaxTrade = maxTradeItem->text().toULongLong(&ok);
+        uint8_t nUnitExponent = unitExponentItem->text().toUInt(&ok);
+        if(!ok || (nUnitExponent > MAX_TRADABLE_UNIT_EXPONENT))
+        {
+            error(tr("Invalid unit exponent on row %1").arg(row));
+            return;
+        }
+        assetVote.nUnitExponent = nUnitExponent;
+
+        uint64 nMaxTrade = GUIUtil::coinsToUnits(maxTradeItem->text(), nUnitExponent);
         uint8_t nMaxTradeExpParam = ExponentialParameter(nMaxTrade);
-        if(!ok || (nMaxTradeExpParam > EXP_SERIES_MAX_PARAM))
+        if((nMaxTradeExpParam == 0) || (nMaxTradeExpParam > EXP_SERIES_MAX_PARAM))
         {
             error(tr("Invalid max trade on row %1").arg(row));
             return;
         }
-
-        CAssetVote assetVote;
-        assetVote.nBlockchainId = nBlockchainId;
-        assetVote.nAssetId = nAssetId;
-        assetVote.nNumberOfConfirmations = nNumberOfConfirmations;
-        assetVote.nRequiredDepositSigners = nRequiredDepositSigners;
-        assetVote.nTotalDepositSigners = nTotalDepositSigners;
         assetVote.nMaxTradeExpParam = nMaxTradeExpParam;
+
+        uint64 nMinTrade = GUIUtil::coinsToUnits(minTradeItem->text(), nUnitExponent);
+        uint8_t nMinTradeExpParam = ExponentialParameter(nMinTrade);
+        if((nMinTradeExpParam > nMaxTradeExpParam) || (nMinTradeExpParam > EXP_SERIES_MAX_PARAM))
+        {
+            error(tr("Invalid min trade on row %1").arg(row));
+            return;
+        }
+        assetVote.nMinTradeExpParam = nMinTradeExpParam;
 
         vAssetVote.push_back(assetVote);
     }
@@ -289,59 +272,4 @@ void AssetVoteDialog::accept()
     model->setVote(vote);
 
     QDialog::accept();
-}
-
-void AssetVoteDialog::on_assetVoteTable_cellChanged(int row, int column)
-{
-    QTableWidget *table = ui->assetVoteTable;
-    QTableWidgetItem *idItem = table->item(row, 0);
-    QTableWidgetItem *maxTradeItem = table->item(row, 7);
-    QTableWidgetItem *maxTradeCoinsItem = table->item(row, 8);
-    if((idItem == NULL) || (maxTradeItem == NULL) || (maxTradeCoinsItem == NULL))
-        return;
-
-    if(column == 7)
-    {
-        uint64 globalId = idItem->data(Qt::DisplayRole).toULongLong();
-        QString assetSymbol = QString::fromStdString(GetAssetSymbol(globalId));
-        if(assetSymbol.isEmpty())
-        {
-            maxTradeCoinsItem->setData(Qt::DisplayRole, QString(""));
-        }
-        else
-        {
-            uint64 maxTrade = maxTradeItem->data(Qt::DisplayRole).toULongLong();
-            unsigned char exponent = GetAssetUnitExponent(globalId);
-            QString maxTradeStr = maxTradeCoinsItem->text();
-            maxTradeStr = GUIUtil::unitsToCoins(maxTrade, exponent);
-            maxTradeStr = maxTradeStr + " " + assetSymbol;
-            maxTradeCoinsItem->setData(Qt::DisplayRole, maxTradeStr);
-        }
-    }
-    else if(column == 8)
-    {
-        uint64 globalId = idItem->data(Qt::DisplayRole).toULongLong();
-        QString assetSymbol = QString::fromStdString(GetAssetSymbol(globalId));
-        if(assetSymbol.isEmpty())
-        {
-            maxTradeCoinsItem->setData(Qt::DisplayRole, QString(""));
-        }
-        else
-        {
-            unsigned char exponent = GetAssetUnitExponent(globalId);
-            QString maxTradeStr = maxTradeCoinsItem->text();
-            maxTradeStr = maxTradeStr.left(maxTradeStr.indexOf(" "));
-            uint64 n = GUIUtil::coinsToUnits(maxTradeStr, exponent);
-            if(n != maxTradeItem->data(Qt::DisplayRole).toULongLong())
-            {
-                maxTradeItem->setData(Qt::DisplayRole, n);
-            }
-        }
-    }
-    else
-        return;
-
-    table->setVisible(false);
-    table->resizeColumnsToContents();
-    table->setVisible(true);
 }

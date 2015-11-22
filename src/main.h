@@ -1735,7 +1735,7 @@ public:
             else if (fRead)
                 const_cast<CDiskBlockIndex*>(this)->mapVotedFee.clear();
 
-            if (nProtocolVersion >= PROTOCOL_V3_1)
+            if (nProtocolVersion >= PROTOCOL_V4_0)
                 READWRITE(mapAssets);
             else if (fRead)
                 const_cast<CDiskBlockIndex*>(this)->mapAssets.clear();
