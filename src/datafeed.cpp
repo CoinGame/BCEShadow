@@ -343,7 +343,7 @@ CVote ParseVote(const Object& objVote)
                 {
                     if (assetVoteAttribute.name_ == "assetid")
                     {
-                        uint32_t nAssetId = assetVoteAttribute.value_.get_uint64();
+                        uint32_t nAssetId = EncodeAssetId(assetVoteAttribute.value_.get_str());
 
                         if (!IsValidAssetId(nAssetId))
                             throw runtime_error("Invalid asset id");

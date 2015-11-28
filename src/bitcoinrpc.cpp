@@ -431,7 +431,7 @@ Object voteToJSON(const CVote& vote)
     BOOST_FOREACH(const CAssetVote& assetVote, vote.vAssetVote)
     {
         Object object;
-        object.push_back(Pair("assetid", (boost::int32_t)assetVote.nAssetId));
+        object.push_back(Pair("assetid", AssetIdToStr(assetVote.nAssetId)));
         object.push_back(Pair("confirmations", assetVote.nNumberOfConfirmations));
         object.push_back(Pair("reqsigners", assetVote.nRequiredDepositSigners));
         object.push_back(Pair("totalsigners", assetVote.nTotalDepositSigners));
@@ -3565,12 +3565,15 @@ Value getassetinfo(const Array& params, bool fHelp)
 
     if (fHelp || params.size() > 2 || params.size() < 1)
         throw runtime_error(
-                "getassetinfo <asset id> [<block height>]\n"
+                "getassetinfo <asset id string> [<block height>]\n"
                         "Returns an object information about an asset on a specific height (default is the current)");
 
     CBlockIndex *pindex = pindexBest;
 
-    uint32_t nAssetId = params[0].get_int();
+    uint32_t nAssetId = EncodeAssetId(params[0].get_str());
+
+    if (!IsValidAssetId(nAssetId))
+        throw JSONRPCError(-3, "Invalid asset id");
 
     if (params.size() > 1)
     {
@@ -3588,7 +3591,7 @@ Value getassetinfo(const Array& params, bool fHelp)
         throw JSONRPCError(-4, "Could not get asset");
 
     Object object;
-    object.push_back(Pair("assetid", (boost::int32_t)nAssetId));
+    object.push_back(Pair("assetid", AssetIdToStr(nAssetId)));
     object.push_back(Pair("name", GetAssetName(nAssetId)));
     object.push_back(Pair("symbol", GetAssetSymbol(nAssetId)));
     object.push_back(Pair("confirmations", asset.nNumberOfConfirmations));
@@ -3630,7 +3633,7 @@ Value getassets(const Array& params, bool fHelp)
     {
         CAsset asset = pair.second;
         Object object;
-        object.push_back(Pair("assetid", (boost::int32_t)asset.nAssetId));
+        object.push_back(Pair("assetid", AssetIdToStr(asset.nAssetId)));
         object.push_back(Pair("confirmations", asset.nNumberOfConfirmations));
         object.push_back(Pair("reqsigners", asset.nRequiredDepositSigners));
         object.push_back(Pair("totalsigners", asset.nTotalDepositSigners));

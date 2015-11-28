@@ -12,6 +12,8 @@
 #include "ui_interface.h"
 #include "main.h"
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+
 
 // Work around clang compilation problem in Boost 1.46:
 // /usr/include/boost/program_options/detail/config_file.hpp:163:17: error: call to function 'to_internal' that is neither visible in the template definition nor found by argument-dependent lookup
@@ -1626,7 +1628,18 @@ int64 AnnualInterestRatePercentageToRate(double percentage, int64 blocks)
 
 uint32_t EncodeAssetId(std::string symbol)
 {
-  if ((symbol.length() == 0) || (symbol.length() > ASSET_SYMBOL_ALPHA_MAX))
+  if (symbol.length() == 0)
+        return ASSET_ID_INVALID;
+
+  // Check if a raw id
+  if (boost::starts_with(symbol, "ID") && symbol.length() == ASSET_ID_RAW_CHARS)
+  {
+      int64 nParsedId = atoi64(symbol.substr(2)); // Try to parse the id number
+      if (nParsedId > 0 && nParsedId <= ASSET_ID_RAW_MAX_VALUE && IsValidAssetId(nParsedId))
+          return (uint32_t) nParsedId;
+  }
+
+  if (symbol.length() > ASSET_SYMBOL_ALPHA_MAX)
         return ASSET_ID_INVALID;
 
     char pSymbolItems[ASSET_SYMBOL_ALPHA_MAX];
@@ -1673,6 +1686,9 @@ uint32_t EncodeAssetId(std::string symbol)
 
 std::string AssetIdToStr(uint32_t nId)
 {
+    if (!IsValidAssetId(nId))
+        return ASSET_ID_INVALID_STR;
+
     std::vector<char> rv;
     uint8_t header = GetAssetIdHeader(nId);
 
@@ -1688,7 +1704,7 @@ std::string AssetIdToStr(uint32_t nId)
             if (c >= ASCII_ENCODED_ALPHA_START && c <= ASCII_ENCODED_ALPHA_END)
                 rv.push_back(c + ASCII_ALPHA_ENCODING_BASE);
             else
-                rv.push_back('?');
+                return ASSET_ID_INVALID_STR;
         }
         break;
     case ASSET_ID_HEADER_ALPHANUM:
@@ -1703,19 +1719,45 @@ std::string AssetIdToStr(uint32_t nId)
             else if (c >= ASCII_ENCODED_NUM_START && c <= ASCII_ENCODED_NUM_END)
                 rv.push_back(c + ASCII_NUM_ENCODING_BASE);
             else
-                rv.push_back('?');
+                return ASSET_ID_INVALID_STR;
         }
         break;
     case ASSET_ID_HEADER_RAW:
-        // Iterate over nibbles
-        for (int i = sizeof(nId) * 2 - 1; i >= 0 ; i--)
-            rv.push_back(hexmap[nId >> i * 4 & 0xf]);
-        break;
+        return strprintf("ID%010d", nId);
     case ASSET_ID_HEADER_RESERVED:
     default:
-        return "INVALID_ID";
+        return ASSET_ID_INVALID_STR;
     }
     return std::string(rv.begin(), rv.end());
+}
+
+bool IsValidAssetId(uint32_t nId)
+{
+    if (nId == ASSET_ID_INVALID || nId == ASSET_ID_INVALID_ZERO ||
+            nId == ASSET_ID_INVALID_EMPTY_ALPHA || nId == ASSET_ID_INVALID_EMPTY_ALPHANUM)
+        return false;
+
+    uint8_t header = GetAssetIdHeader(nId);
+    if (header == ASSET_ID_HEADER_RESERVED)
+        return false;
+    else
+    {
+        // Alphanumeric IDs must contain at least one digit, otherwise they are invalid.
+        // This is to avoid similar looking asset string representations
+        if (header == ASSET_ID_HEADER_ALPHANUM)
+        {
+            bool fIsAlphaNumValid = false;
+            for (int i = ASSET_SYMBOL_ALPHANUM_MAX - 1; i >= 0 && !fIsAlphaNumValid; i--)
+            {
+                uint8_t c = (nId >> i * ASSET_ID_ALPHANUM_SHIFT) & ASSET_ID_ALPHANUM_CHAR_MASK;
+                if (c >= ASCII_ENCODED_NUM_START && c <= ASCII_ENCODED_NUM_END)
+                    fIsAlphaNumValid = true;
+            }
+            return fIsAlphaNumValid;
+        }
+        else
+            return true;
+    }
 }
 
 unsigned char ExponentialParameter(int64 value)

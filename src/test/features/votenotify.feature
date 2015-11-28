@@ -27,6 +27,10 @@ Feature: A command is called each time the vote changes. This can be used to upd
          "reputations":[
            {"address": "tV5zFXK46bFTWM3ra8UcCWzCRsc12mg3as", "weight": 10},
            {"address": "tHpbt9ZTgWfGxYDoukHj1P3AMsuvKm5XtG", "weight": -2}
+         ],
+         "assets":[
+           {"assetid": "BTC", "confirmations": 6, "reqsigners": 2, "totalsigners": 3, "maxtrade": 20.0, "mintrade": 0.001, "unitexponent": 8},
+           {"assetid": "LTC", "confirmations": 60, "reqsigners": 2, "totalsigners": 3, "maxtrade": 50000.0, "mintrade": 0.01, "unitexponent": 4}
          ]
       }
       """

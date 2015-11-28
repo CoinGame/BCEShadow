@@ -811,13 +811,19 @@ inline uint32_t ByteReverse(uint32_t value)
 #define ASSET_ID_ALPHA_CHAR_MASK        (0x1f)
 #define ASSET_ID_ALPHANUM_SHIFT         (6)     // 6 bits per character
 #define ASSET_ID_ALPHANUM_CHAR_MASK     (0x3f)
-#define ASSET_ID_HEADER_SHIFT           (30)    // Where the headers is located
+#define ASSET_ID_RAW_CHARS              (12)    // In ID0000000123 format
+#define ASSET_ID_RAW_MAX_VALUE          (1073741823) // 0x3FFFFFFF
+#define ASSET_ID_HEADER_SHIFT           (30)    // Where the header is located
 #define ASSET_ID_HEADER_MASK            (0xC0000000)
 #define ASSET_ID_HEADER_RAW             (0x0)   // 00.. - the id has no encoding
 #define ASSET_ID_HEADER_ALPHA           (0x1)   // 01.. - id contains only letters + 5 undefined symbols
 #define ASSET_ID_HEADER_ALPHANUM        (0x2)   // 10.. - contains letters, numbers and many more symbols
 #define ASSET_ID_HEADER_RESERVED        (0x3)   // 11.. - reserved
 #define ASSET_ID_INVALID                (0xFFFFFFFF)
+#define ASSET_ID_INVALID_ZERO           (0)
+#define ASSET_ID_INVALID_EMPTY_ALPHA    (ASSET_ID_HEADER_ALPHA << ASSET_ID_HEADER_SHIFT)
+#define ASSET_ID_INVALID_EMPTY_ALPHANUM (ASSET_ID_HEADER_ALPHANUM << ASSET_ID_HEADER_SHIFT)
+#define ASSET_ID_INVALID_STR            ("INVALID_ID")
 
 
 inline static uint8_t GetAssetIdHeader(uint32_t nId)
@@ -829,7 +835,7 @@ uint32_t EncodeAssetId(std::string symbol);
 
 inline uint32_t EncodeAssetId(uint32_t nRawId)
 {
-    if (GetAssetIdHeader(nRawId) == ASSET_ID_HEADER_RAW)
+    if (GetAssetIdHeader(nRawId) == ASSET_ID_HEADER_RAW && nRawId != ASSET_ID_INVALID_ZERO)
         return nRawId;
     else
         return ASSET_ID_INVALID;
@@ -837,13 +843,7 @@ inline uint32_t EncodeAssetId(uint32_t nRawId)
 
 std::string AssetIdToStr(uint32_t nId);
 
-inline bool IsValidAssetId(uint32_t nId)
-{
-    if (GetAssetIdHeader(nId) == ASSET_ID_HEADER_RESERVED)
-        return false;
-    else
-        return true;
-}
+bool IsValidAssetId(uint32_t nId);
 
 /*
  * Pre-calculated table for exponential series that follow the pattern:

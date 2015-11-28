@@ -4,7 +4,7 @@ When(/^node "(.*?)" votes for the following assets:$/) do |arg1, table|
   vote = {
     "assets" => table.hashes.map do |row|
       {
-        "assetid" => row["AssetId"].to_i,
+        "assetid" => row["AssetId"],
         "confirmations" => row["Confirmations"].to_i,
         "reqsigners" => row["M"].to_i,
         "totalsigners" => row["N"].to_i,
@@ -33,7 +33,7 @@ Then(/^block "(.*?)" on node "(.*?)" should contain the following asset votes:$/
 
   expected_asset_votes = table.hashes.map do |row|
     {
-      "assetid" => row["AssetId"].to_i,
+      "assetid" => row["AssetId"],
       "confirmations" => row["Confirmations"].to_i,
       "reqsigners" => row["M"].to_i,
       "totalsigners" => row["N"].to_i,
@@ -68,7 +68,7 @@ Then(/^the active assets in node "(.*?)" are:$/) do |arg1, table|
 
   expected_assets = table.hashes.map do |row|
     {
-      "assetid" => row["AssetId"].to_i,
+      "assetid" => row["AssetId"],
       "confirmations" => row["Confirmations"].to_i,
       "reqsigners" => row["M"].to_i,
       "totalsigners" => row["N"].to_i,
