@@ -1000,6 +1000,10 @@ bool ExtractAssetVoteResult(const CBlockIndex* pindex, vector<CAsset>& vAssets)
                         nMaxVotes = item.second;
                     }
                 }
+
+                // Make sure that the majority is larger than the half votes
+                if (nMaxVotes <= nHalfAssetVotes)
+                    return false;
             }
 
             newAsset.nUnitExponent = nUnitExponent;
