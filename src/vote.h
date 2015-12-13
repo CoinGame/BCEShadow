@@ -628,4 +628,6 @@ bool CalculateReputationResult(const CBlockIndex* pindex, std::map<CBitcoinAddre
 bool ExtractAssetVoteResult(const CBlockIndex *pindex, std::vector<CAsset> &vAssets);
 bool CalculateVotedAssets(CBlockIndex* pindex);
 
+bool MustUpgradeProtocol(const CBlockIndex* pPrevIndex, int nProtocolVersion);
+
 #endif

@@ -1615,4 +1615,86 @@ BOOST_AUTO_TEST_CASE(asset_vote_on_inexistant_asset_with_absolute_majority_on_ex
     CheckSampleAssetWithExponent(vAssets[0], 4);
 }
 
+int64 GetTime(int year, int month, int day, int hour, int min, int sec)
+{
+    tm t;
+    t.tm_year = year - 1900;
+    t.tm_mon = month - 1;
+    t.tm_mday = day;
+    t.tm_hour = hour;
+    t.tm_min = min;
+    t.tm_sec = sec;
+    return timegm(&t);
+}
+
+std::string TimeString(struct tm* timeinfo)
+{
+    char buffer[100];
+    strftime(buffer, 100, "%Y-%m-%d %H:%M:%S", timeinfo);
+    std::string result(buffer);
+    return result;
+}
+
+void CheckTimeEqual(time_t t1, time_t t2)
+{
+    string s1 = TimeString(gmtime(&t1));
+    string s2 = TimeString(gmtime(&t2));
+    BOOST_CHECK_EQUAL(s1, s2);
+}
+
+void CheckProtocolSwitchTime(int64 nVotePassTime, int64 nExpectedSwitchTime)
+{
+    int nVotesForNewProtocol = PROTOCOL_SWITCH_REQUIRE_VOTES;
+    int nVotesAgainstNewProtocol = PROTOCOL_SWITCH_COUNT_VOTES - PROTOCOL_SWITCH_REQUIRE_VOTES;
+    int nVotes = nVotesForNewProtocol + nVotesAgainstNewProtocol;
+    int nInterval = 60;
+
+    CBlockIndex* pindexBest = new CBlockIndex;
+    pindexBest->nTime = nVotePassTime - nVotes * nInterval;
+    pindexBest->vote.nVersionVote = 3;
+    BOOST_CHECK(!MustUpgradeProtocol(pindexBest, 4));
+
+    for (int i = 0; i < PROTOCOL_SWITCH_COUNT_VOTES - PROTOCOL_SWITCH_REQUIRE_VOTES; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.nVersionVote = 3;
+        pindexBest->nTime = pindexBest->pprev->nTime + nInterval;
+        BOOST_CHECK(!MustUpgradeProtocol(pindexBest, 4));
+    }
+
+    for (int i = 0; i < PROTOCOL_SWITCH_REQUIRE_VOTES; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.nVersionVote = 4;
+        pindexBest->nTime = pindexBest->pprev->nTime + nInterval;
+        BOOST_CHECK(!MustUpgradeProtocol(pindexBest, 4));
+    }
+    BOOST_CHECK_EQUAL(pindexBest->nTime, nVotePassTime);
+
+    bool fUpgraded = false;
+    for (int i = 0; i < 30000; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.nVersionVote = 3;
+        pindexBest->nTime = pindexBest->pprev->nTime + nInterval;
+        if (MustUpgradeProtocol(pindexBest, 4))
+        {
+            fUpgraded = true;
+            break;
+        }
+    }
+
+    BOOST_CHECK(fUpgraded);
+    CheckTimeEqual(nExpectedSwitchTime, pindexBest->nTime);
+}
+
+BOOST_AUTO_TEST_CASE(protocol_upgrade_2_weeks_after_vote)
+{
+    CheckProtocolSwitchTime(GetTime(2015, 12, 13, 10, 40, 12), GetTime(2015, 12, 27, 14,  0, 12));
+    CheckProtocolSwitchTime(GetTime(2015, 12, 13, 14,  0,  0), GetTime(2015, 12, 27, 14,  0,  0));
+    CheckProtocolSwitchTime(GetTime(2015, 12, 13, 14,  0,  1), GetTime(2015, 12, 28, 14,  0,  1));
+    CheckProtocolSwitchTime(GetTime(2015, 12, 24, 23, 59, 59), GetTime(2016,  1,  8, 14,  0, 59));
+    CheckProtocolSwitchTime(GetTime(2015, 12, 25,  0,  0,  0), GetTime(2016,  1,  8, 14,  0,  0));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
