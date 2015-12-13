@@ -29,6 +29,10 @@ Feature: The user can define a data feed URL to automatically update his vote fr
            {"address": "tV5zFXK46bFTWM3ra8UcCWzCRsc12mg3as", "weight": 10},
            {"address": "tHpbt9ZTgWfGxYDoukHj1P3AMsuvKm5XtG", "weight": -2}
          ],
+         "signerreward":{
+           "count": 10,
+           "amount": 20.0
+         },
          "assets":[
            {"assetid": "BTC", "confirmations": 6, "reqsigners": 2, "totalsigners": 3, "maxtrade": 20.0, "mintrade": 0.001, "unitexponent": 8},
            {"assetid": "LTC", "confirmations": 60, "reqsigners": 2, "totalsigners": 3, "maxtrade": 50000.0, "mintrade": 0.01, "unitexponent": 4}
@@ -61,6 +65,10 @@ Feature: The user can define a data feed URL to automatically update his vote fr
          "reputations":[
            {"address": "tUgyRr1JHgw1AqMc1Zq9VzFEbukpYBKAX2", "weight": 1}
          ],
+         "signerreward":{
+           "count": 5,
+           "amount": 12.0512
+         },
          "assets":[
            {"assetid": "BTC", "confirmations": 10, "reqsigners": 3, "totalsigners": 5, "maxtrade": 20.0, "mintrade": 0.001, "unitexponent": 8 }
          ]
@@ -74,6 +82,7 @@ Feature: The user can define a data feed URL to automatically update his vote fr
          "motions":[],
          "fees": {},
          "reputations":[],
+         "signerreward":{"count": null, "amount": null},
          "assets":[]
       }
       """
@@ -142,7 +151,8 @@ Feature: The user can define a data feed URL to automatically update his vote fr
             "1111111111111111111111111111111111111111"
          ],
          "fees": {},
-         "reputations": [],
+         "reputations":[],
+         "signerreward":{"count": null, "amount": null},
          "assets":[]
       }
       """
@@ -222,6 +232,7 @@ Feature: The user can define a data feed URL to automatically update his vote fr
       | motions                |
       | fees                   |
       | reputations            |
+      | signerreward           |
       | assets                 |
 
   Scenario: An user sets a data feed through a proxy

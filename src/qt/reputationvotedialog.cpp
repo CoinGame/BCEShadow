@@ -54,6 +54,9 @@ void ReputationVoteDialog::setModel(WalletModel *model)
     ui->downVoteTable->setVisible(false);
     ui->downVoteTable->resizeColumnsToContents();
     ui->downVoteTable->setVisible(true);
+
+    ui->eligibleSignerCount->setText(vote.signerReward.nCount >= 0 ? QString::number(vote.signerReward.nCount) : "");
+    ui->signerReward->setText(vote.signerReward.nAmount >= 0 ? BitcoinUnits::format(BitcoinUnits::BTC, vote.signerReward.nAmount) : "");
 }
 
 void ReputationVoteDialog::addVote(QTableWidget* table)
@@ -159,6 +162,39 @@ void ReputationVoteDialog::accept()
         return;
     if (!parseVoteTable(ui->downVoteTable, tr("down vote table"), vote))
         return;
+
+    {
+        QString text = ui->eligibleSignerCount->text();
+        if (text == "")
+            vote.signerReward.nCount = -1;
+        else
+        {
+            int nCount = text.toInt();
+            if (nCount < numeric_limits<int16_t>::min() || nCount > numeric_limits<int16_t>::max())
+            {
+                error(tr("Invalid eligible signer amount"));
+                return;
+            }
+            vote.signerReward.nCount = nCount;
+        }
+    }
+
+    {
+        QString text = ui->signerReward->text();
+        if (text == "")
+            vote.signerReward.nAmount = -1;
+        else
+        {
+            int64 nAmount;
+            bool validAmount = BitcoinUnits::parse(BitcoinUnits::BTC, text, &nAmount);
+            if (!validAmount || nAmount < numeric_limits<int32_t>::min() || nAmount > numeric_limits<int32_t>::max())
+            {
+                error(tr("Invalid signer reward amount"));
+                return;
+            }
+            vote.signerReward.nAmount = nAmount;
+        }
+    }
 
     if (!vote.IsValid(model->getProtocolVersion()))
     {

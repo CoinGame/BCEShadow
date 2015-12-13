@@ -106,6 +106,11 @@ void VotePage::update()
 
         fillCustodianTable();
         fillReputationTable();
+
+        CSignerRewardVote signerReward = lastBestBlock->GetEffectiveSignerRewardVoteResult();
+        ui->eligibleSigner->setText(QString::number(signerReward.nCount));
+        ui->signerReward->setText(QString("%1 BKS").arg(BitcoinUnits::format(BitcoinUnits::BTC, signerReward.nAmount)));
+
         fillAssetTable();
     }
 }

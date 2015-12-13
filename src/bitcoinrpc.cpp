@@ -427,6 +427,11 @@ Object voteToJSON(const CVote& vote)
     }
     result.push_back(Pair("reputations", reputationVotes));
 
+    Object signerReward;
+    signerReward.push_back(Pair("count", vote.signerReward.nCount >= 0 ? vote.signerReward.nCount : Value::null));
+    signerReward.push_back(Pair("amount", vote.signerReward.nAmount >= 0 ? ValueFromAmount(vote.signerReward.nAmount) : Value::null));
+    result.push_back(Pair("signerreward", signerReward));
+
     Array assetVotes;
     BOOST_FOREACH(const CAssetVote& assetVote, vote.vAssetVote)
     {
@@ -1481,7 +1486,7 @@ Value park(const Array& params, bool fHelp)
     else
         strAccount = "";
 
-    CBitcoinAddress unparkAddress(params.size() > 3 ? params[3].get_str() : GetAccountAddress(strAccount));
+    CBitcoinAddress unparkAddress(params.size() > 3 ? CBitcoinAddress(params[3].get_str()) : GetAccountAddress(strAccount));
     if (!unparkAddress.IsValid(pwalletMain->GetUnit()))
         throw JSONRPCError(-5, "Invalid address");
 
@@ -3559,6 +3564,136 @@ Value getreputations(const Array& params, bool fHelp)
     return obj;
 }
 
+static CBlockIndex* GetBlockIndexFromParamsHeight(const Array& params, int index)
+{
+    CBlockIndex* pindex = pindexBest;
+
+    if (params.size() <= index || params[index].type() == null_type)
+        return pindex;
+
+    int nHeight = params[index].get_int();
+
+    if (nHeight < 0)
+        nHeight = nBestHeight + nHeight;
+
+    if (nHeight < 0 || nHeight > nBestHeight)
+        throw JSONRPCError(-3, "Invalid height");
+
+    for (int i = nBestHeight; i > nHeight; i--)
+        pindex = pindex->pprev;
+
+    return pindex;
+}
+
+Value getsignerreward(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "getsignerreward [<height>]\n"
+            "Returns an object containing the effective signer reward at block <height> (default is the current height).\n"
+            "If <height> is negative, it's relative to the current height");
+
+    CBlockIndex *pindex = GetBlockIndexFromParamsHeight(params, 0);
+    const CSignerRewardVote& signerReward = pindex->GetEffectiveSignerRewardVoteResult();
+
+    Object obj;
+    obj.push_back(Pair("count", signerReward.nCount));
+    obj.push_back(Pair("amount", ValueFromAmount(signerReward.nAmount)));
+    return obj;
+}
+
+template<typename KeyType, typename ValueType>
+struct CComparatorWithPrevious
+{
+    KeyType previous;
+
+    CComparatorWithPrevious(KeyType previous) : previous(previous)
+    {
+    }
+
+    bool operator() (const pair<KeyType, ValueType>& lhs, const pair<KeyType, ValueType>& rhs) const
+    {
+        const KeyType& lhsValue = (lhs.first == -1 ? previous : lhs.first);
+        const KeyType& rhsValue = (rhs.first == -1 ? previous : rhs.first);
+        return (lhsValue < rhsValue);
+    }
+};
+
+Value getsignerrewardvotes(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "getsignerrewardvotes [<height>]\n"
+            "Returns an object containing the details of the signer reward votes at block <height> (default is the current height).\n"
+            "If <height> is negative, it's relative to the current height");
+
+    CBlockIndex *pindex = GetBlockIndexFromParamsHeight(params, 0);
+
+    CSignerRewardVote previous;
+    if  (pindex->pprev)
+        previous = pindex->pprev->signerRewardVoteResult;
+    else
+        previous.Set(0, 0);
+
+    map<int16_t, int> mapCount;
+    map<int32_t, int> mapAmount;
+
+    int voteCount = CalculateSignerRewardVoteCounts(pindex, mapCount, mapAmount);
+
+    vector<pair<int16_t, int> > vCount(mapCount.begin(), mapCount.end());
+    vector<pair<int32_t, int> > vAmount(mapAmount.begin(), mapAmount.end());
+
+    // Sort votes by voted value, except for negative values that are put at the same place as the value in the previous block
+    sort(vCount.begin(), vCount.end(), CComparatorWithPrevious<int16_t, int>(previous.nCount));
+    sort(vAmount.begin(), vAmount.end(), CComparatorWithPrevious<int32_t, int>(previous.nAmount));
+
+    Object obj;
+
+    // Eligible reputed signer count votes
+    {
+        Array resultArray;
+        int accumulated = 0;
+        BOOST_FOREACH(PAIRTYPE(int16_t, int) pair, vCount)
+        {
+            accumulated += pair.second;
+            Object result;
+            const int& nCount = pair.first;
+            result.push_back(Pair("vote", nCount == -1 ? Value::null : nCount));
+            result.push_back(Pair("value", nCount == -1 ? previous.nCount : nCount));
+            result.push_back(Pair("count", pair.second));
+
+            double accumulatedPercentage = std::floor((double)accumulated / (double)voteCount * 1000 + 0.5) / 10.0;
+            result.push_back(Pair("accumulated_percentage", accumulatedPercentage));
+
+            resultArray.push_back(result);
+        }
+        obj.push_back(Pair("count", resultArray));
+    }
+
+    // Reward amount votes
+    {
+        Array resultArray;
+        int accumulated = 0;
+        BOOST_FOREACH(PAIRTYPE(int32_t, int) pair, vAmount)
+        {
+            accumulated += pair.second;
+            Object result;
+            const int& nAmount = pair.first;
+            result.push_back(Pair("vote", nAmount == -1 ? Value::null : ValueFromAmount(nAmount)));
+            result.push_back(Pair("value", ValueFromAmount(nAmount == -1 ? previous.nAmount : nAmount)));
+            result.push_back(Pair("count", pair.second));
+
+            double accumulatedPercentage = std::floor((double)accumulated / (double)voteCount * 1000 + 0.5) / 10.0;
+            result.push_back(Pair("accumulated_percentage", accumulatedPercentage));
+
+            resultArray.push_back(result);
+        }
+        obj.push_back(Pair("amount", resultArray));
+    }
+
+    return obj;
+}
+
 Value getassetinfo(const Array& params, bool fHelp)
 {
     Object result;
@@ -4479,7 +4614,7 @@ Value setdatafeed(const Array& params, bool fHelp)
             "setdatafeed <url> [<signature url> <address>] [<parts>]\n"
             "Change the vote data feed. Set <url> to an empty string to disable.\n"
             "If <signature url> and <address> are specified and not empty strings a signature will also be retrieved at <signature url> and verified.\n"
-            "Parts is the list of the top level vote parts that will be taken from the feed, separated by a coma. The other parts will not affect the vote. Default is \"custodians,parkrates,motions,fees,reputations,assets\".");
+            "Parts is the list of the top level vote parts that will be taken from the feed, separated by a coma. The other parts will not affect the vote. Default is \"custodians,parkrates,motions,fees,reputations,signerreward,assets\".");
 
     string sURL = params[0].get_str();
 
@@ -4491,7 +4626,7 @@ Value setdatafeed(const Array& params, bool fHelp)
     if (params.size() > 2)
         sAddress = params[2].get_str();
 
-    string sParts("custodians,parkrates,motions,fees,reputations,assets");
+    string sParts("custodians,parkrates,motions,fees,reputations,signerreward,signerreward,assets");
     if (params.size() > 3)
         sParts = params[3].get_str();
     vector<string> vParts;
@@ -4499,7 +4634,7 @@ Value setdatafeed(const Array& params, bool fHelp)
 
     BOOST_FOREACH(const string sPart, vParts)
     {
-        if (sPart != "custodians" && sPart != "parkrates" && sPart != "motions" && sPart != "fees" && sPart != "reputations" && sPart != "assets")
+        if (sPart != "custodians" && sPart != "parkrates" && sPart != "motions" && sPart != "fees" && sPart != "reputations" && sPart != "signerreward" && sPart != "assets")
             throw runtime_error("Invalid parts");
     }
 
@@ -4903,6 +5038,8 @@ static const CRPCCommand vRPCCommands[] =
     { "getelectedcustodians",   &getelectedcustodians,   true },
     { "getparkvotes",           &getparkvotes,           true },
     { "getreputations",         &getreputations,         true },
+    { "getsignerreward",        &getsignerreward,        true },
+    { "getsignerrewardvotes",   &getsignerrewardvotes,   true },
     { "getassets",              &getassets,              true },
     { "getassetinfo",           &getassetinfo,           true },
     { "listunspent",            &listunspent,            false},
@@ -5753,6 +5890,8 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "getparkvotes"            && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "getparkvotes"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "getreputations"          && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "getsignerreward"         && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "getsignerrewardvotes"    && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "getassetinfo"            && n > 0) ConvertTo<boost::uint64_t>(params[0]);
     if (strMethod == "getassetinfo"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "getassets"               && n > 0) ConvertTo<boost::int64_t>(params[0]);

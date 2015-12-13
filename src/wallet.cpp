@@ -1744,10 +1744,6 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
 
     int nProtocolVersion = GetProtocolForNextBlock(pindexprev);
 
-    CBlockIndex pindexdummy;
-    pindexdummy.pprev = pindexprev;
-    pindexdummy.nTime = txNew.nTime;
-
     CVote blockVote = vote.GenerateBlockVote(nProtocolVersion);
 
     // nubit: Add current vote
@@ -1759,10 +1755,35 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         blockVote.nVersionVote = nForcedVersionVote;
 #endif
 
-    CalculateVotedAssets(&pindexdummy);
-    RemoveVotedAssets(pindexdummy, blockVote.vAssetVote);
+    {
+        CBlockIndex pindexdummy;
+        pindexdummy.pprev = pindexprev;
+        pindexdummy.nTime = txNew.nTime;
+
+        CalculateVotedAssets(&pindexdummy);
+        RemoveVotedAssets(pindexdummy, blockVote.vAssetVote);
+    }
 
     txNew.vout.push_back(CTxOut(0, blockVote.ToScript(nProtocolVersion)));
+
+    CBlockIndex pindexdummy;
+    pindexdummy.pprev = pindexprev;
+    pindexdummy.nTime = txNew.nTime;
+    pindexdummy.vote = blockVote;
+
+    {
+        CTxDestination addressSigner;
+        int64 nReward;
+        if (!CalculateSignerReward(&pindexdummy, addressSigner, nReward))
+            return error("CreateCoinStake : unable to get signer reward");
+
+        if (nReward > 0)
+        {
+            CScript scriptOutput;
+            scriptOutput.SetDestination(addressSigner);
+            txNew.vout.push_back(CTxOut(nReward, scriptOutput));
+        }
+    }
 
     // nubit: The result of the vote is stored in the CoinStake transaction
     CParkRateVote parkRateResult;

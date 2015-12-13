@@ -383,17 +383,17 @@ public:
     {
     }
 
-    CBitcoinAddress(const CTxDestination &dest, unsigned char cUnit)
+    explicit CBitcoinAddress(const CTxDestination &dest, unsigned char cUnit)
     {
         Set(dest, cUnit);
     }
 
-    CBitcoinAddress(const std::string& strAddress)
+    explicit CBitcoinAddress(const std::string& strAddress)
     {
         SetString(strAddress);
     }
 
-    CBitcoinAddress(const char* pszAddress)
+    explicit CBitcoinAddress(const char* pszAddress)
     {
         SetString(pszAddress);
     }

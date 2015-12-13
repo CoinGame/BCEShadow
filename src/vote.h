@@ -303,21 +303,30 @@ public:
             }
     };
 
+    void SetDestination(const CTxDestination& destination)
+    {
+        boost::apply_visitor(CDestinationVisitor(this), destination);
+    }
+
+    CTxDestination GetDestination() const
+    {
+        if (fScript)
+            return CScriptID(hashAddress);
+        else
+            return CKeyID(hashAddress);
+    }
+
     void SetAddress(const CBitcoinAddress& address)
     {
         if (address.GetUnit() != '8')
             throw std::runtime_error("Invalid unit on reputation vote");
-        CTxDestination destination = address.Get();
-        boost::apply_visitor(CDestinationVisitor(this), destination);
+        SetDestination(address.Get());
     }
 
     CBitcoinAddress GetAddress() const
     {
         CBitcoinAddress address;
-        if (fScript)
-            address.Set(CScriptID(hashAddress), '8');
-        else
-            address.Set(CKeyID(hashAddress), '8');
+        address.Set(GetDestination(), '8');
         return address;
     }
 
@@ -334,6 +343,64 @@ public:
         if (hashAddress < other.hashAddress)
             return true;
         return false;
+    }
+};
+
+class CSignerRewardVote
+{
+public:
+    // A negative value means no vote, i.e. a vote to keep the current value
+    int16_t nCount;
+    int32_t nAmount;
+
+    CSignerRewardVote() :
+        nCount(-1),
+        nAmount(-1)
+    {
+    }
+
+    void SetNull()
+    {
+        nCount = -1;
+        nAmount = -1;
+    }
+
+    void Set(int nCount, int64 nAmount)
+    {
+        if (nCount < std::numeric_limits<int16_t>::min() || nCount > std::numeric_limits<int16_t>::max())
+            throw std::runtime_error("Signer reward count out of range");
+        if (nAmount < std::numeric_limits<int32_t>::min() || nAmount > std::numeric_limits<int32_t>::max())
+            throw std::runtime_error("Signer reward amount out of range");
+        this->nCount = nCount;
+        this->nAmount = nAmount;
+    }
+
+    IMPLEMENT_SERIALIZE
+    (
+        READWRITE(nCount);
+        READWRITE(nAmount);
+    )
+
+    bool IsValid(int nProtocolVersion) const
+    {
+        return true;
+    }
+
+    bool IsValidInBlock(int nProtocolVersion) const
+    {
+        if (nProtocolVersion < PROTOCOL_V4_0 && (nCount > 0 || nAmount > 0))
+            return false;
+        return true;
+    }
+
+    inline bool operator==(const CSignerRewardVote& other) const
+    {
+        return (nCount == other.nCount &&
+                nAmount == other.nAmount);
+    }
+    inline bool operator!=(const CSignerRewardVote& other) const
+    {
+        return !(*this == other);
     }
 };
 
@@ -446,6 +513,7 @@ public:
     std::vector<uint160> vMotion;
     std::map<unsigned char, uint32_t> mapFeeVote;
     std::vector<CReputationVote> vReputationVote;
+    CSignerRewardVote signerReward;
     std::vector<CAssetVote> vAssetVote;
 
     int64 nCoinAgeDestroyed;
@@ -530,11 +598,13 @@ public:
         if (nVersion >= PROTOCOL_V4_0)
         {
             READWRITE(vReputationVote);
+            READWRITE(signerReward);
             READWRITE(vAssetVote);
         }
         else if (fRead)
         {
             const_cast<CVote*>(this)->vReputationVote.clear();
+            const_cast<CVote*>(this)->signerReward.SetNull();
             const_cast<CVote*>(this)->vAssetVote.clear();
         }
     )
@@ -551,8 +621,9 @@ public:
                 vParkRateVote == other.vParkRateVote &&
                 vMotion == other.vMotion &&
                 mapFeeVote == other.mapFeeVote &&
-                vReputationVote == other.vReputationVote) &&
-                vAssetVote == other.vAssetVote;
+                vReputationVote == other.vReputationVote &&
+                signerReward == other.signerReward &&
+                vAssetVote == other.vAssetVote);
     }
     inline bool operator!=(const CVote& other) const
     {
@@ -623,7 +694,15 @@ bool IsProtocolActiveForNextBlock(const CBlockIndex* pPrevIndex, int nSwitchTime
 
 bool CalculateVotedFees(CBlockIndex* pindex);
 
+bool CalculateReputationDestinationResult(const CBlockIndex* pindex, std::map<CTxDestination, int64>& mapReputation);
 bool CalculateReputationResult(const CBlockIndex* pindex, std::map<CBitcoinAddress, int64>& mapReputation);
+
+bool CalculateSignerReward(const CBlockIndex* pindex, CTxDestination& addressRet, int64& nRewardRet);
+bool CalculateSignerRewardRecipient(const std::map<CTxDestination, int64>& mapReputation, int nCount, const std::map<CTxDestination, int>& mapPastReward, bool& fFoundRet, CTxDestination& addressRecipientRet);
+bool GetPastSignerRewards(const CBlockIndex* pindex, std::map<CTxDestination, int>& mapPastRewardRet);
+
+int CalculateSignerRewardVoteCounts(const CBlockIndex* pindex, std::map<int16_t, int>& mapCountRet, std::map<int32_t, int>& mapAmountRet);
+bool CalculateSignerRewardVoteResult(CBlockIndex* pindex);
 
 bool ExtractAssetVoteResult(const CBlockIndex *pindex, std::vector<CAsset> &vAssets);
 bool CalculateVotedAssets(CBlockIndex* pindex);

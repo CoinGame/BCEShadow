@@ -82,6 +82,9 @@ int nBlocksToIgnore = 0;
 // Settings
 int64 nSplitShareOutputs = MIN_COINSTAKE_VALUE;
 
+static map<const CBlockIndex*, CTxDestination> mapRewardedSignerCache;
+static CCriticalSection cs_mapRewardedSignerCache;
+
 static string strProtocolWarningMessage = _("Unknown protocol vote received. You may need to upgrade your client.");
 string strProtocolWarning = "";
 
@@ -1537,8 +1540,35 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs,
 
         if (IsCoinStake())
         {
+            // bcexchange: the signer reward is included in the coin stake
+            int64 nSignerReward;
+            CTxDestination addressSigner;
+            if (!CalculateSignerReward(pindexBlock, addressSigner, nSignerReward))
+                return error("ConnectInputs() : unable to get signer reward");
+
+            assert(nSignerReward >= 0);
+
+            if (nSignerReward > 0)
+            {
+                bool fSignerRewardFound = false;
+                BOOST_FOREACH(const CTxOut& txo, vout)
+                {
+                    CTxDestination addressOutput;
+                    if (ExtractDestination(txo.scriptPubKey, addressOutput) && addressOutput == addressSigner && txo.nValue == nSignerReward)
+                    {
+                        fSignerRewardFound = true;
+                        break;
+                    }
+                }
+
+                if (!fSignerRewardFound)
+                    return error("ConnectInputs() : signer reward not found in coin stake");
+            }
+
+            CacheRewardedSigner(pindexBlock, addressSigner);
+
             // ppcoin: coin stake tx earns reward instead of paying fee
-            int64 nStakeReward = GetValueOut() - nValueIn;
+            int64 nStakeReward = GetValueOut() - nValueIn - nSignerReward;
             if (nStakeReward > GetProofOfStakeReward() - GetMinFee(pindexBlock) + GetUnitMinFee(pindexBlock))
                 return DoS(100, error("ConnectInputs() : %s stake reward exceeded", GetHash().ToString().substr(0,10).c_str()));
         }
@@ -1824,6 +1854,31 @@ bool CBlock::CheckCustodianGrants(const CBlockIndex* pindexPrev) const
     }
 
     return true;
+}
+
+CTxDestination CBlockIndex::GetRewardedSigner() const
+{
+    CTxDestination addressSigner;
+
+    LOCK(cs_mapRewardedSignerCache);
+    map<const CBlockIndex*, CTxDestination>::const_iterator it = mapRewardedSignerCache.find(this);
+    if (it == mapRewardedSignerCache.end())
+    {
+        int64 nSignerReward;
+        if (!CalculateSignerReward(this, addressSigner, nSignerReward))
+            throw runtime_error("Unable to get rewarded signer");
+        mapRewardedSignerCache[this] = addressSigner;
+    }
+    else
+        addressSigner = it->second;
+
+    return addressSigner;
+}
+
+void CacheRewardedSigner(const CBlockIndex* pindex, const CTxDestination& addressSigner)
+{
+    LOCK(cs_mapRewardedSignerCache);
+    mapRewardedSignerCache[pindex] = addressSigner;
 }
 
 bool Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
@@ -2286,6 +2341,10 @@ bool CBlock::AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos)
             }
         }
     }
+
+    // bcexchange: calculate signer reward vote result
+    if (!CalculateSignerRewardVoteResult(pindexNew))
+        return error("Unable to calculate signer reward vote result");
 
     // Add to mapBlockIndex
     map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.insert(make_pair(hash, pindexNew)).first;

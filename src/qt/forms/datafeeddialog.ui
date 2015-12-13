@@ -132,6 +132,13 @@ to update</string>
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="signerRewardCheckBox">
+         <property name="text">
+          <string>Signer reward</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QCheckBox" name="assetsCheckBox">
          <property name="text">
           <string>Assets</string>
