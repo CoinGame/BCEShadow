@@ -31,7 +31,11 @@ Feature: A command is called each time the vote changes. This can be used to upd
          "signerreward":{
            "count": 5,
            "amount": 12.0512
-         }
+         },
+         "assets":[
+           {"assetid": "BTC", "confirmations": 6, "reqsigners": 2, "totalsigners": 3, "maxtrade": 20.0, "mintrade": 0.001, "unitexponent": 8},
+           {"assetid": "LTC", "confirmations": 60, "reqsigners": 2, "totalsigners": 3, "maxtrade": 50000.0, "mintrade": 0.01, "unitexponent": 4}
+         ]
       }
       """
 

@@ -1713,4 +1713,380 @@ BOOST_AUTO_TEST_CASE(signer_reward_vote_result)
         BOOST_CHECK_EQUAL(     0, chain.pindexBest->signerRewardVoteResult.nAmount);
     }
 }
+
+void NewBlockTip(CBlockIndex*& pindexBest)
+{
+    CBlockIndex *pindex = pindexBest;
+    pindexBest = new CBlockIndex;
+    pindexBest->pprev = pindex;
+}
+
+void CheckAsset(const CAsset& asset, uint32_t assetId, unsigned short confirmations, unsigned char m, unsigned char n,
+                int64 maxTrade, int64 minTrade, uint8_t nUnitExponent)
+{
+    BOOST_CHECK_EQUAL(assetId, asset.nAssetId);
+    BOOST_CHECK_EQUAL(confirmations, asset.nNumberOfConfirmations);
+    BOOST_CHECK_EQUAL(m, asset.nRequiredDepositSigners);
+    BOOST_CHECK_EQUAL(n, asset.nTotalDepositSigners);
+    BOOST_CHECK_EQUAL(maxTrade, asset.GetMaxTrade());
+    BOOST_CHECK_EQUAL(minTrade, asset.GetMinTrade());
+    BOOST_CHECK_EQUAL(nUnitExponent, asset.nUnitExponent);
+}
+
+CAssetVote NewAssetVote(uint32_t assetId, unsigned short confirmations, unsigned char m, unsigned char n,
+                        uint8_t maxTradeExpParam, uint8_t minTradeExpParam, uint8_t nUnitExponent)
+{
+    CAssetVote vote;
+
+    vote.nAssetId = assetId;
+    vote.nNumberOfConfirmations = confirmations;
+    vote.nRequiredDepositSigners = m;
+    vote.nTotalDepositSigners = n;
+    vote.nMaxTradeExpParam = maxTradeExpParam;
+    vote.nMinTradeExpParam = minTradeExpParam;
+    vote.nUnitExponent = nUnitExponent;
+
+    return vote;
+}
+
+BOOST_AUTO_TEST_CASE(asset_vote_result)
+{
+    CBlockIndex* pindexBest = new CBlockIndex;
+    CBlockIndex* pindex = pindexBest;
+
+    // asset 1
+    const uint32_t ASSET_ID = 0x40000a83; // BTC string
+    const uint16_t CONFIRMATIONS = 60;
+    const uint8_t M = 3;
+    const uint8_t N = 5;
+    const uint8_t MAX_TRADE_EXP_PARAM = 91;
+    const uint8_t MIN_TRADE_EXP_PARAM = 81;
+    const int64 MAX_TRADE = pnExponentialSeries[MAX_TRADE_EXP_PARAM];
+    const int64 MIN_TRADE = pnExponentialSeries[MIN_TRADE_EXP_PARAM];
+    const uint8_t UNIT_EXPONENT = 6;
+
+    // asset 2
+    const uint32_t ASSET_ID_2 = 0x81083829; // ABC09
+    const uint16_t CONFIRMATIONS_2 = 6;
+    const uint8_t M_2 = 2;
+    const uint8_t N_2 = 3;
+    const uint8_t MAX_TRADE_EXP_PARAM_2 = 120;
+    const uint8_t MIN_TRADE_EXP_PARAM_2 = 100;
+    const int64 MAX_TRADE_2 = pnExponentialSeries[MAX_TRADE_EXP_PARAM_2];
+    const int64 MIN_TRADE_2 = pnExponentialSeries[MIN_TRADE_EXP_PARAM_2];
+    const uint8_t UNIT_EXPONENT_2 = 8;
+
+    vector<CAsset> vAssets;
+    map<uint64, CAsset> mapAssets;
+    CAsset asset;
+
+    // Check vote objects
+    CVote vote;
+    vote.vAssetVote.push_back(NewAssetVote(ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE_EXP_PARAM, MIN_TRADE_EXP_PARAM, UNIT_EXPONENT));
+    vote.vAssetVote.push_back(NewAssetVote(ASSET_ID_2, CONFIRMATIONS_2, M_2, N_2, MAX_TRADE_EXP_PARAM_2, MIN_TRADE_EXP_PARAM_2, UNIT_EXPONENT_2));
+    BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V2_0)); // not valid in old blocks
+    BOOST_CHECK(vote.IsValidInBlock(PROTOCOL_V4_0)); // valid in new blocks
+    // Add a duplicate vote for the same asset
+    vote.vAssetVote.push_back(NewAssetVote(ASSET_ID, CONFIRMATIONS+1, M, N, MAX_TRADE_EXP_PARAM+1, MIN_TRADE_EXP_PARAM+1, UNIT_EXPONENT));
+    BOOST_CHECK(!vote.IsValidInBlock(PROTOCOL_V4_0)); // not valid due to duplicate vote
+
+    // No vote, no assets
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(0, vAssets.size());
+
+    // Add a single vote
+    pindex->vote.vAssetVote.push_back(NewAssetVote(ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE_EXP_PARAM, MIN_TRADE_EXP_PARAM, UNIT_EXPONENT));
+    BOOST_CHECK(pindex->vote.IsValidInBlock(PROTOCOL_V4_0));
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(0, vAssets.size());
+    BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    BOOST_CHECK_EQUAL(0, pindexBest->mapAssets.size());
+    BOOST_CHECK_EQUAL(0, pindexBest->mapAssetsPrev.size());
+
+    // Add some asset votes but not enough to win the vote
+    for (int i = 0; i < ASSET_VOTES / 2 - 5; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.vAssetVote.push_back(NewAssetVote(ASSET_ID, CONFIRMATIONS-1, M-1, N-1, MAX_TRADE_EXP_PARAM-1, MIN_TRADE_EXP_PARAM-1, UNIT_EXPONENT));
+        BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    }
+
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(0, vAssets.size());
+    BOOST_CHECK_EQUAL(0, pindexBest->mapAssets.size());
+    BOOST_CHECK_EQUAL(0, pindexBest->mapAssetsPrev.size());
+
+    // Add some asset votes for the same asset but different values
+    for (int i = 0; i < 5; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.vAssetVote.push_back(NewAssetVote(ASSET_ID, CONFIRMATIONS+1, M+1, N+1, MAX_TRADE_EXP_PARAM+1, MIN_TRADE_EXP_PARAM+1, UNIT_EXPONENT));
+        BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    }
+
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(1, vAssets.size());
+    CheckAsset(vAssets[0], ASSET_ID, CONFIRMATIONS-1, M-1, N-1, pnExponentialSeries[MAX_TRADE_EXP_PARAM-1], pnExponentialSeries[MIN_TRADE_EXP_PARAM-1], UNIT_EXPONENT);
+
+    // Asset is not effective yet
+    BOOST_CHECK(pindexBest->GetEffectiveAssets(mapAssets));
+    BOOST_CHECK_EQUAL(0, mapAssets.size());
+
+    // Asset should become effective after a delay
+    for (int i = 0; i < VOTE_DELAY_BLOCKS; i++)
+    {
+        NewBlockTip(pindexBest);
+        BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    }
+
+    BOOST_CHECK(pindexBest->GetEffectiveAssets(mapAssets));
+    BOOST_CHECK_EQUAL(1, mapAssets.size());
+    asset = CAsset(); // reset
+    BOOST_CHECK(pindexBest->GetEffectiveAsset(ASSET_ID, asset));
+    CheckAsset(asset, ASSET_ID, CONFIRMATIONS-1, M-1, N-1, pnExponentialSeries[MAX_TRADE_EXP_PARAM-1], pnExponentialSeries[MIN_TRADE_EXP_PARAM-1], UNIT_EXPONENT);
+
+    // Add some normal asset votes to achieve a majority
+    for (int i = 0; i < ASSET_VOTES / 2 + 1; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.vAssetVote.push_back(NewAssetVote(ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE_EXP_PARAM, MIN_TRADE_EXP_PARAM, UNIT_EXPONENT));
+        BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    }
+
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(1, vAssets.size());
+    CheckAsset(vAssets[0], ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE, MIN_TRADE, UNIT_EXPONENT);
+
+    // Updated asset is not effective yet
+    asset = CAsset(); // reset
+    BOOST_CHECK(pindexBest->GetEffectiveAsset(ASSET_ID, asset));
+    CheckAsset(asset, ASSET_ID, CONFIRMATIONS-1, M-1, N-1, pnExponentialSeries[MAX_TRADE_EXP_PARAM-1], pnExponentialSeries[MIN_TRADE_EXP_PARAM-1], UNIT_EXPONENT);
+
+    for (int i = 0; i < VOTE_DELAY_BLOCKS; i++)
+    {
+        NewBlockTip(pindexBest);
+        BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    }
+
+    BOOST_CHECK(pindexBest->GetEffectiveAssets(mapAssets));
+    BOOST_CHECK_EQUAL(1, mapAssets.size());
+    asset = CAsset(); // reset
+    BOOST_CHECK(pindexBest->GetEffectiveAsset(ASSET_ID, asset));
+    CheckAsset(asset, ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE, MIN_TRADE, UNIT_EXPONENT);
+
+    // Add some more normal asset votes, the previous asset has a new maxTrade value and we add a new asset
+    for (int i = 0; i < ASSET_VOTES / 2 + 1; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.vAssetVote.push_back(NewAssetVote(ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE_EXP_PARAM+1, MIN_TRADE_EXP_PARAM+1, UNIT_EXPONENT));
+        pindexBest->vote.vAssetVote.push_back(NewAssetVote(ASSET_ID_2, CONFIRMATIONS_2, M_2, N_2, MAX_TRADE_EXP_PARAM_2, MIN_TRADE_EXP_PARAM_2, UNIT_EXPONENT_2));
+        BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    }
+
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(2, vAssets.size());
+    BOOST_FOREACH(const CAsset& asset, vAssets)
+    {
+        if (asset.nAssetId == ASSET_ID)
+            CheckAsset(asset, ASSET_ID, CONFIRMATIONS, M, N, pnExponentialSeries[MAX_TRADE_EXP_PARAM+1], pnExponentialSeries[MIN_TRADE_EXP_PARAM+1], UNIT_EXPONENT);
+        else
+            CheckAsset(asset, ASSET_ID_2, CONFIRMATIONS_2, M_2, N_2, MAX_TRADE_2, MIN_TRADE_2, UNIT_EXPONENT_2);
+    }
+
+    // new assets are not effective yet
+    BOOST_CHECK(pindexBest->GetEffectiveAssets(mapAssets));
+    BOOST_CHECK_EQUAL(1, mapAssets.size());
+
+    for (int i = 0; i < VOTE_DELAY_BLOCKS; i++)
+    {
+        NewBlockTip(pindexBest);
+        BOOST_CHECK(CalculateVotedAssets(pindexBest));
+    }
+
+    BOOST_CHECK(pindexBest->GetEffectiveAssets(mapAssets));
+    BOOST_CHECK_EQUAL(2, mapAssets.size());
+    asset = CAsset(); // reset
+    BOOST_CHECK(pindexBest->GetEffectiveAsset(ASSET_ID, asset));
+    CheckAsset(asset, ASSET_ID, CONFIRMATIONS, M, N, pnExponentialSeries[MAX_TRADE_EXP_PARAM+1], pnExponentialSeries[MIN_TRADE_EXP_PARAM+1], UNIT_EXPONENT);
+    asset = CAsset(); // reset
+    BOOST_CHECK(pindexBest->GetEffectiveAsset(ASSET_ID_2, asset));
+    CheckAsset(asset, ASSET_ID_2, CONFIRMATIONS_2, M_2, N_2, MAX_TRADE_2, MIN_TRADE_2, UNIT_EXPONENT_2);
+
+    // free memory
+    while(pindexBest != NULL)
+    {
+        pindex = pindexBest;
+        pindexBest = pindexBest->pprev;
+        delete pindex;
+    }
+}
+
+void AddSampleAssetVoteWithExponent(CBlockIndex* pindex, uint8_t nExponent)
+{
+    const uint32_t ASSET_ID = 0x40000a83; // BTC string
+    const uint16_t CONFIRMATIONS = 60;
+    const uint8_t M = 3;
+    const uint8_t N = 5;
+    const uint8_t MAX_TRADE_EXP_PARAM = 91;
+    const uint8_t MIN_TRADE_EXP_PARAM = 81;
+    pindex->vote.vAssetVote.push_back(NewAssetVote(ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE_EXP_PARAM, MIN_TRADE_EXP_PARAM, nExponent));
+}
+
+void CheckSampleAssetWithExponent(const CAsset& asset, uint8_t nUnitExponent)
+{
+    const uint32_t ASSET_ID = 0x40000a83; // BTC string
+    const uint16_t CONFIRMATIONS = 60;
+    const uint8_t M = 3;
+    const uint8_t N = 5;
+    const uint8_t MAX_TRADE_EXP_PARAM = 91;
+    const uint8_t MIN_TRADE_EXP_PARAM = 81;
+    const int64 MAX_TRADE = pnExponentialSeries[MAX_TRADE_EXP_PARAM];
+    const int64 MIN_TRADE = pnExponentialSeries[MIN_TRADE_EXP_PARAM];
+
+    BOOST_CHECK_EQUAL(ASSET_ID, asset.nAssetId);
+    BOOST_CHECK_EQUAL(CONFIRMATIONS, asset.nNumberOfConfirmations);
+    BOOST_CHECK_EQUAL(M, asset.nRequiredDepositSigners);
+    BOOST_CHECK_EQUAL(N, asset.nTotalDepositSigners);
+    BOOST_CHECK_EQUAL(MAX_TRADE, asset.GetMaxTrade());
+    BOOST_CHECK_EQUAL(MIN_TRADE, asset.GetMinTrade());
+    BOOST_CHECK_EQUAL(nUnitExponent, asset.nUnitExponent);
+}
+
+
+BOOST_AUTO_TEST_CASE(asset_vote_on_inexistant_asset_without_absolute_majority_on_exponent)
+{
+    CBlockIndex* pindexBest = new CBlockIndex;
+
+    for (int i = 0; i < ASSET_VOTES / 2; i++)
+    {
+        NewBlockTip(pindexBest);
+        AddSampleAssetVoteWithExponent(pindexBest, 4);
+    }
+
+    for (int i = 0; i < 10; i++)
+    {
+        NewBlockTip(pindexBest);
+        AddSampleAssetVoteWithExponent(pindexBest, 5);
+    }
+
+    for (int i = 0; i < ASSET_VOTES / 2 - 10; i++)
+    {
+        NewBlockTip(pindexBest);
+        AddSampleAssetVoteWithExponent(pindexBest, 6);
+    }
+
+    vector<CAsset> vAssets;
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(0, vAssets.size());
+}
+
+BOOST_AUTO_TEST_CASE(asset_vote_on_inexistant_asset_with_absolute_majority_on_exponent)
+{
+    CBlockIndex* pindexBest = new CBlockIndex;
+    for (int i = 0; i < ASSET_VOTES / 2 + 1; i++)
+    {
+        NewBlockTip(pindexBest);
+        AddSampleAssetVoteWithExponent(pindexBest, 4);
+    }
+
+    for (int i = 0; i < 10; i++)
+    {
+        NewBlockTip(pindexBest);
+        AddSampleAssetVoteWithExponent(pindexBest, 5);
+    }
+
+    for (int i = 0; i < ASSET_VOTES / 2 - 1 - 10; i++)
+    {
+        NewBlockTip(pindexBest);
+        AddSampleAssetVoteWithExponent(pindexBest, 6);
+    }
+
+    vector<CAsset> vAssets;
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(1, vAssets.size());
+    CheckSampleAssetWithExponent(vAssets[0], 4);
+}
+
+int64 GetTime(int year, int month, int day, int hour, int min, int sec)
+{
+    tm t;
+    t.tm_year = year - 1900;
+    t.tm_mon = month - 1;
+    t.tm_mday = day;
+    t.tm_hour = hour;
+    t.tm_min = min;
+    t.tm_sec = sec;
+    return timegm(&t);
+}
+
+std::string TimeString(struct tm* timeinfo)
+{
+    char buffer[100];
+    strftime(buffer, 100, "%Y-%m-%d %H:%M:%S", timeinfo);
+    std::string result(buffer);
+    return result;
+}
+
+void CheckTimeEqual(time_t t1, time_t t2)
+{
+    string s1 = TimeString(gmtime(&t1));
+    string s2 = TimeString(gmtime(&t2));
+    BOOST_CHECK_EQUAL(s1, s2);
+}
+
+void CheckProtocolSwitchTime(int64 nVotePassTime, int64 nExpectedSwitchTime)
+{
+    int nVotesForNewProtocol = PROTOCOL_SWITCH_REQUIRE_VOTES;
+    int nVotesAgainstNewProtocol = PROTOCOL_SWITCH_COUNT_VOTES - PROTOCOL_SWITCH_REQUIRE_VOTES;
+    int nVotes = nVotesForNewProtocol + nVotesAgainstNewProtocol;
+    int nInterval = 60;
+
+    CBlockIndex* pindexBest = new CBlockIndex;
+    pindexBest->nTime = nVotePassTime - nVotes * nInterval;
+    pindexBest->vote.nVersionVote = 3;
+    BOOST_CHECK(!MustUpgradeProtocol(pindexBest, 4));
+
+    for (int i = 0; i < PROTOCOL_SWITCH_COUNT_VOTES - PROTOCOL_SWITCH_REQUIRE_VOTES; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.nVersionVote = 3;
+        pindexBest->nTime = pindexBest->pprev->nTime + nInterval;
+        BOOST_CHECK(!MustUpgradeProtocol(pindexBest, 4));
+    }
+
+    for (int i = 0; i < PROTOCOL_SWITCH_REQUIRE_VOTES; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.nVersionVote = 4;
+        pindexBest->nTime = pindexBest->pprev->nTime + nInterval;
+        BOOST_CHECK(!MustUpgradeProtocol(pindexBest, 4));
+    }
+    BOOST_CHECK_EQUAL(pindexBest->nTime, nVotePassTime);
+
+    bool fUpgraded = false;
+    for (int i = 0; i < 30000; i++)
+    {
+        NewBlockTip(pindexBest);
+        pindexBest->vote.nVersionVote = 3;
+        pindexBest->nTime = pindexBest->pprev->nTime + nInterval;
+        if (MustUpgradeProtocol(pindexBest, 4))
+        {
+            fUpgraded = true;
+            break;
+        }
+    }
+
+    BOOST_CHECK(fUpgraded);
+    CheckTimeEqual(nExpectedSwitchTime, pindexBest->nTime);
+}
+
+BOOST_AUTO_TEST_CASE(protocol_upgrade_2_weeks_after_vote)
+{
+    CheckProtocolSwitchTime(GetTime(2015, 12, 13, 10, 40, 12), GetTime(2015, 12, 27, 14,  0, 12));
+    CheckProtocolSwitchTime(GetTime(2015, 12, 13, 14,  0,  0), GetTime(2015, 12, 27, 14,  0,  0));
+    CheckProtocolSwitchTime(GetTime(2015, 12, 13, 14,  0,  1), GetTime(2015, 12, 28, 14,  0,  1));
+    CheckProtocolSwitchTime(GetTime(2015, 12, 24, 23, 59, 59), GetTime(2016,  1,  8, 14,  0, 59));
+    CheckProtocolSwitchTime(GetTime(2015, 12, 25,  0,  0,  0), GetTime(2016,  1,  8, 14,  0,  0));
+}
+
 BOOST_AUTO_TEST_SUITE_END()

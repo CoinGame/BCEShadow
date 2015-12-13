@@ -199,7 +199,10 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/datafeeddialog.h \
     src/qt/feevotedialog.h \
     src/qt/reputationvotedialog.h \
-    src/qt/dividendkeysdialog.h
+    src/qt/dividendkeysdialog.h \
+    src/coinmetadata.h \
+    src/qt/assetvotedialog.h \
+    src/qt/addassetvotedialog.h
 
 SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/transactiontablemodel.cpp \
@@ -272,7 +275,10 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/datafeeddialog.cpp \
     src/qt/feevotedialog.cpp \
     src/qt/reputationvotedialog.cpp \
-    src/qt/dividendkeysdialog.cpp
+    src/qt/dividendkeysdialog.cpp \
+    src/coinmetadata.cpp \
+    src/qt/assetvotedialog.cpp \
+    src/qt/addassetvotedialog.cpp
 
 RESOURCES += \
     src/qt/bitcoin.qrc
@@ -297,7 +303,9 @@ FORMS += \
     src/qt/forms/datafeeddialog.ui \
     src/qt/forms/feevotedialog.ui \
     src/qt/forms/reputationvotedialog.ui \
-    src/qt/forms/dividendkeysdialog.ui
+    src/qt/forms/dividendkeysdialog.ui \
+    src/qt/forms/assetvotedialog.ui \
+    src/qt/forms/addassetvotedialog.ui
 
 contains(USE_QRCODE, 1) {
 HEADERS += src/qt/qrcodedialog.h

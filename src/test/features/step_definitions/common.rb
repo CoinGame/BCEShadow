@@ -220,6 +220,11 @@ When(/^node "(.*?)" finds a block "([^"]*?)"$/) do |node, block|
   @blocks[block] = @nodes[node].generate_stake
 end
 
+When(/^node "(.*?)" finds a block "([^"]*?)" received by all (?:nodes|other nodes)$/) do |node, block|
+  step "node \"#{node}\" finds a block \"#{block}\""
+  step "all nodes reach the same height"
+end
+
 When(/^node "(.*?)" finds a block "([^"]*?)" not received by node "([^"]*?)"$/) do |node, block, other|
   time_travel(5)
   @nodes[other].rpc("ignorenextblock")

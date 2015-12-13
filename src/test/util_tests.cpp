@@ -1,3 +1,4 @@
+
 #include <vector>
 #include <boost/test/unit_test.hpp>
 #include <boost/foreach.hpp>
@@ -190,10 +191,6 @@ BOOST_AUTO_TEST_CASE(util_FormatMoney)
     BOOST_CHECK_EQUAL(FormatMoney(COIN/100, false), "0.01");
     BOOST_CHECK_EQUAL(FormatMoney(COIN/1000, false), "0.001");
     BOOST_CHECK_EQUAL(FormatMoney(COIN/10000, false), "0.0001");
-    BOOST_CHECK_EQUAL(FormatMoney(COIN/100000, false), "0.00001");
-    BOOST_CHECK_EQUAL(FormatMoney(COIN/1000000, false), "0.000001");
-    BOOST_CHECK_EQUAL(FormatMoney(COIN/10000000, false), "0.0000001");
-    BOOST_CHECK_EQUAL(FormatMoney(COIN/100000000, false), "0.00000001");
 }
 
 BOOST_AUTO_TEST_CASE(util_ParseMoney)
@@ -231,17 +228,9 @@ BOOST_AUTO_TEST_CASE(util_ParseMoney)
     BOOST_CHECK_EQUAL(ret, COIN/1000);
     BOOST_CHECK(ParseMoney("0.0001", ret));
     BOOST_CHECK_EQUAL(ret, COIN/10000);
-    BOOST_CHECK(ParseMoney("0.00001", ret));
-    BOOST_CHECK_EQUAL(ret, COIN/100000);
-    BOOST_CHECK(ParseMoney("0.000001", ret));
-    BOOST_CHECK_EQUAL(ret, COIN/1000000);
-    BOOST_CHECK(ParseMoney("0.0000001", ret));
-    BOOST_CHECK_EQUAL(ret, COIN/10000000);
-    BOOST_CHECK(ParseMoney("0.00000001", ret));
-    BOOST_CHECK_EQUAL(ret, COIN/100000000);
 
     // Attempted 63 bit overflow should fail
-    BOOST_CHECK(!ParseMoney("92233720368.54775808", ret));
+    BOOST_CHECK(!ParseMoney("92233720368.5478", ret));
 }
 
 BOOST_AUTO_TEST_CASE(util_IsHex)
@@ -257,6 +246,91 @@ BOOST_AUTO_TEST_CASE(util_IsHex)
     BOOST_CHECK(!IsHex("eleven"));
     BOOST_CHECK(!IsHex("00xx00"));
     BOOST_CHECK(!IsHex("0x0000"));
+}
+
+
+BOOST_AUTO_TEST_CASE(util_AssetIds)
+{
+    // Check asset ids
+    BOOST_CHECK_EQUAL(0x40000a83, EncodeAssetId("BTC"));
+    BOOST_CHECK_EQUAL("BTC", AssetIdToStr(0x40000a83));
+    BOOST_CHECK(IsValidAssetId(0x40000a83));
+    BOOST_CHECK_EQUAL(0x81083829, EncodeAssetId("ABC09"));
+    BOOST_CHECK_EQUAL("ABC09", AssetIdToStr(0x81083829));
+    BOOST_CHECK(IsValidAssetId(0x81083829));
+    BOOST_CHECK_EQUAL(0x01234567, EncodeAssetId(0x01234567));
+    BOOST_CHECK_EQUAL(0x01234567, EncodeAssetId("ID0019088743"));
+    BOOST_CHECK_EQUAL("ID0019088743", AssetIdToStr(0x01234567));
+    BOOST_CHECK(IsValidAssetId(0x01234567));
+    BOOST_CHECK_EQUAL(0x3FFFFFFF, EncodeAssetId(0x3FFFFFFF));
+    BOOST_CHECK_EQUAL(0x3FFFFFFF, EncodeAssetId("ID1073741823"));
+    BOOST_CHECK_EQUAL("ID1073741823", AssetIdToStr(0x3FFFFFFF));
+    BOOST_CHECK(IsValidAssetId(0x3FFFFFFF));
+    BOOST_CHECK_EQUAL(0x00000001, EncodeAssetId(0x00000001));
+    BOOST_CHECK_EQUAL(0x00000001, EncodeAssetId("ID0000000001"));
+    BOOST_CHECK_EQUAL("ID0000000001", AssetIdToStr(0x00000001));
+    BOOST_CHECK(IsValidAssetId(0x00000001));
+
+    BOOST_CHECK_EQUAL(ASSET_ID_INVALID, EncodeAssetId(ASSET_ID_INVALID_STR));
+    BOOST_CHECK(!IsValidAssetId(0xFFFFFFFF));
+    BOOST_CHECK_EQUAL(ASSET_ID_INVALID_STR, AssetIdToStr(0xFFFFFFFF));
+
+    BOOST_CHECK_EQUAL(ASSET_ID_INVALID, EncodeAssetId("ID0000000000"));
+    BOOST_CHECK_EQUAL(ASSET_ID_INVALID, EncodeAssetId(0));
+    BOOST_CHECK(!IsValidAssetId(0));
+    BOOST_CHECK_EQUAL(ASSET_ID_INVALID_STR, AssetIdToStr(0));
+
+    BOOST_CHECK(!IsValidAssetId(0x80002503)); // 'BTC' as an alphanumeric id
+    BOOST_CHECK_EQUAL(ASSET_ID_INVALID_STR, AssetIdToStr(0x80002503));
+
+    // Empty ids
+    BOOST_CHECK_EQUAL(ASSET_ID_INVALID, EncodeAssetId(""));
+    BOOST_CHECK(!IsValidAssetId(0x40000000));
+    BOOST_CHECK(!IsValidAssetId(0x80000000));
+
+    BOOST_CHECK_EQUAL(ASSET_ID_INVALID, EncodeAssetId("ID9999999999")); // overflow
+    BOOST_CHECK_EQUAL(ASSET_ID_INVALID, EncodeAssetId("ID5368709119")); // overflow
+    BOOST_CHECK_EQUAL(ASSET_ID_INVALID, EncodeAssetId("ID1073741824")); // overflow
+}
+
+BOOST_AUTO_TEST_CASE(util_ExpSeries)
+{
+    for (int i = 0; i <= EXP_SERIES_MAX_PARAM; i++)
+        BOOST_CHECK_EQUAL(i, ExponentialParameter(pnExponentialSeries[i]));
+
+    BOOST_CHECK_EQUAL(0, ExponentialParameter(0L));
+    BOOST_CHECK_EQUAL(1, ExponentialParameter(1L));
+    BOOST_CHECK_EQUAL(9, ExponentialParameter(9L));
+    BOOST_CHECK_EQUAL(18, ExponentialParameter(99L));
+    BOOST_CHECK_EQUAL(55, ExponentialParameter(1555555L));
+    BOOST_CHECK_EQUAL(112, ExponentialParameter(4500000000000L));
+    BOOST_CHECK_EQUAL(122, ExponentialParameter(50000000000001L));
+    BOOST_CHECK_EQUAL(122, ExponentialParameter(59999999999999L));
+    BOOST_CHECK_EQUAL(162, ExponentialParameter(999900000000000000L));
+    BOOST_CHECK_EQUAL(171, ExponentialParameter(9223372036854775807L));
+
+    BOOST_CHECK_EQUAL(0, ConvertExpParameter(0, 8, 8));
+    BOOST_CHECK_EQUAL(0, ConvertExpParameter(0, 4, 8));
+    BOOST_CHECK_EQUAL(1, ConvertExpParameter(1, 8, 8));
+    BOOST_CHECK_EQUAL(42, ConvertExpParameter(42, 0, 0));
+    BOOST_CHECK_EQUAL(42, ConvertExpParameter(42, 8, 8));
+    BOOST_CHECK_EQUAL(49, ConvertExpParameter(40, 0, 1));
+    BOOST_CHECK_EQUAL(76, ConvertExpParameter(40, 4, 8));
+    BOOST_CHECK_EQUAL(1, ConvertExpParameter(36, 8, 4));
+    BOOST_CHECK_EQUAL(1, ConvertExpParameter(21, 8, 4));
+    BOOST_CHECK_EQUAL(45, ConvertExpParameter(81, 8, 4));
+    BOOST_CHECK_EQUAL(171, ConvertExpParameter(169, 4, 8));
+    BOOST_CHECK_EQUAL(133, ConvertExpParameter(169, 8, 4));
+
+    BOOST_CHECK_EQUAL(ExponentialParameter(1000000L), ConvertExpParameter(ExponentialParameter(100000000L), 8, 6));
+    BOOST_CHECK_EQUAL(ExponentialParameter(500000000L), ConvertExpParameter(ExponentialParameter(50000L), 4, 8));
+    BOOST_CHECK_EQUAL(ExponentialParameter(3L), ConvertExpParameter(ExponentialParameter(3000000000000000000L), 18, 0));
+    BOOST_CHECK_EQUAL(ExponentialParameter(3000000000000000000L), ConvertExpParameter(ExponentialParameter(3L), 0, 18));
+    BOOST_CHECK_EQUAL(ExponentialParameter(9000000000000000000L), ConvertExpParameter(ExponentialParameter(9000000000000000000L), 6, 8));
+    BOOST_CHECK_EQUAL(ExponentialParameter(1L), ConvertExpParameter(ExponentialParameter(100), 8, 4));
+    BOOST_CHECK_EQUAL(ExponentialParameter(100L), ConvertExpParameter(ExponentialParameter(1), 8, 10));
+
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

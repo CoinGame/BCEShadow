@@ -364,6 +364,79 @@ CVote ParseVote(const Object& objVote)
                     throw runtime_error("Invalid signer reward vote object");
             }
         }
+        else if (voteAttribute.name_ == "assets")
+        {
+            BOOST_FOREACH(const Value& assetVoteObject, voteAttribute.value_.get_array())
+            {
+                CAssetVote assetVote;
+                double maxTrade = 0.0;
+                double minTrade = 0.0;
+                BOOST_FOREACH(const Pair& assetVoteAttribute, assetVoteObject.get_obj())
+                {
+                    if (assetVoteAttribute.name_ == "assetid")
+                    {
+                        uint32_t nAssetId = EncodeAssetId(assetVoteAttribute.value_.get_str());
+
+                        if (!IsValidAssetId(nAssetId))
+                            throw runtime_error("Invalid asset id");
+
+                        assetVote.nAssetId = nAssetId;
+                    }
+                    else if (assetVoteAttribute.name_ == "confirmations")
+                    {
+                        int nConfirmations = assetVoteAttribute.value_.get_int();
+                        if (nConfirmations <= 0 || nConfirmations > MAX_CONFIRMATIONS)
+                            throw runtime_error("Invalid confirmations");
+                        assetVote.nNumberOfConfirmations = (uint16_t)nConfirmations;
+                    }
+                    else if (assetVoteAttribute.name_ == "reqsigners")
+                    {
+                        int nRequiredSigners = assetVoteAttribute.value_.get_int();
+                        if (nRequiredSigners <= 0 || nRequiredSigners > MAX_SIGNERS)
+                            throw runtime_error("Invalid required signers quantity");
+                        if (assetVote.nTotalDepositSigners > 0 && nRequiredSigners > assetVote.nTotalDepositSigners )
+                            throw runtime_error("Required signers cannot be more than the total signers");
+                        assetVote.nRequiredDepositSigners = (uint8_t)nRequiredSigners;
+                    }
+                    else if (assetVoteAttribute.name_ == "totalsigners")
+                    {
+                        int nTotalSigners = assetVoteAttribute.value_.get_int();
+                        if (nTotalSigners <= 0 || nTotalSigners > MAX_SIGNERS)
+                            throw runtime_error("Invalid total signers quantity");
+                        if (assetVote.nRequiredDepositSigners > 0 && nTotalSigners < assetVote.nRequiredDepositSigners )
+                            throw runtime_error("Total signers cannot be less than the required signers");
+                        assetVote.nTotalDepositSigners = (uint8_t)nTotalSigners;
+                    }
+                    else if (assetVoteAttribute.name_ == "maxtrade")
+                    {
+                        maxTrade = assetVoteAttribute.value_.get_real();
+                        if (maxTrade < 0)
+                            throw runtime_error("Invalid max trade value");
+                        // Set later when we find out the exponent
+                    }
+                    else if (assetVoteAttribute.name_ == "mintrade")
+                    {
+                        minTrade = assetVoteAttribute.value_.get_real();
+                        if (minTrade < 0)
+                            throw runtime_error("Invalid minimum trade value");
+                        // Set later when we find out the exponent
+                    }
+                    else if (assetVoteAttribute.name_ == "unitexponent")
+                    {
+                        int nUnitExponent = assetVoteAttribute.value_.get_int();
+                        if (nUnitExponent <= 0 || nUnitExponent > MAX_TRADABLE_UNIT_EXPONENT)
+                            throw runtime_error("Invalid unit exponent value");
+                        assetVote.nUnitExponent = nUnitExponent;
+                    }
+                    else
+                        throw runtime_error("Invalid asset vote object");
+                }
+                // Set the max/min trades as we know the unit exponent
+                assetVote.nMaxTradeExpParam = ExponentialParameter(maxTrade * pow(10, assetVote.nUnitExponent));
+                assetVote.nMinTradeExpParam = ExponentialParameter(minTrade * pow(10, assetVote.nUnitExponent));
+                vote.vAssetVote.push_back(assetVote);
+            }
+        }
         else
             throw runtime_error("Invalid vote object");
     }
@@ -404,6 +477,8 @@ void UpdateFromDataFeed()
                 newVote.vReputationVote = feedVote.vReputationVote;
             else if (sPart == "signerreward")
                 newVote.signerReward = feedVote.signerReward;
+            else if (sPart == "assets")
+                newVote.vAssetVote = feedVote.vAssetVote;
             else
                 throw runtime_error("Invalid part");
         }

@@ -72,10 +72,14 @@ static const int64 MAX_COIN_AGE = 100000000000000; // To make sure coin days can
 #ifdef TESTING
 static const int VOTE_DELAY_BLOCKS = 3;
 static const int FEE_VOTES = 5;
+static const int ASSET_VOTES = 5;
+static const int ASSET_VOTES_MAJORITY = 3;
 static const int SAFE_FEE_BLOCKS = 2;
 #else
 static const int VOTE_DELAY_BLOCKS = 60; // Some votes are effective this number of blocks after the actual vote result
 static const int FEE_VOTES = 2000;
+static const int ASSET_VOTES = 2000;
+static const int ASSET_VOTES_MAJORITY = 1500; // 75% mainly used to update the unit exponent of the asset
 static const int SAFE_FEE_BLOCKS = 10; // When a new transaction is created, the highest min fee of the next SAFE_FEE_BLOCKS blocks will be used, to make sure this transaction can be included in any of these blocks
 #endif
 
@@ -1300,6 +1304,12 @@ public:
     // bcexchange: reputed signer reward vote results
     CSignerRewardVote signerRewardVoteResult;
 
+    // TODO move to a separate index as the current implementetion uses more memory
+    // bcexchange: previous blocks that contain the actual asset vote results
+    std::map<uint64, CBlockIndex*> mapAssetsPrev;
+    // bcexchange: asset votes results for this block
+    std::map<uint64, CAsset> mapAssets;
+
     // block header
     int nVersion;
     uint256 hashMerkleRoot;
@@ -1595,6 +1605,65 @@ public:
         return GetEffectiveVoteIndex()->signerRewardVoteResult;
     }
 
+    bool GetEffectiveAssets(std::map<uint64, CAsset>& mapEffectiveAssets) const
+    {
+        mapEffectiveAssets.clear();
+        const CBlockIndex* pEffectiveIndex = GetEffectiveVoteIndex();
+
+        // First copy the assets from the previous blocks
+        BOOST_FOREACH(const PAIRTYPE(const uint64, CBlockIndex*)& item, pEffectiveIndex->mapAssetsPrev)
+            item.second->GetBlockVotedAsset(item.first, mapEffectiveAssets[item.first]);
+
+        // Copy any assets that are voted in this block
+        BOOST_FOREACH(const PAIRTYPE(const uint64, CAsset)& item, pEffectiveIndex->mapAssets)
+            mapEffectiveAssets[item.first] = item.second;
+
+        return true;
+    }
+
+    bool GetEffectiveAsset(uint32_t nAssetId, CAsset& asset) const
+    {
+        const CBlockIndex* pEffectiveIndex = GetEffectiveVoteIndex();
+        if (pEffectiveIndex)
+            return pEffectiveIndex->GetVotedAsset(nAssetId, asset);
+        else
+            return false;
+    }
+
+    /**
+     * Get an asset that was voted on the pindex or the previous blocks
+     */
+    bool GetVotedAsset(uint32_t nAssetId, CAsset& asset) const
+    {
+        // Get this asset from the current block
+        if (GetBlockVotedAsset(nAssetId, asset))
+            return true;
+
+        // Try to get the asset from a previous block
+        std::map<uint64, CBlockIndex*>::const_iterator it = mapAssetsPrev.find(nAssetId);
+        if(it != mapAssetsPrev.end())
+        {
+            CBlockIndex* pPrevBlock = it->second;
+            if (pPrevBlock->GetBlockVotedAsset(nAssetId, asset))
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Get a specific asset that was voted on a specific pindex
+     */
+    bool GetBlockVotedAsset(uint32_t nAssetId, CAsset& asset) const
+    {
+        std::map<uint64, CAsset>::const_iterator it = mapAssets.find(nAssetId);
+        if(it != mapAssets.end())
+        {
+            asset = it->second;
+            return true;
+        }
+        return false;
+    }
+
     std::string ToString() const
     {
         return strprintf("CBlockIndex(nprev=%08x, pnext=%08x, nFile=%d, nBlockPos=%-6d nHeight=%d, nMint=%s, nMoneySupply(S)=%s, nMoneySupply(B)=%s, nFlags=(%s)(%d)(%s), nStakeModifier=%016"PRI64x", nStakeModifierChecksum=%08x, hashProofOfStake=%s, prevoutStake=(%s), nStakeTime=%d merkle=%s, hashBlock=%s)",
@@ -1685,10 +1754,15 @@ public:
                 const_cast<CDiskBlockIndex*>(this)->mapVotedFee.clear();
 
             if (nProtocolVersion >= PROTOCOL_V4_0)
+            {
                 READWRITE(signerRewardVoteResult);
+                READWRITE(mapAssets);
+            }
             else if (fRead)
+            {
                 const_cast<CDiskBlockIndex*>(this)->signerRewardVoteResult.Set(0, 0);
-
+                const_cast<CDiskBlockIndex*>(this)->mapAssets.clear();
+            }
         }
         else if (fRead)
         {

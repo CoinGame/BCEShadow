@@ -7,6 +7,8 @@
 
 #include "serialize.h"
 #include "base58.h"
+#include "exchange.h"
+#include "util.h"
 
 class CBlock;
 class CBlockIndex;
@@ -15,6 +17,16 @@ static const int64 COIN_PARK_RATE = 100000 * COIN; // Park rate internal encodin
 static const int64 MAX_PARK_RATE = 1000000 * COIN_PARK_RATE;
 static const unsigned char MAX_COMPACT_DURATION = 30; // about 2000 years
 static const int64 MAX_PARK_DURATION = 1000000000; // about 1900 years
+
+// Confirmations is a unsigned short
+static const int MAX_CONFIRMATIONS = 65535;
+
+// Signers is a 8bit uint
+static const int MAX_SIGNERS = 255;
+
+// Normally the minimum M-of-N signers is 2-of-3 but we keep open the possibility for non-multisig blockchains
+static const int MIN_REQ_SIGNERS = 1;
+static const int MIN_TOTAL_SIGNERS = 1;
 
 class CCustodianVote
 {
@@ -392,6 +404,106 @@ public:
     }
 };
 
+class CAssetVote
+{
+public:
+    uint32_t nAssetId;
+    uint16_t nNumberOfConfirmations;
+    uint8_t nRequiredDepositSigners;
+    uint8_t nTotalDepositSigners;
+    uint8_t nMaxTradeExpParam;
+    uint8_t nMinTradeExpParam;
+    uint8_t nUnitExponent;
+
+    CAssetVote() :
+        nAssetId(0),
+        nNumberOfConfirmations(0),
+        nRequiredDepositSigners(0),
+        nTotalDepositSigners(0),
+        nMaxTradeExpParam(0),
+        nMinTradeExpParam(0),
+        nUnitExponent(0)
+    {
+    }
+
+    bool IsValid(int nProtocolVersion) const
+    {
+        return (IsValidAssetId(nAssetId) &&
+                nNumberOfConfirmations > 0 &&
+                nRequiredDepositSigners >= MIN_REQ_SIGNERS &&
+                nTotalDepositSigners >= MIN_TOTAL_SIGNERS &&
+                nRequiredDepositSigners < nTotalDepositSigners &&
+                nMaxTradeExpParam <= EXP_SERIES_MAX_PARAM &&
+                nMinTradeExpParam <= nMaxTradeExpParam &&
+                nUnitExponent <= MAX_TRADABLE_UNIT_EXPONENT);
+    }
+
+    inline int64 GetMaxTrade() const
+    {
+        return nMaxTradeExpParam <= EXP_SERIES_MAX_PARAM ? pnExponentialSeries[nMaxTradeExpParam] : 0;
+    }
+
+    inline int64 GetMinTrade() const
+    {
+        return nMinTradeExpParam <= EXP_SERIES_MAX_PARAM ? pnExponentialSeries[nMinTradeExpParam] : 0;
+    }
+
+    IMPLEMENT_SERIALIZE
+    (
+        READWRITE(nAssetId);
+        READWRITE(nNumberOfConfirmations);
+        READWRITE(nRequiredDepositSigners);
+        READWRITE(nTotalDepositSigners);
+        READWRITE(nMaxTradeExpParam);
+        READWRITE(nMinTradeExpParam);
+        READWRITE(nUnitExponent);
+    )
+
+    inline bool operator==(const CAssetVote& other) const
+    {
+        return (nAssetId == other.nAssetId &&
+                nNumberOfConfirmations == other.nNumberOfConfirmations &&
+                nRequiredDepositSigners == other.nRequiredDepositSigners &&
+                nTotalDepositSigners == other.nTotalDepositSigners &&
+                nMaxTradeExpParam == other.nMaxTradeExpParam &&
+                nMinTradeExpParam == other.nMinTradeExpParam &&
+                nUnitExponent == other.nUnitExponent);
+    }
+    inline bool operator!=(const CAssetVote& other) const
+    {
+        return !(*this == other);
+    }
+    bool operator< (const CAssetVote& other) const
+    {
+        if (nAssetId != other.nAssetId)
+            return nAssetId < other.nAssetId;
+        if (nNumberOfConfirmations != other.nNumberOfConfirmations)
+            return nNumberOfConfirmations < other.nNumberOfConfirmations;
+        if (nRequiredDepositSigners != other.nRequiredDepositSigners)
+            return nRequiredDepositSigners < other.nRequiredDepositSigners;
+        if (nTotalDepositSigners != other.nTotalDepositSigners)
+            return nTotalDepositSigners < other.nTotalDepositSigners;
+        if (nMaxTradeExpParam != other.nMaxTradeExpParam)
+            return nMaxTradeExpParam < other.nMaxTradeExpParam;
+        if (nMinTradeExpParam != other.nMinTradeExpParam)
+            return nMinTradeExpParam < other.nMinTradeExpParam;
+        if (nUnitExponent != other.nUnitExponent)
+            return nUnitExponent < other.nUnitExponent;
+        return false;
+    }
+
+    bool ProducesAsset(const CAsset& asset) const
+    {
+        return (nAssetId == asset.nAssetId &&
+                nNumberOfConfirmations == asset.nNumberOfConfirmations &&
+                nRequiredDepositSigners == asset.nRequiredDepositSigners &&
+                nTotalDepositSigners == asset.nTotalDepositSigners &&
+                GetMaxTrade() == asset.GetMaxTrade() &&
+                GetMinTrade() == asset.GetMinTrade() &&
+                nUnitExponent == asset.nUnitExponent);
+    }
+};
+
 class CVote
 {
 public:
@@ -402,6 +514,7 @@ public:
     std::map<unsigned char, uint32_t> mapFeeVote;
     std::vector<CReputationVote> vReputationVote;
     CSignerRewardVote signerReward;
+    std::vector<CAssetVote> vAssetVote;
 
     int64 nCoinAgeDestroyed;
 
@@ -419,6 +532,7 @@ public:
         vMotion.clear();
         mapFeeVote.clear();
         vReputationVote.clear();
+        vAssetVote.clear();
         nCoinAgeDestroyed = 0;
     }
 
@@ -485,11 +599,13 @@ public:
         {
             READWRITE(vReputationVote);
             READWRITE(signerReward);
+            READWRITE(vAssetVote);
         }
         else if (fRead)
         {
             const_cast<CVote*>(this)->vReputationVote.clear();
             const_cast<CVote*>(this)->signerReward.SetNull();
+            const_cast<CVote*>(this)->vAssetVote.clear();
         }
     )
 
@@ -506,7 +622,8 @@ public:
                 vMotion == other.vMotion &&
                 mapFeeVote == other.mapFeeVote &&
                 vReputationVote == other.vReputationVote &&
-                signerReward == other.signerReward);
+                signerReward == other.signerReward &&
+                vAssetVote == other.vAssetVote);
     }
     inline bool operator!=(const CVote& other) const
     {
@@ -586,5 +703,10 @@ bool GetPastSignerRewards(const CBlockIndex* pindex, std::map<CTxDestination, in
 
 int CalculateSignerRewardVoteCounts(const CBlockIndex* pindex, std::map<int16_t, int>& mapCountRet, std::map<int32_t, int>& mapAmountRet);
 bool CalculateSignerRewardVoteResult(CBlockIndex* pindex);
+
+bool ExtractAssetVoteResult(const CBlockIndex *pindex, std::vector<CAsset> &vAssets);
+bool CalculateVotedAssets(CBlockIndex* pindex);
+
+bool MustUpgradeProtocol(const CBlockIndex* pPrevIndex, int nProtocolVersion);
 
 #endif

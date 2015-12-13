@@ -20,6 +20,7 @@
 #include "scanbalance.h"
 #include "liquidityinfo.h"
 #include "datafeed.h"
+#include "coinmetadata.h"
 
 #undef printf
 #include <boost/asio.hpp>
@@ -123,6 +124,11 @@ int64 AmountFromValue(const Value& value)
     if (!MoneyRange(nAmount))
         throw JSONRPCError(-3, "Invalid amount");
     return nAmount;
+}
+
+Value ValueFromAmount(int64 amount, uint8_t exponent)
+{
+    return (double)amount / pow(10, exponent);
 }
 
 Value ValueFromAmount(int64 amount)
@@ -425,6 +431,22 @@ Object voteToJSON(const CVote& vote)
     signerReward.push_back(Pair("count", vote.signerReward.nCount >= 0 ? vote.signerReward.nCount : Value::null));
     signerReward.push_back(Pair("amount", vote.signerReward.nAmount >= 0 ? ValueFromAmount(vote.signerReward.nAmount) : Value::null));
     result.push_back(Pair("signerreward", signerReward));
+
+    Array assetVotes;
+    BOOST_FOREACH(const CAssetVote& assetVote, vote.vAssetVote)
+    {
+        Object object;
+        object.push_back(Pair("assetid", AssetIdToStr(assetVote.nAssetId)));
+        object.push_back(Pair("confirmations", assetVote.nNumberOfConfirmations));
+        object.push_back(Pair("reqsigners", assetVote.nRequiredDepositSigners));
+        object.push_back(Pair("totalsigners", assetVote.nTotalDepositSigners));
+        object.push_back(Pair("maxtrade", ValueFromAmount(assetVote.GetMaxTrade(), assetVote.nUnitExponent)));
+        object.push_back(Pair("mintrade", ValueFromAmount(assetVote.GetMinTrade(), assetVote.nUnitExponent)));
+        object.push_back(Pair("unitexponent", assetVote.nUnitExponent));
+
+        assetVotes.push_back(object);
+    }
+    result.push_back(Pair("assets", assetVotes));
 
     return result;
 }
@@ -3672,6 +3694,93 @@ Value getsignerrewardvotes(const Array& params, bool fHelp)
     return obj;
 }
 
+Value getassetinfo(const Array& params, bool fHelp)
+{
+    Object result;
+
+    if (fHelp || params.size() > 2 || params.size() < 1)
+        throw runtime_error(
+                "getassetinfo <asset id string> [<block height>]\n"
+                        "Returns an object information about an asset on a specific height (default is the current)");
+
+    CBlockIndex *pindex = pindexBest;
+
+    uint32_t nAssetId = EncodeAssetId(params[0].get_str());
+
+    if (!IsValidAssetId(nAssetId))
+        throw JSONRPCError(-3, "Invalid asset id");
+
+    if (params.size() > 1)
+    {
+        int nHeight = params[1].get_int();
+
+        if (nHeight < 0 || nHeight > nBestHeight)
+            throw JSONRPCError(-3, "Invalid height");
+
+        for (int i = nBestHeight; i > nHeight; i--)
+            pindex = pindex->pprev;
+    }
+
+    CAsset asset;
+    if (!pindex->GetEffectiveAsset(nAssetId, asset))
+        throw JSONRPCError(-4, "Could not get asset");
+
+    Object object;
+    object.push_back(Pair("assetid", AssetIdToStr(nAssetId)));
+    object.push_back(Pair("name", GetAssetName(nAssetId)));
+    object.push_back(Pair("symbol", GetAssetSymbol(nAssetId)));
+    object.push_back(Pair("confirmations", asset.nNumberOfConfirmations));
+    object.push_back(Pair("reqsigners", asset.nRequiredDepositSigners));
+    object.push_back(Pair("totalsigners", asset.nTotalDepositSigners));
+    object.push_back(Pair("maxtrade", ValueFromAmount(asset.GetMaxTrade(), asset.nUnitExponent)));
+    object.push_back(Pair("mintrade", ValueFromAmount(asset.GetMinTrade(), asset.nUnitExponent)));
+    object.push_back(Pair("unitexponent", asset.nUnitExponent));
+
+    return object;
+}
+
+Value getassets(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+                "getassets [<block height>]\n"
+                        "Returns an object containing the effective registered assets at block <height> (default is the current height).");
+
+    CBlockIndex *pindex = pindexBest;
+
+    if (params.size() > 0)
+    {
+        int nHeight = params[0].get_int();
+
+        if (nHeight < 0 || nHeight > nBestHeight)
+            throw JSONRPCError(-3, "Invalid height");
+
+        for (int i = nBestHeight; i > nHeight; i--)
+            pindex = pindex->pprev;
+    }
+
+    std::map<uint64, CAsset> assets;
+    if (!pindex->GetEffectiveAssets(assets))
+        throw JSONRPCError(-4, "Could not get assets");
+
+    Array assetsArray;
+    BOOST_FOREACH(const PAIRTYPE(const uint32_t, CAsset)& pair, assets)
+    {
+        CAsset asset = pair.second;
+        Object object;
+        object.push_back(Pair("assetid", AssetIdToStr(asset.nAssetId)));
+        object.push_back(Pair("confirmations", asset.nNumberOfConfirmations));
+        object.push_back(Pair("reqsigners", asset.nRequiredDepositSigners));
+        object.push_back(Pair("totalsigners", asset.nTotalDepositSigners));
+        object.push_back(Pair("maxtrade", ValueFromAmount(asset.GetMaxTrade(), asset.nUnitExponent)));
+        object.push_back(Pair("mintrade", ValueFromAmount(asset.GetMinTrade(), asset.nUnitExponent)));
+        object.push_back(Pair("unitexponent", asset.nUnitExponent));
+        assetsArray.push_back(object);
+    }
+
+    return assetsArray;
+}
+
 static map<string, CLiquidityInfo> mapLiquidity;
 static CCriticalSection cs_mapLiquidity;
 
@@ -4505,7 +4614,7 @@ Value setdatafeed(const Array& params, bool fHelp)
             "setdatafeed <url> [<signature url> <address>] [<parts>]\n"
             "Change the vote data feed. Set <url> to an empty string to disable.\n"
             "If <signature url> and <address> are specified and not empty strings a signature will also be retrieved at <signature url> and verified.\n"
-            "Parts is the list of the top level vote parts that will be taken from the feed, separated by a coma. The other parts will not affect the vote. Default is \"custodians,parkrates,motions,fees,reputations,signerreward\".");
+            "Parts is the list of the top level vote parts that will be taken from the feed, separated by a coma. The other parts will not affect the vote. Default is \"custodians,parkrates,motions,fees,reputations,signerreward,assets\".");
 
     string sURL = params[0].get_str();
 
@@ -4517,7 +4626,7 @@ Value setdatafeed(const Array& params, bool fHelp)
     if (params.size() > 2)
         sAddress = params[2].get_str();
 
-    string sParts("custodians,parkrates,motions,fees,reputations,signerreward");
+    string sParts("custodians,parkrates,motions,fees,reputations,signerreward,signerreward,assets");
     if (params.size() > 3)
         sParts = params[3].get_str();
     vector<string> vParts;
@@ -4525,7 +4634,7 @@ Value setdatafeed(const Array& params, bool fHelp)
 
     BOOST_FOREACH(const string sPart, vParts)
     {
-        if (sPart != "custodians" && sPart != "parkrates" && sPart != "motions" && sPart != "fees" && sPart != "reputations" && sPart != "signerreward")
+        if (sPart != "custodians" && sPart != "parkrates" && sPart != "motions" && sPart != "fees" && sPart != "reputations" && sPart != "signerreward" && sPart != "assets")
             throw runtime_error("Invalid parts");
     }
 
@@ -4931,6 +5040,8 @@ static const CRPCCommand vRPCCommands[] =
     { "getreputations",         &getreputations,         true },
     { "getsignerreward",        &getsignerreward,        true },
     { "getsignerrewardvotes",   &getsignerrewardvotes,   true },
+    { "getassets",              &getassets,              true },
+    { "getassetinfo",           &getassetinfo,           true },
     { "listunspent",            &listunspent,            false},
     { "getrawtransaction",      &getrawtransaction,      false},
     { "createrawtransaction",   &createrawtransaction,   false},
@@ -5761,7 +5872,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "sendrawtransaction"     && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "gettxout"               && n > 1) ConvertTo<int64_t>(params[1]);
     if (strMethod == "gettxout"               && n > 2) ConvertTo<bool>(params[2]);
-    if (strMethod == "setvote"                 && n > 0)
+    if (strMethod == "setvote"                && n > 0)
     {
         string s = params[0].get_str();
         Value v;
@@ -5781,6 +5892,9 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "getreputations"          && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "getsignerreward"         && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "getsignerrewardvotes"    && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "getassetinfo"            && n > 0) ConvertTo<boost::uint64_t>(params[0]);
+    if (strMethod == "getassetinfo"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "getassets"               && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "burn"                    && n > 0) ConvertTo<double>(params[0]);
 #ifdef TESTING
     if (strMethod == "timetravel"              && n > 0) ConvertTo<boost::int64_t>(params[0]);

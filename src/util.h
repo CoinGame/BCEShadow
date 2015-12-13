@@ -23,9 +23,11 @@ typedef int pid_t; /* define for windows compatiblity */
 #include <vector>
 #include <string>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/foreach.hpp>
 #include <boost/interprocess/sync/interprocess_recursive_mutex.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
@@ -407,12 +409,14 @@ inline int64 abs64(int64 n)
     return (n >= 0 ? n : -n);
 }
 
+static char hexmap[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
+                           '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+
 template<typename T>
 std::string HexStr(const T itbegin, const T itend, bool fSpaces=false)
 {
     std::vector<char> rv;
-    static char hexmap[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
-                               '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+
     rv.reserve((itend-itbegin)*3);
     for(T it = itbegin; it < itend; ++it)
     {
@@ -777,5 +781,263 @@ inline uint32_t ByteReverse(uint32_t value)
     value = ((value & 0xFF00FF00) >> 8) | ((value & 0x00FF00FF) << 8);
     return (value<<16) | (value>>16);
 }
+
+
+/**
+ * Asset IDs can be random numbers or encode capital Latin characters typically the asset symbol.
+ *
+ * The 2 HO bits encode the id header and it can take 3 values: letters only, letters and numbers and raw value.
+ *
+ * The raw id is a number that has the header bits set to 00.
+ *
+ * The alphanumeric IDs are encoded with 5 or 6 bits per character depending if it encodes numbers as well.
+ *
+ * The header 11 is reserved and the ID 0xFFFFFFFF is the invalid constant
+ */
+
+#define ASSET_SYMBOL_ALPHA_MAX          (6)
+#define ASSET_SYMBOL_ALPHANUM_MAX       (5)
+#define ASCII_ALPHA_START               (0x41)  // 'A'
+#define ASCII_ALPHA_END                 (0x5A)  // 'Z'
+#define ASCII_NUM_START                 (0x30)  // '0'
+#define ASCII_NUM_END                   (0x39)  // '9'
+#define ASCII_ALPHA_ENCODING_BASE       (0x40)  // so that A-Z will be in the rage 0x01- 0x1A
+#define ASCII_NUM_ENCODING_BASE         (0x10)  // so that 0-1 will be in the rage 0x20- 0x29
+#define ASCII_ENCODED_ALPHA_START       (ASCII_ALPHA_START - ASCII_ALPHA_ENCODING_BASE)
+#define ASCII_ENCODED_ALPHA_END         (ASCII_ALPHA_END - ASCII_ALPHA_ENCODING_BASE)
+#define ASCII_ENCODED_NUM_START         (ASCII_NUM_START - ASCII_NUM_ENCODING_BASE)
+#define ASCII_ENCODED_NUM_END           (ASCII_NUM_END - ASCII_NUM_ENCODING_BASE)
+#define ASSET_ID_ALPHA_SHIFT            (5)     // 5 bits per character
+#define ASSET_ID_ALPHA_CHAR_MASK        (0x1f)
+#define ASSET_ID_ALPHANUM_SHIFT         (6)     // 6 bits per character
+#define ASSET_ID_ALPHANUM_CHAR_MASK     (0x3f)
+#define ASSET_ID_RAW_CHARS              (12)    // In ID0000000123 format
+#define ASSET_ID_RAW_MAX_VALUE          (1073741823) // 0x3FFFFFFF
+#define ASSET_ID_HEADER_SHIFT           (30)    // Where the header is located
+#define ASSET_ID_HEADER_MASK            (0xC0000000)
+#define ASSET_ID_HEADER_RAW             (0x0)   // 00.. - the id has no encoding
+#define ASSET_ID_HEADER_ALPHA           (0x1)   // 01.. - id contains only letters + 5 undefined symbols
+#define ASSET_ID_HEADER_ALPHANUM        (0x2)   // 10.. - contains letters, numbers and many more symbols
+#define ASSET_ID_HEADER_RESERVED        (0x3)   // 11.. - reserved
+#define ASSET_ID_INVALID                (0xFFFFFFFF)
+#define ASSET_ID_INVALID_ZERO           (0)
+#define ASSET_ID_INVALID_EMPTY_ALPHA    (ASSET_ID_HEADER_ALPHA << ASSET_ID_HEADER_SHIFT)
+#define ASSET_ID_INVALID_EMPTY_ALPHANUM (ASSET_ID_HEADER_ALPHANUM << ASSET_ID_HEADER_SHIFT)
+#define ASSET_ID_INVALID_STR            ("INVALID_ID")
+
+
+inline static uint8_t GetAssetIdHeader(uint32_t nId)
+{
+    return (nId & ASSET_ID_HEADER_MASK) >> ASSET_ID_HEADER_SHIFT;
+}
+
+uint32_t EncodeAssetId(std::string symbol);
+
+inline uint32_t EncodeAssetId(uint32_t nRawId)
+{
+    if (GetAssetIdHeader(nRawId) == ASSET_ID_HEADER_RAW && nRawId != ASSET_ID_INVALID_ZERO)
+        return nRawId;
+    else
+        return ASSET_ID_INVALID;
+}
+
+std::string AssetIdToStr(uint32_t nId);
+
+bool IsValidAssetId(uint32_t nId);
+
+/*
+ * Pre-calculated table for exponential series that follow the pattern:
+ *
+ * 0, 1, 2, ... , 8, 9, 10, 20, ... , 80, 90, 100, 200, ... , 8E17, 9E17, 1E18, 2E18, ... , 8E18, 9E18
+ *
+ * The maximum value 9E18 is lower than the highest signed 64 bit integer (9223372036854775807L).
+ * The parameter range is [0, 171].
+ *
+ * The function ExponentialParameter(int64 value) returns the highest parameter where:
+ *
+ *     pnExponentialSeries[ExponentialParameter(value)] <= value
+ *
+ * The following python lambda produces the teble values:
+ * lambda(i):(i%9) * 10**(i/9) if i == 0 or i%9 != 0 else 9*10**(i/9 - 1)
+ */
+#define EXP_SERIES_MAX_PARAM (171)
+
+unsigned char ExponentialParameter(int64 value);
+unsigned char ConvertExpParameter(unsigned char nExpParam, unsigned char nFromUnitExponent, unsigned char nToUnitExponent);
+
+static const int64 pnExponentialSeries[] = {
+    0L, // 0
+    1L, // 1
+    2L, // 2
+    3L, // 3
+    4L, // 4
+    5L, // 5
+    6L, // 6
+    7L, // 7
+    8L, // 8
+    9L, // 9
+    10L, // 10
+    20L, // 11
+    30L, // 12
+    40L, // 13
+    50L, // 14
+    60L, // 15
+    70L, // 16
+    80L, // 17
+    90L, // 18
+    100L, // 19
+    200L, // 20
+    300L, // 21
+    400L, // 22
+    500L, // 23
+    600L, // 24
+    700L, // 25
+    800L, // 26
+    900L, // 27
+    1000L, // 28
+    2000L, // 29
+    3000L, // 30
+    4000L, // 31
+    5000L, // 32
+    6000L, // 33
+    7000L, // 34
+    8000L, // 35
+    9000L, // 36
+    10000L, // 37
+    20000L, // 38
+    30000L, // 39
+    40000L, // 40
+    50000L, // 41
+    60000L, // 42
+    70000L, // 43
+    80000L, // 44
+    90000L, // 45
+    100000L, // 46
+    200000L, // 47
+    300000L, // 48
+    400000L, // 49
+    500000L, // 50
+    600000L, // 51
+    700000L, // 52
+    800000L, // 53
+    900000L, // 54
+    1000000L, // 55
+    2000000L, // 56
+    3000000L, // 57
+    4000000L, // 58
+    5000000L, // 59
+    6000000L, // 60
+    7000000L, // 61
+    8000000L, // 62
+    9000000L, // 63
+    10000000L, // 64
+    20000000L, // 65
+    30000000L, // 66
+    40000000L, // 67
+    50000000L, // 68
+    60000000L, // 69
+    70000000L, // 70
+    80000000L, // 71
+    90000000L, // 72
+    100000000L, // 73
+    200000000L, // 74
+    300000000L, // 75
+    400000000L, // 76
+    500000000L, // 77
+    600000000L, // 78
+    700000000L, // 79
+    800000000L, // 80
+    900000000L, // 81
+    1000000000L, // 82
+    2000000000L, // 83
+    3000000000L, // 84
+    4000000000L, // 85
+    5000000000L, // 86
+    6000000000L, // 87
+    7000000000L, // 88
+    8000000000L, // 89
+    9000000000L, // 90
+    10000000000L, // 91
+    20000000000L, // 92
+    30000000000L, // 93
+    40000000000L, // 94
+    50000000000L, // 95
+    60000000000L, // 96
+    70000000000L, // 97
+    80000000000L, // 98
+    90000000000L, // 99
+    100000000000L, // 100
+    200000000000L, // 101
+    300000000000L, // 102
+    400000000000L, // 103
+    500000000000L, // 104
+    600000000000L, // 105
+    700000000000L, // 106
+    800000000000L, // 107
+    900000000000L, // 108
+    1000000000000L, // 109
+    2000000000000L, // 110
+    3000000000000L, // 111
+    4000000000000L, // 112
+    5000000000000L, // 113
+    6000000000000L, // 114
+    7000000000000L, // 115
+    8000000000000L, // 116
+    9000000000000L, // 117
+    10000000000000L, // 118
+    20000000000000L, // 119
+    30000000000000L, // 120
+    40000000000000L, // 121
+    50000000000000L, // 122
+    60000000000000L, // 123
+    70000000000000L, // 124
+    80000000000000L, // 125
+    90000000000000L, // 126
+    100000000000000L, // 127
+    200000000000000L, // 128
+    300000000000000L, // 129
+    400000000000000L, // 130
+    500000000000000L, // 131
+    600000000000000L, // 132
+    700000000000000L, // 133
+    800000000000000L, // 134
+    900000000000000L, // 135
+    1000000000000000L, // 136
+    2000000000000000L, // 137
+    3000000000000000L, // 138
+    4000000000000000L, // 139
+    5000000000000000L, // 140
+    6000000000000000L, // 141
+    7000000000000000L, // 142
+    8000000000000000L, // 143
+    9000000000000000L, // 144
+    10000000000000000L, // 145
+    20000000000000000L, // 146
+    30000000000000000L, // 147
+    40000000000000000L, // 148
+    50000000000000000L, // 149
+    60000000000000000L, // 150
+    70000000000000000L, // 151
+    80000000000000000L, // 152
+    90000000000000000L, // 153
+    100000000000000000L, // 154
+    200000000000000000L, // 155
+    300000000000000000L, // 156
+    400000000000000000L, // 157
+    500000000000000000L, // 158
+    600000000000000000L, // 159
+    700000000000000000L, // 160
+    800000000000000000L, // 161
+    900000000000000000L, // 162
+    1000000000000000000L, // 163
+    2000000000000000000L, // 164
+    3000000000000000000L, // 165
+    4000000000000000000L, // 166
+    5000000000000000000L, // 167
+    6000000000000000000L, // 168
+    7000000000000000000L, // 169
+    8000000000000000000L, // 170
+    9000000000000000000L  // 171
+};
 
 #endif

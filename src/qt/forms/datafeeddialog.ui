@@ -138,6 +138,13 @@ to update</string>
          </property>
         </widget>
        </item>
+       <item>
+        <widget class="QCheckBox" name="assetsCheckBox">
+         <property name="text">
+          <string>Assets</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
     </layout>

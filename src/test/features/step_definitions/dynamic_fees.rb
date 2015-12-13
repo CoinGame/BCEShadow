@@ -68,10 +68,10 @@ Then(/^transaction "(.*?)" on node "(.*?)" should have a fee of ([\d.,]+) per 10
     info = node.rpc("getrawtransaction", tx, 1)
     bytes = info["hex"].size / 2
     expected_fee = (expected_fee_per_kilobyte.to_d / 1000 * bytes).ceil(4)
-    total_out = info["vout"].map { |output| output["value"] }.inject(&:+)
+    total_out = info["vout"].map { |output| output["value"].to_d }.inject(&:+)
     total_in = info["vin"].map do |input|
       in_info = node.rpc("getrawtransaction", input["txid"], 1)
-      in_info["vout"][input["vout"]]["value"]
+      in_info["vout"][input["vout"]]["value"].to_d
     end.inject(&:+)
     fee = total_in - total_out
     expect(fee.to_d).to be_within(0.0001).of(expected_fee)

@@ -12,6 +12,8 @@
 #include "ui_interface.h"
 #include "main.h"
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+
 
 // Work around clang compilation problem in Boost 1.46:
 // /usr/include/boost/program_options/detail/config_file.hpp:163:17: error: call to function 'to_internal' that is neither visible in the template definition nor found by argument-dependent lookup
@@ -1622,4 +1624,195 @@ double AnnualInterestRatePercentage(int64 rate, int64 blocks)
 int64 AnnualInterestRatePercentageToRate(double percentage, int64 blocks)
 {
     return round(percentage * DurationInYears(blocks) / 100 * COIN_PARK_RATE);
+}
+
+uint32_t EncodeAssetId(std::string symbol)
+{
+  if (symbol.length() == 0)
+        return ASSET_ID_INVALID;
+
+  // Check if a raw id
+  if (boost::starts_with(symbol, "ID") && symbol.length() == ASSET_ID_RAW_CHARS)
+  {
+      int64 nParsedId = atoi64(symbol.substr(2)); // Try to parse the id number
+      if (nParsedId > 0 && nParsedId <= ASSET_ID_RAW_MAX_VALUE && IsValidAssetId(nParsedId))
+          return (uint32_t) nParsedId;
+  }
+
+  if (symbol.length() > ASSET_SYMBOL_ALPHA_MAX)
+        return ASSET_ID_INVALID;
+
+    char pSymbolItems[ASSET_SYMBOL_ALPHA_MAX];
+    int nItems = 0;
+    bool fHasNumbers = false;
+
+    // Extract symbol characters
+    BOOST_FOREACH(char c, boost::to_upper_copy(symbol))
+    {
+        if (c >= ASCII_ALPHA_START && c <= ASCII_ALPHA_END)
+            pSymbolItems[nItems++] = c - ASCII_ALPHA_ENCODING_BASE;
+        else if (c >= ASCII_NUM_START && c <= ASCII_NUM_END)
+        {
+            pSymbolItems[nItems++] = c - ASCII_NUM_ENCODING_BASE;
+            fHasNumbers = true;
+        }
+        else
+            return ASSET_ID_INVALID;
+    }
+
+    // Alphanumeric symbols can have less characters
+    if (fHasNumbers && nItems > ASSET_SYMBOL_ALPHANUM_MAX)
+        return ASSET_ID_INVALID;
+
+    // Set values
+    uint32_t id = 0;
+    for (int i = 0; i < nItems; i++)
+    {
+        if (fHasNumbers)
+            id <<= ASSET_ID_ALPHANUM_SHIFT;
+        else
+            id <<= ASSET_ID_ALPHA_SHIFT;
+        id |= pSymbolItems[i];
+    }
+
+    // Set headers
+    if (fHasNumbers)
+        id |= ASSET_ID_HEADER_ALPHANUM << ASSET_ID_HEADER_SHIFT;
+    else
+        id |= ASSET_ID_HEADER_ALPHA << ASSET_ID_HEADER_SHIFT;
+
+    return id;
+}
+
+std::string AssetIdToStr(uint32_t nId)
+{
+    if (!IsValidAssetId(nId))
+        return ASSET_ID_INVALID_STR;
+
+    std::vector<char> rv;
+    uint8_t header = GetAssetIdHeader(nId);
+
+    switch(header)
+    {
+    case ASSET_ID_HEADER_ALPHA:
+        for (int i = ASSET_SYMBOL_ALPHA_MAX - 1; i >= 0; i--)
+        {
+            uint8_t c = (nId >> i * ASSET_ID_ALPHA_SHIFT) & ASSET_ID_ALPHA_CHAR_MASK;
+            if (c == 0)
+                continue;
+
+            if (c >= ASCII_ENCODED_ALPHA_START && c <= ASCII_ENCODED_ALPHA_END)
+                rv.push_back(c + ASCII_ALPHA_ENCODING_BASE);
+            else
+                return ASSET_ID_INVALID_STR;
+        }
+        break;
+    case ASSET_ID_HEADER_ALPHANUM:
+        for (int i = ASSET_SYMBOL_ALPHANUM_MAX - 1; i >= 0; i--)
+        {
+            uint8_t c = (nId >> i * ASSET_ID_ALPHANUM_SHIFT) & ASSET_ID_ALPHANUM_CHAR_MASK;
+            if (c == 0)
+                continue;
+
+            if (c >= ASCII_ENCODED_ALPHA_START && c <= ASCII_ENCODED_ALPHA_END)
+                rv.push_back(c + ASCII_ALPHA_ENCODING_BASE);
+            else if (c >= ASCII_ENCODED_NUM_START && c <= ASCII_ENCODED_NUM_END)
+                rv.push_back(c + ASCII_NUM_ENCODING_BASE);
+            else
+                return ASSET_ID_INVALID_STR;
+        }
+        break;
+    case ASSET_ID_HEADER_RAW:
+        return strprintf("ID%010d", nId);
+    case ASSET_ID_HEADER_RESERVED:
+    default:
+        return ASSET_ID_INVALID_STR;
+    }
+    return std::string(rv.begin(), rv.end());
+}
+
+bool IsValidAssetId(uint32_t nId)
+{
+    if (nId == ASSET_ID_INVALID || nId == ASSET_ID_INVALID_ZERO ||
+            nId == ASSET_ID_INVALID_EMPTY_ALPHA || nId == ASSET_ID_INVALID_EMPTY_ALPHANUM)
+        return false;
+
+    uint8_t header = GetAssetIdHeader(nId);
+    if (header == ASSET_ID_HEADER_RESERVED)
+        return false;
+    else
+    {
+        // Alphanumeric IDs must contain at least one digit, otherwise they are invalid.
+        // This is to avoid similar looking asset string representations
+        if (header == ASSET_ID_HEADER_ALPHANUM)
+        {
+            bool fIsAlphaNumValid = false;
+            for (int i = ASSET_SYMBOL_ALPHANUM_MAX - 1; i >= 0 && !fIsAlphaNumValid; i--)
+            {
+                uint8_t c = (nId >> i * ASSET_ID_ALPHANUM_SHIFT) & ASSET_ID_ALPHANUM_CHAR_MASK;
+                if (c >= ASCII_ENCODED_NUM_START && c <= ASCII_ENCODED_NUM_END)
+                    fIsAlphaNumValid = true;
+            }
+            return fIsAlphaNumValid;
+        }
+        else
+            return true;
+    }
+}
+
+unsigned char ExponentialParameter(int64 value)
+{
+    /*
+     * This function searches the pnExponentialSeries table to find a parameter that produces a value lower than the
+     * value we have. So when we provide the value 99 it will return the parameter 18 because:
+     *
+     *     pnExponentialSeries[18] == 90 and pnExponentialSeries[19] == 100
+     *
+     * It is possible to use the logarithms to solve the same problem
+     *
+     * if n == 0 else int(math.log(n, 10)+.00000000000001)*9 + (n%9 if n%9 != 0 else 9)
+     */
+
+    if (value <= 0)
+        return 0;
+    if (value >= 9000000000000000000L)
+        return EXP_SERIES_MAX_PARAM;
+
+    int min = 1;
+    int max = EXP_SERIES_MAX_PARAM - 1;
+    // binary search a range
+    while (min <= max)
+    {
+        int mid = (max - min) / 2 + min;
+        int64 n1 = pnExponentialSeries[mid];
+        int64 n2 = pnExponentialSeries[mid + 1];
+        if(n1 <= value && value < n2)
+        {
+            min = mid;
+            break;
+        }
+        else if (n1 < value)
+            min = mid + 1; // search upper subarray
+        else
+            max = mid - 1; // search lower subarray
+    }
+
+    return (unsigned char) min;
+}
+
+unsigned char ConvertExpParameter(unsigned char nExpParam, unsigned char nFromUnitExponent, unsigned char nToUnitExponent)
+{
+    // No conversion is needed
+    if (nExpParam == 0 || nToUnitExponent == nFromUnitExponent)
+        return nExpParam;
+
+    int nNewExpParam = nExpParam + 9 * (nToUnitExponent - nFromUnitExponent);
+
+    // Always return a sane value
+    if (nNewExpParam <= 0)
+        return 1;
+    else if (nNewExpParam > EXP_SERIES_MAX_PARAM)
+        return EXP_SERIES_MAX_PARAM;
+    else
+        return nNewExpParam;
 }

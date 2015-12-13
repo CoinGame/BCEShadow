@@ -74,6 +74,8 @@ namespace GUIUtil
     double annualInterestRatePercentage(qint64 rate, qint64 blocks);
     qint64 annualInterestRatePercentageToRate(double percentage, qint64 blocks);
 
+    QString unitsToCoins(unsigned long long n, int exponent);
+    unsigned long long coinsToUnits(QString amountStr, int exponent);
 } // namespace GUIUtil
 
 #endif // GUIUTIL_H

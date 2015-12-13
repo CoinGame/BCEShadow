@@ -238,5 +238,46 @@ qint64 annualInterestRatePercentageToRate(double percentage, qint64 blocks)
     return AnnualInterestRatePercentageToRate(percentage, blocks);
 }
 
+QString unitsToCoins(unsigned long long n, int exponent)
+{
+    unsigned long long coin = pow(10, exponent);
+    int num_decimals = exponent;
+    unsigned long long quotient = n / coin;
+    unsigned long long remainder = n % coin;
+    QString quotient_str = QString::number(quotient);
+    QString remainder_str = QString::number(remainder).rightJustified(num_decimals, '0');
+    int nTrim = 0;
+
+    for(int i = remainder_str.size() - 1; (i >= 0) && (remainder_str.at(i) == '0'); i--)
+        nTrim++;
+    remainder_str.chop(nTrim);
+
+    if(remainder_str.isEmpty())
+        return quotient_str;
+    else
+        return quotient_str + QString(".") + remainder_str;
+}
+
+unsigned long long coinsToUnits(QString amountStr, int exponent)
+{
+    unsigned long long coin = pow(10, exponent);
+    int num_decimals = exponent;
+    QStringList vals = amountStr.split(".");
+    QString quotient_str = vals.at(0);
+    QString remainder_str = "";
+
+    if(vals.size() > 1)
+        remainder_str = vals.at(1);
+    if(remainder_str.size() > num_decimals)
+        remainder_str.chop(remainder_str.size() - num_decimals);
+    else
+        remainder_str = remainder_str.leftJustified(num_decimals, '0');
+
+    unsigned long long quotient = quotient_str.toULongLong();
+    unsigned long long remainder = remainder_str.toULongLong();
+
+    return quotient * coin + remainder;
+}
+
 } // namespace GUIUtil
 
