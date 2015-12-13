@@ -1755,15 +1755,21 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         blockVote.nVersionVote = nForcedVersionVote;
 #endif
 
+    {
+        CBlockIndex pindexdummy;
+        pindexdummy.pprev = pindexprev;
+        pindexdummy.nTime = txNew.nTime;
+
+        CalculateVotedAssets(&pindexdummy);
+        RemoveVotedAssets(pindexdummy, blockVote.vAssetVote);
+    }
+
+    txNew.vout.push_back(CTxOut(0, blockVote.ToScript(nProtocolVersion)));
+
     CBlockIndex pindexdummy;
     pindexdummy.pprev = pindexprev;
     pindexdummy.nTime = txNew.nTime;
     pindexdummy.vote = blockVote;
-
-    CalculateVotedAssets(&pindexdummy);
-    RemoveVotedAssets(pindexdummy, blockVote.vAssetVote);
-
-    txNew.vout.push_back(CTxOut(0, blockVote.ToScript(nProtocolVersion)));
 
     {
         CTxDestination addressSigner;
