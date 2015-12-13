@@ -1001,9 +1001,9 @@ bool ExtractAssetVoteResult(const CBlockIndex* pindex, vector<CAsset>& vAssets)
                     }
                 }
 
-                // Make sure that the majority is larger than the half votes
+                // Do not add this asset if there's no absolute majority on the exponent (because it's permanent)
                 if (nMaxVotes <= nHalfAssetVotes)
-                    return false;
+                    continue;
             }
 
             newAsset.nUnitExponent = nUnitExponent;

@@ -1529,4 +1529,90 @@ BOOST_AUTO_TEST_CASE(asset_vote_result)
     }
 }
 
+void AddSampleAssetVoteWithExponent(CBlockIndex* pindex, uint8_t nExponent)
+{
+    const uint32_t ASSET_ID = 0x40000a83; // BTC string
+    const uint16_t CONFIRMATIONS = 60;
+    const uint8_t M = 3;
+    const uint8_t N = 5;
+    const uint8_t MAX_TRADE_EXP_PARAM = 91;
+    const uint8_t MIN_TRADE_EXP_PARAM = 81;
+    pindex->vote.vAssetVote.push_back(NewAssetVote(ASSET_ID, CONFIRMATIONS, M, N, MAX_TRADE_EXP_PARAM, MIN_TRADE_EXP_PARAM, nExponent));
+}
+
+void CheckSampleAssetWithExponent(const CAsset& asset, uint8_t nUnitExponent)
+{
+    const uint32_t ASSET_ID = 0x40000a83; // BTC string
+    const uint16_t CONFIRMATIONS = 60;
+    const uint8_t M = 3;
+    const uint8_t N = 5;
+    const uint8_t MAX_TRADE_EXP_PARAM = 91;
+    const uint8_t MIN_TRADE_EXP_PARAM = 81;
+    const int64 MAX_TRADE = pnExponentialSeries[MAX_TRADE_EXP_PARAM];
+    const int64 MIN_TRADE = pnExponentialSeries[MIN_TRADE_EXP_PARAM];
+
+    BOOST_CHECK_EQUAL(ASSET_ID, asset.nAssetId);
+    BOOST_CHECK_EQUAL(CONFIRMATIONS, asset.nNumberOfConfirmations);
+    BOOST_CHECK_EQUAL(M, asset.nRequiredDepositSigners);
+    BOOST_CHECK_EQUAL(N, asset.nTotalDepositSigners);
+    BOOST_CHECK_EQUAL(MAX_TRADE, asset.GetMaxTrade());
+    BOOST_CHECK_EQUAL(MIN_TRADE, asset.GetMinTrade());
+    BOOST_CHECK_EQUAL(nUnitExponent, asset.nUnitExponent);
+}
+
+
+BOOST_AUTO_TEST_CASE(asset_vote_on_inexistant_asset_without_absolute_majority_on_exponent)
+{
+    CBlockIndex* pindexBest = new CBlockIndex;
+
+    for (int i = 0; i < ASSET_VOTES / 2; i++)
+    {
+        NewBlockTip(pindexBest);
+        AddSampleAssetVoteWithExponent(pindexBest, 4);
+    }
+
+    for (int i = 0; i < 10; i++)
+    {
+        NewBlockTip(pindexBest);
+        AddSampleAssetVoteWithExponent(pindexBest, 5);
+    }
+
+    for (int i = 0; i < ASSET_VOTES / 2 - 10; i++)
+    {
+        NewBlockTip(pindexBest);
+        AddSampleAssetVoteWithExponent(pindexBest, 6);
+    }
+
+    vector<CAsset> vAssets;
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(0, vAssets.size());
+}
+
+BOOST_AUTO_TEST_CASE(asset_vote_on_inexistant_asset_with_absolute_majority_on_exponent)
+{
+    CBlockIndex* pindexBest = new CBlockIndex;
+    for (int i = 0; i < ASSET_VOTES / 2 + 1; i++)
+    {
+        NewBlockTip(pindexBest);
+        AddSampleAssetVoteWithExponent(pindexBest, 4);
+    }
+
+    for (int i = 0; i < 10; i++)
+    {
+        NewBlockTip(pindexBest);
+        AddSampleAssetVoteWithExponent(pindexBest, 5);
+    }
+
+    for (int i = 0; i < ASSET_VOTES / 2 - 1 - 10; i++)
+    {
+        NewBlockTip(pindexBest);
+        AddSampleAssetVoteWithExponent(pindexBest, 6);
+    }
+
+    vector<CAsset> vAssets;
+    BOOST_CHECK(ExtractAssetVoteResult(pindexBest, vAssets));
+    BOOST_CHECK_EQUAL(1, vAssets.size());
+    CheckSampleAssetWithExponent(vAssets[0], 4);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
