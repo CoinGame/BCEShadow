@@ -48,6 +48,10 @@ contains(CURL_STATIC, 1) {
     DEFINES += CURL_STATICLIB
 }
 
+contains(MINIUPNP_STATICLIB, 1) {
+    DEFINES += MINIUPNP_STATICLIB
+}
+
 # use: qmake "USE_QRCODE=1"
 # libqrencode (http://fukuchi.org/works/qrencode/index.en.html) must be installed for support
 contains(USE_QRCODE, 1) {
@@ -56,8 +60,8 @@ contains(USE_QRCODE, 1) {
     LIBS += -lqrencode
 }
 
-# use: qmake "USE_UPNP=1" ( enabled by default; default)
-#  or: qmake "USE_UPNP=0" (disabled by default)
+# use: qmake "USE_UPNP=1" ( enabled by default)
+#  or: qmake "USE_UPNP=0" (disabled by default; default)
 #  or: qmake "USE_UPNP=-" (not supported)
 # miniupnpc (http://miniupnp.free.fr/files/) must be installed for support
 contains(USE_UPNP, -) {
@@ -65,7 +69,7 @@ contains(USE_UPNP, -) {
 } else {
     message(Building with UPNP support)
     count(USE_UPNP, 0) {
-        USE_UPNP=1
+        USE_UPNP=0
     }
     DEFINES += USE_UPNP=$$USE_UPNP STATICLIB
     INCLUDEPATH += $$MINIUPNPC_INCLUDE_PATH

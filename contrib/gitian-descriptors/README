@@ -25,7 +25,7 @@ Once you've got the right hardware and software:
 
 To build the software:
 If you don't have the dependencies yet, get them and copy them to the inputs directory:
-    wget 'http://miniupnp.tuxfamily.org/files/download.php?file=miniupnpc-1.9.tar.gz' -O gitian-builder/inputs/miniupnpc-1.9.tar.gz
+    wget 'http://miniupnp.tuxfamily.org/files/download.php?file=miniupnpc-1.9.20151008.tar.gz' -O gitian-builder/inputs/miniupnpc-1.9.20151008.tar.gz
     ...
 See doc/release-process.txt for the complete list of dependencies.
 
