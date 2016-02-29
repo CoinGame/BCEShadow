@@ -907,7 +907,7 @@ boost::filesystem::path GetDefaultDataDir()
     return pathRet / "BCExchange";
 #else
     // Unix
-    return pathRet / ".bcexchange";
+    return pathRet / ".bceTESTING";
 #endif
 #endif
 }

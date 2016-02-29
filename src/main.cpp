@@ -2949,9 +2949,9 @@ bool LoadBlockIndex(bool fAllowNew)
         //   vMerkleTree: 4a5e1e
 
         // Genesis block
-        const char* pszTimestamp = "Bitcoin's block 360800 is 0000000000000000151b2741b37b9c1a9826947c49cb8afba5bb812d36ead66e";
-        unsigned int nTimeGenesis=1435190400;
-        unsigned int nNonceGenesis=2250782;
+        const char* pszTimestamp = "Seg Jan 18 12:59:55 EST 2016 0sapQ87lhNLPu7by1cLvuNckS8fX9J0J";
+        unsigned int nTimeGenesis=1453139995;
+        unsigned int nNonceGenesis=942599;
 
         if (fTestNet)
         {
@@ -3001,7 +3001,7 @@ bool LoadBlockIndex(bool fAllowNew)
         printf("%s\n", hashGenesisBlock.ToString().c_str());
         printf("%s\n", block.hashMerkleRoot.ToString().c_str());
         if (!fTestNet)
-            assert(block.hashMerkleRoot == uint256("0x5f6d3c86c39f07715fb73cc5cf3a8a11a59f4e6b77547675f519a4a5d11f4a1a"));
+            assert(block.hashMerkleRoot == uint256("0x770149cbafff678372a52bf96ebafdab8a547841a920ce183aab30886f34b443"));
         else
             assert(block.hashMerkleRoot == uint256("0x8be28677dacf29e408de840ab74324d2c28ee0d0b9af935b882f2e1baaa174d2"));
 
